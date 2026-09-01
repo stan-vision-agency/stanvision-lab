@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>001 · Ink Field — StanVision Lab</title>
+<meta name="description" content="Interactive WebGL ink simulation. Domain-warped noise that reacts to your cursor. A StanVision Lab experiment.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0b; --ink:#edede8; --dim:#8b8b86; --line:rgba(237,237,232,.14);
+    --accent:#ff4d00; --panel:rgba(14,14,15,.72);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--ink); overflow:hidden;
+    font-family:'IBM Plex Mono',monospace; font-size:12px;
+  }
+  canvas#gl{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:10;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 24px; pointer-events:none;
+  }
+  header a{pointer-events:auto}
+  .back{
+    color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:10px;
+    letter-spacing:.04em;
+  }
+  .back .idx{color:var(--accent)}
+  .back:hover .lbl{text-decoration:underline;text-underline-offset:3px}
+  .brand{color:var(--dim); text-decoration:none; letter-spacing:.06em}
+  .brand:hover{color:var(--ink)}
+
+  .panel{
+    position:fixed; right:24px; bottom:24px; z-index:10; width:248px;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    padding:16px; display:flex; flex-direction:column; gap:14px;
+  }
+  .panel h2{
+    font:600 11px/1 'Archivo',sans-serif; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--dim); display:flex; justify-content:space-between; align-items:center;
+  }
+  .panel h2 button{
+    all:unset; cursor:pointer; color:var(--dim); font-family:'IBM Plex Mono',monospace; font-size:11px;
+  }
+  .panel h2 button:hover{color:var(--ink)}
+  .row{display:flex; flex-direction:column; gap:7px}
+  .row label{display:flex; justify-content:space-between; color:var(--dim); letter-spacing:.03em}
+  .row label output{color:var(--ink)}
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:2px;
+    background:var(--line); border-radius:1px; outline:none; cursor:ew-resize;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none; width:12px; height:12px; border-radius:50%;
+    background:var(--ink); border:none;
+  }
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--ink);border:none}
+  .swatches{display:flex; gap:8px}
+  .sw{
+    flex:1; height:26px; border-radius:6px; border:1px solid var(--line); cursor:pointer; position:relative;
+  }
+  .sw[aria-pressed="true"]{border-color:var(--ink); box-shadow:0 0 0 1px var(--ink)}
+  .actions{display:flex; gap:8px}
+  .btn{
+    all:unset; flex:1; text-align:center; cursor:pointer; padding:9px 0; border-radius:7px;
+    border:1px solid var(--line); color:var(--ink); letter-spacing:.05em; font-size:11px;
+  }
+  .btn:hover{border-color:var(--ink)}
+  .btn.primary{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+  .btn.primary:hover{background:#fff}
+
+  .hint{
+    position:fixed; left:24px; bottom:24px; z-index:10; color:var(--dim); letter-spacing:.04em;
+    transition:opacity 1s ease;
+  }
+  .panel.min .row,.panel.min .actions{display:none}
+  @media (max-width:640px){
+    .panel{left:16px; right:16px; bottom:16px; width:auto}
+    .hint{display:none}
+    header{padding:16px}
+  }
+  html.embed header, html.embed .panel, html.embed .hint{display:none !important;}
+</style>
+</head>
+<body>
+<script>if(location.search.indexOf('embed')>-1)document.documentElement.classList.add('embed');</script>
+<canvas id="gl"></canvas>
+
+<header>
+  <a class="back" href="/"><span class="idx">001</span><span class="lbl">Ink Field</span></a>
+  <a class="brand" href="https://stan.vision" target="_blank" rel="noopener">StanVision Lab</a>
+</header>
+
+<p class="hint" id="hint">Move your cursor to stir the ink</p>
+
+<div class="panel" id="panel">
+  <h2>Controls <button id="minBtn" aria-label="Collapse panel">—</button></h2>
+  <div class="row">
+    <div class="swatches" id="swatches"></div>
+  </div>
+  <div class="row">
+    <label>Flow <output id="speedOut">1.0</output></label>
+    <input type="range" id="speed" min="0" max="3" step="0.05" value="1">
+  </div>
+  <div class="row">
+    <label>Warp <output id="warpOut">1.4</output></label>
+    <input type="range" id="warp" min="0.2" max="3" step="0.05" value="1.4">
+  </div>
+  <div class="row">
+    <label>Detail <output id="detailOut">5</output></label>
+    <input type="range" id="detail" min="2" max="8" step="1" value="5">
+  </div>
+  <div class="actions">
+    <button class="btn" id="randomBtn">Shuffle</button>
+    <button class="btn primary" id="saveBtn">Save PNG</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gl');
+const gl = canvas.getContext('webgl2', {preserveDrawingBuffer:true, antialias:false});
+
+const VERT = `#version 300 es
+void main(){
+  vec2 p = vec2[](vec2(-1,-1),vec2(3,-1),vec2(-1,3))[gl_VertexID];
+  gl_Position = vec4(p,0,1);
+}`;
+
+const FRAG = `#version 300 es
+precision highp float;
+out vec4 fragColor;
+uniform vec2  uRes;
+uniform float uTime;
+uniform vec2  uMouse;      // pixels
+uniform float uStir;       // decaying stir energy 0..1
+uniform float uSpeed;
+uniform float uWarp;
+uniform float uDetail;
+uniform vec3  uA, uB, uC, uD; // cosine palette
+uniform float uSeed;
+
+mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
+
+float hash(vec2 p){
+  p = fract(p*vec2(234.34,435.345));
+  p += dot(p,p+34.23);
+  return fract(p.x*p.y);
+}
+float noise(vec2 p){
+  vec2 i=floor(p), f=fract(p);
+  f=f*f*(3.-2.*f);
+  float a=hash(i), b=hash(i+vec2(1,0)), c=hash(i+vec2(0,1)), d=hash(i+vec2(1,1));
+  return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);
+}
+float fbm(vec2 p){
+  float v=0., amp=.55;
+  mat2 m = rot(.62);
+  for(int i=0;i<8;i++){
+    if(float(i)>=uDetail) break;
+    v += amp*noise(p);
+    p = m*p*2.03 + 11.7;
+    amp *= .52;
+  }
+  return v;
+}
+vec3 palette(float t){
+  return uA + uB*cos(6.28318*(uC*t + uD));
+}
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy - .5*uRes)/min(uRes.x,uRes.y);
+  float t = uTime*.08*uSpeed + uSeed;
+
+  // pointer influence: gaussian well around cursor
+  vec2 muv = (uMouse - .5*uRes)/min(uRes.x,uRes.y);
+  float md = length(uv-muv);
+  float stir = uStir*exp(-md*md*9.);
+
+  vec2 p = uv*1.6;
+  vec2 q = vec2(fbm(p + t), fbm(p + vec2(5.2,1.3) - t*.7));
+  vec2 r = vec2(fbm(p + (uWarp+stir*2.5)*q + vec2(1.7,9.2) + t*.6),
+                fbm(p + (uWarp+stir*2.5)*q + vec2(8.3,2.8) - t*.4));
+  float f = fbm(p + (uWarp + stir*3.)*r + stir*1.5);
+
+  float shade = f*f*1.6 + .12*length(q) + .28*r.y;
+  vec3 col = palette(clamp(shade,0.,1.));
+
+  // deep floor + soft highlight
+  col *= smoothstep(-.15,.85,f)*1.15;
+  col += stir*.16*palette(.85);
+
+  // vignette
+  float vig = 1. - .38*dot(uv,uv);
+  col *= vig;
+
+  // film grain
+  float g = hash(gl_FragCoord.xy + fract(uTime)*100.);
+  col += (g-.5)*.045;
+
+  fragColor = vec4(col,1.);
+}`;
+
+function compile(type, src){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(s);
+  return s;
+}
+const prog = gl.createProgram();
+gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+gl.linkProgram(prog);
+gl.useProgram(prog);
+const U = n => gl.getUniformLocation(prog, n);
+
+// ---------- palettes (cosine, IQ-style) ----------
+const PALETTES = [
+  { name:'Carbon',  a:[.08,.08,.09], b:[.28,.28,.30], c:[1,1,1],        d:[.00,.02,.06],  css:'linear-gradient(90deg,#0a0a0b,#4a4a50,#8e8e96)'},
+  { name:'Ember',   a:[.16,.07,.04], b:[.60,.28,.12], c:[1,1,1],        d:[.00,.12,.26],  css:'linear-gradient(90deg,#160604,#a03d10,#ff7a2e)'},
+  { name:'Deep sea',a:[.04,.08,.12], b:[.12,.30,.42], c:[1,1,1],        d:[.42,.30,.16],  css:'linear-gradient(90deg,#04141c,#0f4a66,#57b8d8)'},
+  { name:'Ivory',   a:[.72,.70,.66], b:[.26,.26,.24], c:[1,1,1],        d:[.10,.12,.16],  css:'linear-gradient(90deg,#b9b3a8,#e8e3d8,#fbf8f0)'},
+];
+let palIdx = 1;
+function setPalette(i){
+  palIdx = i;
+  const p = PALETTES[i];
+  gl.uniform3fv(U('uA'), p.a); gl.uniform3fv(U('uB'), p.b);
+  gl.uniform3fv(U('uC'), p.c); gl.uniform3fv(U('uD'), p.d);
+  document.querySelectorAll('.sw').forEach((el,j)=>el.setAttribute('aria-pressed', j===i));
+}
+const swWrap = document.getElementById('swatches');
+PALETTES.forEach((p,i)=>{
+  const b = document.createElement('button');
+  b.className='sw'; b.style.background=p.css; b.title=p.name;
+  b.setAttribute('aria-label', p.name);
+  b.onclick=()=>setPalette(i);
+  swWrap.appendChild(b);
+});
+
+// ---------- controls ----------
+const state = { speed:1, warp:1.4, detail:5, seed:Math.random()*100 };
+function bind(id, key, outId, fmt=(v)=>v){
+  const el = document.getElementById(id), out = document.getElementById(outId);
+  el.addEventListener('input', ()=>{ state[key] = +el.value; out.textContent = fmt(+el.value); });
+}
+bind('speed','speed','speedOut', v=>v.toFixed(2).replace(/0$/,''));
+bind('warp','warp','warpOut', v=>v.toFixed(2).replace(/0$/,''));
+bind('detail','detail','detailOut', v=>v.toFixed(0));
+
+document.getElementById('randomBtn').onclick = ()=>{
+  state.seed = Math.random()*100;
+  setPalette(Math.floor(Math.random()*PALETTES.length));
+};
+document.getElementById('saveBtn').onclick = ()=>{
+  draw(performance.now());
+  const a = document.createElement('a');
+  a.download = `ink-field-${Date.now()}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+};
+const panel = document.getElementById('panel');
+document.getElementById('minBtn').onclick = (e)=>{
+  panel.classList.toggle('min');
+  e.target.textContent = panel.classList.contains('min') ? '+' : '—';
+};
+
+// ---------- pointer ----------
+let mouse = [innerWidth*.5*devicePixelRatio, innerHeight*.45*devicePixelRatio];
+let stir = 0, lastMove = 0;
+function onMove(x,y){
+  mouse = [x*devicePixelRatio, (innerHeight-y)*devicePixelRatio];
+  stir = Math.min(1, stir + .08);
+  lastMove = performance.now();
+  const h = document.getElementById('hint');
+  if(h){ h.style.opacity = 0; setTimeout(()=>h.remove(), 1100); }
+}
+addEventListener('pointermove', e=>onMove(e.clientX, e.clientY), {passive:true});
+addEventListener('touchmove', e=>{ const t=e.touches[0]; onMove(t.clientX, t.clientY); }, {passive:true});
+
+// ---------- loop ----------
+function resize(){
+  const dpr = Math.min(devicePixelRatio, 2);
+  canvas.width = innerWidth*dpr; canvas.height = innerHeight*dpr;
+  gl.viewport(0,0,canvas.width,canvas.height);
+}
+addEventListener('resize', resize); resize();
+setPalette(palIdx);
+
+function draw(now){
+  stir *= .965;
+  gl.uniform2f(U('uRes'), canvas.width, canvas.height);
+  gl.uniform1f(U('uTime'), now*.001);
+  gl.uniform2f(U('uMouse'), mouse[0], mouse[1]);
+  gl.uniform1f(U('uStir'), stir);
+  gl.uniform1f(U('uSpeed'), state.speed);
+  gl.uniform1f(U('uWarp'), state.warp);
+  gl.uniform1f(U('uDetail'), state.detail);
+  gl.uniform1f(U('uSeed'), state.seed);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+(function loop(now){ draw(now); requestAnimationFrame(loop); })(0);
+</script>
+</body>
+</html>

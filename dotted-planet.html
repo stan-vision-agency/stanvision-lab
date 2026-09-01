@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>002 · Dotted Planet — StanVision Lab</title>
+<meta name="description" content="Interactive dotted planet rendered with three.js. Drag to orbit, tune density, colors and atmosphere, copy your settings. A StanVision Lab experiment.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ink:#0a0605;
+    --panel:rgba(13,17,23,.86);
+    --line:rgba(148,163,184,.16);
+    --text:#e6ebf2;
+    --mute:#8a94a3;
+    --accent:#5b8cff;
+    --radius:10px;
+  }
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--ink); color:var(--text);
+    font-family:"Archivo",system-ui,-apple-system,sans-serif;
+    overflow:hidden; -webkit-font-smoothing:antialiased;
+  }
+  #stage{position:fixed; inset:0;}
+  #glow{position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    pointer-events:none; border-radius:50%; filter:blur(2px);}
+  canvas{display:block; cursor:grab;}
+  canvas.dragging{cursor:grabbing;}
+
+  header{
+    position:fixed; top:20px; left:24px; z-index:5; pointer-events:none;
+  }
+  header h1{
+    margin:0; font-size:14px; font-weight:600; letter-spacing:.02em;
+  }
+  header p{
+    margin:4px 0 0; font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:11px; letter-spacing:.04em;
+  }
+  header{color:var(--pagefg,#e6ebf2);}
+  header p{opacity:.55;}
+
+  #panel{
+    position:fixed; top:16px; right:16px; bottom:16px; width:288px; z-index:6;
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    display:flex; flex-direction:column; overflow:hidden;
+    transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s;
+  }
+  #panel.hidden{transform:translateX(calc(100% + 24px)); opacity:0; pointer-events:none;}
+  #panel .head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px 12px; border-bottom:1px solid var(--line);
+  }
+  #panel .head span{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--mute);
+  }
+  #panel .body{overflow-y:auto; padding:6px 16px 16px; flex:1; scrollbar-width:thin; scrollbar-color:rgba(148,163,184,.3) transparent;}
+  #panel .body::-webkit-scrollbar{width:6px;}
+  #panel .body::-webkit-scrollbar-thumb{background:rgba(148,163,184,.25); border-radius:3px;}
+
+  .presets{display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:14px 0 4px;}
+  .presets button{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:8px 6px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .presets button:hover{border-color:rgba(148,163,184,.45);}
+  .presets button.active{border-color:var(--accent); background:rgba(91,140,255,.12);}
+
+  details{border-bottom:1px solid var(--line); padding:2px 0;}
+  details:last-of-type{border-bottom:none;}
+  summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+    padding:12px 2px; font-size:12px; font-weight:600; letter-spacing:.02em; user-select:none;
+  }
+  summary::-webkit-details-marker{display:none;}
+  summary::after{content:""; width:7px; height:7px; border-right:1.4px solid var(--mute);
+    border-bottom:1.4px solid var(--mute); transform:rotate(45deg); transition:transform .18s; margin-right:3px;}
+  details[open] summary::after{transform:rotate(-135deg); margin-top:4px;}
+  .grp{padding:0 2px 14px; display:flex; flex-direction:column; gap:11px;}
+
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:22px;}
+  .row label{font-size:12px; color:var(--mute); flex:0 0 auto;}
+  .row .val{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--text);
+    min-width:38px; text-align:right; font-variant-numeric:tabular-nums;
+  }
+  .slider-row{display:flex; flex-direction:column; gap:6px;}
+  .slider-row .top{display:flex; justify-content:space-between; align-items:baseline;}
+  .slider-row .top label{font-size:12px; color:var(--mute);}
+  .slider-row .top .val{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--text);
+    font-variant-numeric:tabular-nums;
+  }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer; margin:0;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
+    background:var(--text); margin-top:-5px; border:none;
+    transition:transform .12s; box-shadow:0 0 0 3px rgba(5,7,11,.6);
+  }
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+  input[type=range]::-moz-range-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-moz-range-thumb{width:12px; height:12px; border-radius:50%; background:var(--text); border:none;}
+
+  input[type=color]{
+    -webkit-appearance:none; appearance:none; width:44px; height:22px; border:1px solid var(--line);
+    border-radius:6px; background:none; padding:0; cursor:pointer;
+  }
+  input[type=color]::-webkit-color-swatch-wrapper{padding:2px;}
+  input[type=color]::-webkit-color-swatch{border:none; border-radius:4px;}
+  input[type=color]::-moz-color-swatch{border:none; border-radius:4px;}
+
+  .switch{position:relative; width:32px; height:18px; flex:0 0 auto;}
+  .switch input{position:absolute; opacity:0; inset:0; margin:0; cursor:pointer;}
+  .switch i{
+    position:absolute; inset:0; border-radius:9px; background:rgba(148,163,184,.25);
+    transition:background .18s; pointer-events:none;
+  }
+  .switch i::after{
+    content:""; position:absolute; left:2px; top:2px; width:14px; height:14px; border-radius:50%;
+    background:var(--text); transition:transform .18s;
+  }
+  .switch input:checked + i{background:var(--accent);}
+  .switch input:checked + i::after{transform:translateX(14px);}
+
+  .footbar{
+    border-top:1px solid var(--line); padding:12px 16px; display:flex; gap:8px;
+  }
+  .footbar button{
+    flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em;
+    color:#0a0605; background:var(--text); border:none; border-radius:8px; padding:9px 0; cursor:pointer;
+    transition:opacity .15s;
+  }
+  .footbar button:hover{opacity:.85;}
+
+  #toggleUi{
+    position:fixed; top:24px; right:16px; z-index:7; width:34px; height:34px;
+    border-radius:9px; border:1px solid var(--line); background:var(--panel);
+    backdrop-filter:blur(14px); color:var(--mute); cursor:pointer; font-size:15px; line-height:1;
+    display:none; align-items:center; justify-content:center;
+  }
+  #panel.hidden ~ #toggleUi{display:flex;}
+
+  #toast{
+    position:fixed; left:50%; bottom:28px; transform:translate(-50%,12px); z-index:9;
+    background:var(--text); color:#0a0605; font-size:12px; font-weight:500;
+    padding:8px 14px; border-radius:8px; opacity:0; transition:opacity .2s, transform .2s;
+    pointer-events:none;
+  }
+  #toast.show{opacity:1; transform:translate(-50%,0);}
+
+  .hidebtn{background:none; border:none; color:var(--mute); font-size:15px; cursor:pointer; padding:2px 4px; line-height:1;}
+  .hidebtn:hover{color:var(--text);}
+
+  @media (max-width:720px){
+    #panel{top:auto; left:12px; right:12px; bottom:12px; width:auto; max-height:46vh;}
+    #panel.hidden{transform:translateY(calc(100% + 20px));}
+    header{left:16px; top:16px;}
+    #toggleUi{top:auto; bottom:20px;}
+  }
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
+
+  /* lab header conventions */
+  header{pointer-events:none;}
+  header a.lab-back{
+    pointer-events:auto; color:var(--text); text-decoration:none;
+    display:flex; align-items:center; gap:10px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; letter-spacing:.04em;
+  }
+  header a.lab-back .idx{color:#ff4d00;}
+  header a.lab-back:hover .lbl{text-decoration:underline; text-underline-offset:3px;}
+  html.embed header, html.embed #panel, html.embed #toggleUi, html.embed #toast{display:none !important;}
+</style>
+</head>
+<body>
+<script>if(location.search.indexOf('embed')>-1)document.documentElement.classList.add('embed');</script>
+<div id="stage"></div>
+<div id="glow"></div>
+
+<header>
+  <a class="lab-back" href="/"><span class="idx">002</span><span class="lbl">Dotted Planet</span></a>
+  <p>StanVision Lab — WebGL / three.js</p>
+</header>
+
+<aside id="panel">
+  <div class="head">
+    <span>Controls</span>
+    <button class="hidebtn" id="hideUi" title="Hide panel" aria-label="Hide panel">&times;</button>
+  </div>
+  <div class="body">
+    <div class="presets" id="presets"></div>
+    <div id="groups"></div>
+  </div>
+  <div class="footbar">
+    <button id="copyBtn">COPY SETTINGS</button>
+  </div>
+</aside>
+<button id="toggleUi" title="Show controls" aria-label="Show controls">☰</button>
+
+<div id="toast">Copied to clipboard</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+/* ============================== land mask ============================== */
+const MASK_W = 720, MASK_H = 360;
+const MASK_PACKED = "~A645.MT5//8P~A64.QD7///kBAAAA4OP~/5.Dw~A60.Dw8f////8fAE74sP////8f~A61.P7~/6.3/A9~/9.9/PoAf~A17.w~A4" +
+  "4.8MDP//f//x/A~/c.z/9/~A15.IAP~Aa.D~A39./IP7f/j/f+D~/f.8H~A12.BgfeCHzwE~A7.D8Dw~A36./7/5/P//D/z~/e.3" +
+  "0~Aa.EAjBwAAAADAA08b~Aa.D/Aw~A36.///zz//fAcD~/e.ww~A7.DgL8/8Hw~A14.Dz/w~A32.4AMAgP+///8BAOD~/e.wM~A7" +
+  ".BAfz/~A17.DgPzg~A32.P444P/9//8H8P~/e.Pw~A9.g//8H~A19.P4D~A31.ODxAVf+//+B~/10.HwI~A9.hD8c~A18.gD8Q~A" +
+  "2d.MgPADgAHwDv/w8A+P~/f.xE~Aa.B/4Aw~A46./gEAY~A5.j8bwAAwP~/f.wU~A9.4Ac~A17.QAAPgH~A2a.CA/xhgAADAP/j/" +
+  "/w8A4P~/e.Fw~Ac.M~Ae.PAD~A9.Pw/~Ae.Q~A1b.D4Ay/wALYfwD8AwAAAwH/5~/c.fwQ~A19.zP8~A7.CAg////wU~A29.zP/B" +
+  "H/gPAD8APw~A6./P~/b.wE~A17.Dg/wE~A7.D+~/5.w0~A5.gPj9AQ~A1e.4P//zwEPn////wE~A5.8P~/a.fw0~A17.D8Aw~A7." +
+  "P7~/6.wc~A6.Pzf8wU~A1e.PAHAAAAHP///Q~A6.wP~/a.vwE~A17.D/~A8.0P~/7.w~A7.G~A1f.ID/G~A13.gP~/b.w~A17.MA" +
+  "f~A8.4P~/6.DwM~A8.C~A1e.D//wAAMMA//Ac+Q~A8.P~/9.ffw~A17.PAH~A8.uv~/6.2QQ~A8.8~A1d.ID/fw4AcYAP/sHPv38" +
+  "~A6.P7~/8.nAQ~A17.PgAAABwAAD+7~/5.8P//8fgP8BAABg~A1d.MD/9+cxH5g/zuDnfw~A7.Pv~/8.3Dw~A17.H4AAAD8QUD+~" +
+  "/a.v///8DAAAM~A1d.OD/8f9/P8B/DPDHP+8D~A5.P7~/9.D~A18.H4AAAD+QfDw~/e.8GAMD//AM~A1a.IB//P//fgA+DvDv//8" +
+  "T~A5.N7~/9.Dw~A16.gH8AAAD+ef+n~/e.8HAoD/8wM~A9.4P~/74.8/~A6.D9fw~Aa.8P///wCAf8D~/5.OwAAADj+~/6.8eHw~" +
+  "Ac.BA1gY~A6.OAHAID/8f+~/19.fw~Ab.OD///8~A7.IAAL7//x+A/wH4//v/nwAAANj~/7.9z~Ae.Cw+z8~A7.BgAMD/8f/f~/1" +
+  "9.w~Ab.Pz~/5.HwAA90ccwP///zcYfgDggMH//wIAAPz6~/8.AQ~Ab.GD//7cD~A6.CAH8D/+f~/1b.wAA5/8B~A5.P7~/6.wd~/" +
+  "5.A/D/+w/46CPgHyT+/wcAAAD8~/6.8/~Ad.Pz///9fAAAADgAA/gP/8f~/1e.wf9//P~/3f.wc~A5.+P////OPAcADHAQ~A1b.Q" +
+  "~A5.4P~/3f.w~A6.wP/wHyg~A5.HAg~A22.P7~/3d.Pw~A7.P74Aw~A6.P~A24.Pz~/3d.fw~A7.Pz4~A8.Dw~A24.z+~/3c.Bw~" +
+  "A5.MAPwB~A6.CMAw~A23.gDw~/3c.CwAAAADwA48~A2d.BgD4~/3c.AQDgAQDA/wE~A2d./oD~/3d.AwD4BwDg/w~A2f.DgA+M~/" +
+  "19.5B/D7/xcAAADx/38~A5.+f8P~A6.CA//8D/v8/Pv~/2b.789~A5.MD~/18.4H0DA/x8AAAD+/18~A5.8P8B~A6.Dg//8D////" +
+  "8P~/2c.8f~A5.MD~/15.fw/8eACA/38AAAD+/38~A5.gB8~A7.D6///B~/32.8fAAB4APj~/16.wcgABgA/jwAAAD8/z8~Af.D//" +
+  "z/w~/32.8/AAAAwP~/16.fwAADgAA5CMAAAD4/w8~Ae.MD//w/8~/32.97AAAA4P~/16.PwAAAvE7gA8AAADg/wc~Ab.QAAPj//w" +
+  "f4~/2d.z////8~A5.8P~/16.HwAAAPH/~A6.Dg/wc~Ae.Pz//wf4~/2c.Bz7//w8~A5.4P////P~/11.DwAAAOD/AQAAAACA/wc~" +
+  "Ae.Pz//wP4~/2c.AQf//wE~A5.QP7//374~/10.BwAAAOD/Hw~A6.8Qc~Ae.Pz//wf4~/2c.AMH/fw~A6.nP//f/6D~/10.BwAAA" +
+  "OD/n0~A6.YAM~Ac.gAPz//5/wB/z~/27.8/APAnE~A8.PD/Pw8AwP7~/d.AwAAAOD/H+~A17.PT//z8AAP7~/27.8fAHw~Aa.PD/" +
+  "DwMAAPz~/d.AwAAAPD/H+AB~A15.PTf/x+A~/26.8fEAA/AD8~Aa.BDaHwAAAHD~/d.FwAAAPj/b/gD~A15.PjH/wOA~/26.8PAA" +
+  "AAgJ8~Ab.DgzwAAAAD7~/c.PwAAAOD///8D~A11.OQBAOCB/wEQ/v~/24.8BAAAA4A8~Ab.DgcQAAAADp~/c.fwAAAMD///8P~A1" +
+  "1.OAAAACA/yEA/v~/24.8~A5./D8~Ab.B4O~A5.Dr~/c.fwAAAID///8P~A11.PgPAAAY/xE4/v~/23.z8~A5./D8~Ac.c~A6.CM" +
+  "~/d.38AAID///8f~A11.PAHAAAe/gP8~/25.x8~A5./z8~Aa.IAH~A6.Ck~/e.8AAIb///8f~A11.OAHAAA//AD8~/25.w8~A5./" +
+  "38~Aa.P~A8.Bg/v~/c.8HAMD///9/~A11.MgPAAAPDQD8~/25.wMAAACA/w8~Aa.Ew~A7.Dg~/10.AfD///9/AQ~Af.MIfAAD2IQ" +
+  "D8~/25.wAAAACA/w8~A9.gAM~A7.BA8P~/e.D/7~/5.Dw~Ae.gB8eAADOABj~/25.fwgAAACA/w+~A15.8P~/e.B/7~/5.Bw~Ae." +
+  "8B9+AAA8A~/28.6MgAAAA/w~Aa.B~A9.BA+P~/e.D/z~/5.f~Af.8A/8AAD+7~/28.+chAAAA/w~A8.C~Ab.CAoP~/e.D/z~/6.w" +
+  "~Ae.4I//Afj~/2b.83AAAA/w~A16.of~/e.T/z~/6.w~Ae.4A//B/7~/2b.93AAAAHw~A8.g~Ae.v7~/d.D/j~/6.wE~Ad.+If/B" +
+  "/7~/2b.8/AAAAHg~A6.Y~A10.P~/e.f/z~/5.fw~Ae.cMD/A~/2d.9zAAAADg~A17.P7~/f.7~/5.xw~A10.D8x~/2d.9xAAAABg" +
+  "~A16.gPn~/15.ww~Af.IA/+P~/2c.9x~A5.Q~A17.P~/13.w/yY~A10.CAB+P~/2d.xAAD~A1a.Dz~/12.wMDs~A13./v~/2d.x~" +
+  "A1d.PD8~/11.wAM8B0~Af.Dg~/2e.8xAQ~A1b.MD5~/10.P38A+A8~Af.Di~/2e.8w~A1d.ID4~/10.338A/B8~Ae.ID~/2f.8Q~" +
+  "A1d.ID7~/10.7z8A/mc~Af.D+~/2d.38Q~A1e.D~/12.z8AADI~Af.Dw~/c.3~/20.z8w~A1e.D~/12.79AAC~A10.Dw~/c.4///" +
+  "D/z~/1a.x9w~A1e.D+~/e.+//3/m~A12.DA~/9.59/4P//A/z~/1a.w8Q~A1e.D~/13.+j~A12.DA////+////w888P//APz~/1a" +
+  ".wcAAAg~A1b.D~/10.3/w8/~A12.DA////+P///wf8/f9/gP~/1b.wMYAAE~A1b.D~/12.+MD~A12.DA////wf///wMY+P8/wP~/" +
+  "1b.wEwQ~A1d.D~/11.P3~A14.Dg///5wf///wEAwP8/4P~/1b.wB4B~A1d.D~/11.Dz~A14.Dg/3/gA////wEAgP9/wP~/1a.fwD" +
+  "4Aw~A1b.ID~/11.Bw~A12.wP//fxjgD/z//wAAAP5/gP~/1a.HgD4Bw~A1b.ID~/11.Aw~A12.wP//PwDQD/D//wAAAPh/AP7~/1" +
+  "7.9/BAD/~A1d.ID~/11.Aw~A12.gP//PwCGH8D//wAAAPj/AP7~/17.8fAABh~A1e.D~/11.Bw~A12.wP//PwAG/oD//wB+APj/A" +
+  "fL~/17.8PAAAB~A1e.D~/f.8/~A14.gP//DwAA+IH//4P/A/z/A+D~/17.8HAAAE~A1e.D~/f.8/~A14.gP//AwAH4If/cvD~/5." +
+  "B+T~/15.8/8HAAAH~A1d.ID~/f.8P~A14.wP//AQAGwJPf4f~/6.B/7~/15.8f8BAAAP~A1e.D~/f.8P~A14.wP//YAAGAIE/8P~" +
+  "/6.B/j~/13.9/eH4AAAAP~A1e.D~/e.38F~A14.4P9/AAAGAAN+8P~/6.B/j~/13.8/CHgAAAAP~A1e.D+~/d.38D~Af.CAAAA4P" +
+  "//~A6.E8wP~/6.A/D~/13.8HAPgAAIAH~A1e.D8~/d.z8D~A14.wP9/AAAAgAHI4f~/6.A/D~/13.8PAPwBAIAD~A1e.Dw~/d.38" +
+  "B~Af.gAAAAwP8/AAAAPgA64P~/6.A/D~/13.8/AuADAMAD~A1e.D4~/d.38~A15.wP8PAAAIOAA4gP~/6.H/D~/13.8/H8AHAOAD" +
+  "~A1e.Dw~/e.8~A16.PgEwPs/IAAAgJ9f////P/z~/15.B/AHAP4B~A1e.Dw~/e.8~A16.BAA/v8f~A6.gO~/1c.AeAHBP8B~A1e." +
+  "Dg~/e.8B~A15.BCA//8/~A8.~/1c.AOAHAP8D~A1e.DA~/d.38~A16.HDh//8/AACAFwAM~/1a.9/AOAH/j8B~A1e.CA~/d.38~A" +
+  "16.Pj///9/~A7.G~/1a.8/ACAA3xk~A21./v~/b.w8~A16.Pj///8P~A6.CA~/1c.AQDE+QE~A21.8P~/b.wM~A16.P7///8/~A6" +
+  ".CA~/1c.AQAong~A22.4P~/b.wE~A15.gP////8/~A6.DA~/1c.ARD4Ag~A22.4P~/b.w~A13.EAAwP~/6.DwAcAADA~/1c.AwDy" +
+  "~A24.wP~/a.fw~A16.4P~/6.fwA/AADA~/1c.BwBg~A24.gP~/a.Pw~A16.4P~/6.fwD/AwDg~/1c.DwB4~A24.gMP~/9.Hw~A16" +
+  ".8P~/7.wH/f/Dx~/1c.Bw~A27.Mf~/9.Hw~A16.8P~/7.w~/22.Bw~A27.Mf~/6.5fwHw~A16.4P~/2a.BQ~A27.I7~/5.yx8gPg" +
+  "~A16.8P~/12.4f~/16.Dw~A27.Dz~/5.AywAP~A17.+P~/d.d////4P~/16.Dw~A27.Dj~/5.AQAAe~A14.BAA/P~/d.f////wf~" +
+  "/16.Bw~A27.DL+//8/AAAAe~A14.EAA/v~/d.7////gf~/16.AwAE~A25.HT4//8fAAAAf~A15.DA~/e.+H////A~/17.AQ~A27." +
+  "Pj4//8fAAAA+~A15.Dg~/e.8P////B/z~/15.AQ~A27.MDx//8fAAAA8~A15.Dg~/e.8P////D7j8~/12.9/AAAB~A25.IDh//8f" +
+  "AAAA8~A15.D4~/e.8P/v//DwD8~/12.9/AI~A28.Dh//8/AAAA4~A15.D4~/e.8f/P//TwD5~/12.9/~A2a.CD//8fAAAAQ~A15." +
+  "D8~/e.8//P//X4ABXOD~/f.9/~A2b.H//8f~A6.g~A13.D8~/e.8//P//f+ABAMD~/f.8fD~A2a.O/v8f~A5.B~A14.D+~/e.9/+" +
+  "P///+ADAID~/f.8PBg~A29.Y/P8f~A1a.D~/f.9/4P////8PAAD~/f.8HBw~A29.Q+P8P~A1a.D~/f.9/4P////8/AAD+~/e.8BB" +
+  "w~A2a.8P8PAAAA/wEI~A11.ID~/11.wP////9/AADg~/5.9~/7.z8AAw~A2a.4P8PAACA8Qc~A12.ID~/11.wf~/6.AAD8/v///z" +
+  "~/7.wcAAg~A2a.4P8fAAAABB8~A12.MD~/11.w~/5.9/AAD4/v///wf~/6.w~A2e.wP8fAPADAHg~A12.MD~/11.w~/5.8/AADw/" +
+  "v//PwD///9/E~A1d.C~A11.4P8/APgDAP~A13.ID~/11.g~/5.8fAAAg/P//PwD+//8fE~A2f.4P8/APgBAOAP~A12.D~/11.A~/" +
+  "5.8vAAAA/P//HwD8//8f~A21.w~Ae.4P9/APgBAADgBg~Af.ID~/11.B/z///8HAAAA/v//AwD4//8PO~A20.Q~Ae.wP//APwBAA" +
+  "DAPw~Af.ID~/11.B/z///8PAAAA/P//AwD4//8PHg~A2f.P//AP4BAACAfw~A10.D~/11.B/z///8DAAAA/P//AQDw//8HHg~A2f" +
+  ".Pz/9/8AAHjwSxw~Af.D~/11.H/j///8BAAAA/P//AADg//8PAAAAHg~A2b.OD///8~A6.E~A10.D~/11.H/D//38~A5./P9/AAD" +
+  "g//8fAAAADg~A2b.MD//38~A17.D~/11.P+D//z8~A5./P8fAADg//8/AAAAHg~A2c.D+/38~A16.ID~/11.P+D//wc~A5.+P8fA" +
+  "ADg+v9/AAAAHg~A2c.D4+38~A8.w~Ad.ID~/11.P8D//wE~A5.+P8DAADw+P//AAAADg~A2c.DA4H//~A15.ID~/11.f+D//w~A6" +
+  ".+P8BAAAA+P//AQAABw~A2e.wP//~A15.cD~/11.f+D/fw~A6.8P8~A5.8P//AwAABw~A2e.gP//AQ~A13.OD~/12.8P/Bw~A6.8" +
+  "P8~A5.8P//AwAAB~A30.P//Aw~A13.MD~/12.8f/Aw~A6.4P8~A5.8P//AwAAJg~A2f.PD/AQ~A13.ID~/12.69/~A8.4P8~A5.8" +
+  "P//AwAA1QE~A2e.MD+AQ~A5.g~Ad.MD~/12.98H~A8.4P8BAAAA4Pz/BwAAhg~A30.D+AQ~A13.MD~/12.78B~A8.wP8AAAAC4Pz" +
+  "/BwAAB~A31.D8AQAAAw~Af.ID~/12.38~A9.wP8~A5.4OD/AwAAxAY~A2f.D4AQCAAQ~A10.D+~/11.z8AI~A7.gP8AAAAC4MD/A" +
+  "wAAEAQ~A2f.DwAADwe~A11.D~/12.38APg~A7.P8~A5.YMD/AwAAsAY~A2f.DgAQD+fwAg~Ae.D4~/13.4Pw~A7.P8~A5.cMD/AA" +
+  "AAU~A31.DwAQD+/o8n~Ae.D4~/14.Pw~A7.H8~A5.IAAeAABAw~A31.CgAwD+/P8f~Ae.Dg~/14.Pw~A7.D4BAAAAIAAcAAAgIAE" +
+  "~A31.Bw///P8/~Ae.Dg~/14.Hw~A7.H4DAAAA4AAMAAAQQAg~A31./pn///8/~Ae.DA~/14.Hw~A8.4DAAAA8~A6.IABw~A31.cP" +
+  "j~/5.AQ~Ac.DA~/14.Dw~A8.wHAAAA4AE~A5.wB8~A31.4Pj~/5.Aw~Ac.CA~/14.Dw~A9.HAAAAw~A7.cB8~A31.QPD~/5.Bw~A" +
+  "e.~/14.Bw~A9.PAAAAgAEAAAAEEBc~A32.OD~/5.Dw~Ae./v~/12.Aw~A9.P~A6.cAAAAGAAc~A32.OD~/5.Hw~Ae.+P//D/7~/d" +
+  ".Aw~A9.H~A6.8AAAAHAAc~A32.OD~/6.w8~Ad.8P//APz~/d.Aw~Af.B4AAAAfAAQ~A32.OD~/6.38~Ad.4P89APj~/d.AQ~Ac.D" +
+  "AAz4AAIB/~A35.OD~/7.8~Ad.gAcAAPj~/d.~Ae.CAD34AAOAf~A35.OD~/7.8B~A12.D8~/c.~A10.H34AAPAP~A35.MD~/7.8D" +
+  "~A12.D6~/a.9/~A10.PnwAAfgH~A35.OD~/7.8D~A12.Dw~/a.8/~A10.fHgAAPwH~A35.PD~/7.8D~A12.Dw~/a.8f~Ae.CA+Hg" +
+  "AgP8P~A35.Pj~/7.8H~A12.Dw~/a.8H~A10.8PEAwP8PAAAB~A17.g~A19.Pz~/7.8P~A12.D4~/a.8D~A10.4McAyP8PAI~A33." +
+  "Pz~/7.8P~A12.D4~/a.8~A11.xB8A/P8fBIIB~A31.P~/8.8H~A12.D4~/9.38~A11.yB8A/P8P/4EB~A31.P~/8.8X~A12.D4~/" +
+  "9.z8~A11.gF8A/P8HAI~A30.YAgP~/8.95~A12.D4~/9.x8~A12.H8A/P+HAIB~A2f.IAgP~/8.9/Aw~A10.D8~/9.w8~A12.H8A" +
+  "+P+HQMCBjw~A2e.wP~/8.+/Dw~A10.D8~/9.w8~A11.IP4B8P+DHQDADw~A2e.wP~/9.ffw~A10.D4~/9.wc~A12.P4J8P+BDwIQ" +
+  "Dxs~A2d.wP~/a.fw~A10.D4~/9.wM~A11.gPwD8P/BDwAAAn4~A2e.P~/b.wc~Af.Dw~/9.w~A13.Pif8P/BDQAAHf8H~A2d.P~/" +
+  "c.8B~Ae.Dg~/9.w~A13.PgPAPvAHTAevv8fAI~A2a.wP~/c.8H~Ae.DA~/9.w~A13.PAPAGCBHSAg9P//~A2c.wP~/c.8P~Ae.CA" +
+  "~/8.fw~A13.OAPAACAOQAAwP//A4AC~A28.4P~/c.8f~A10.~/8.Pw~A13.IAPAACACQAAAP7/B4AB~A28.wP~/e.AQ~Ae.~/8.v" +
+  "w~A15.PAACAIQAAAPj/D8~A2a.wP~/e.Aw~Ae.~/8.Pw~A15.I~A8.EvD/H34g~A28.wP~/e.Aw~Ae./v~/6.fw~A14.Dw~A8.EO" +
+  "D/fxh~A2a.P~/e.Aw~Ae./v~/6.fw~A14.D4YQ~A6.EMD/PwC~A2a.P7~/d.Aw~Ae./P~/6.fw~A14.Dg/wE~A6.OD/PwAAB~A28" +
+  ".P7~/d.Aw~Ae./P~/6.fw~A16.+R8AABBAAPD/fAAAIg~A27.Pz~/d.Aw~Ae.+P~/6.fw~A16.wH8AwAMAADh/8AAAD~A28.Pz~/" +
+  "d.Aw~Ae.+P~/6.fw~A17.EAdDzwAAAB+4AEAAAI~A26.Pj~/d.AQ~Ae./P~/6.fw~A1c.cAAAAgwBMAAAQ~A26.Pj~/d.~A10./P" +
+  "~/6.fw~A18.CAgQM~A5.gA8AAAM~A26.PD~/d.~A10.+P~/7.w~A1a.g~A8.Dw~A2a.PD~/b.8/~A10.+P~/7.wE~A19.Q~Ac.B~" +
+  "A27.OD~/b.8/~A10.8P~/7.wE~A1b.BAAQAw~A2d.MD~/b.8f~A10.8P~/7.0E~A1c.wBgAw~A2d.MD~/b.8P~A10.+P~/7.wEAB" +
+  "~A19.BA/wI4~A2d.ID~/b.8P~A10./P~/7.wEAB~A19.Dg/wFw~A2d.ID~/b.8D~A10./v~/7.wEAD~A19.Dw/wB4~Ad.I~A20.D" +
+  "~/b.8D~A10./v~/7.wEADw~A18.Dw/wF4~A2e.D~/b.8D~A10./v~/7.wEADw~A17.HD4/wJ4~A2e.D~/b.8D~A10.~/9.wOADw~" +
+  "A17.Pz4fwD4Aw~A2c.D8~/a.8D~A10.~/9.wHAHw~A17.Pz+/wD4Bw~A5.g~A26.D4~/a.8D~A10.~/9.wHgFw~A17.P7//wH4Bw" +
+  "~A2c.Dg~/a.8D~A10.~/9.wD+Dw~A16.gP7//wf4Bw~A7.QC~A23.CA~/a.8D~A10.~/8.fwD+Bw~A16.oP///x/8Bw~A7.QAg~A" +
+  "24./v~/8.8D~Ae.CA~/8.DwD/Bw~A16.8P///z/8Dw~A13.C~A1a./P~/8.8D~Ae.CA~/8.AwD/Bw~A16.8P~/6.Dw~A9.Y~A24." +
+  "+P~/8.8B~A10.~/8.AwD/Bw~A16.8P~/6.Hw~A2e.+P~/8.8B~A10./v~/6.AQD/Aw~A16.+P~/6.Hw~A2e.+P~/8.8B~A10./v/" +
+  "///9/AAD+Aw~A16.+P~/6.Pw~A2e.8P~/8.8~A11./P////8fAAD+Aw~A16./v~/6.fw~A2e.8P~/7.38~A11./P////8fAAD+AQ" +
+  "AI~A12.DA~/9.wE~A2d.8P~/7.38~A11.+P////8/AAD/AQ~A14.D+~/9.wMAAABC~A28.8P~/7.z8~A11.+P////8/AID/AY~A1" +
+  "4.D~/a.wMAAAAE~A28.8P~/7.z8~A11.8P////9/AID/~A15.MD~/a.wcAAAAY~A28.8P~/7.x8~A11.4P////9/AID/~A15.OD~" +
+  "/a.wcAAAAg~A28.+P~/7.w8~A11.4P////9/AID/~A15.Pj~/a.z8~A2d.+P~/6.fw~A12.4P////9/AIB/~A15.PD~/a.z8~A2d" +
+  ".+P~/6.Hw~A12.4P////9/AIB/~A15.Pj~/a.38~A2d.+P~/6.Aw~A12.4P////9/AIB/~A15.Pj~/b.8~A2d.+P~/6.AQ~A12.4" +
+  "P////8/AAA/~A15.Pj~/b.8F~A2c.+P~/6.~A14.wP////8HAAAO~A15.PD~/b.8F~A2c.+P////9/~A14.wP////8B~A19.PD~/" +
+  "b.8D~A2c.+P////9/~A14.wP////8D~A19.PT~/b.8D~A2c./P////9/~A14.wP////8D~A19.Pj~/b.8D~A2c./P////9/~A14." +
+  "gP////8D~A19.PD~/b.8D~A2c./P////9/~A14.gP////8B~A19.PD~/b.8H~A2c./P////9/~A15.P////8B~A19.OD~/b.8H~A" +
+  "2c./v////8/~A15.P7///8~A1a.OD~/b.8H~A2c./v////8f~A15.Pz//38~A1a.MD~/b.8H~A2c./v////8P~A15.Pz//z8~A1a" +
+  ".MD~/b.8H~A2c./v////8N~A15.Pj//z8~A1a.MD~/b.8D~A2c./v////8B~A15.Pj//x8~A1a.MD~/b.8D~A2c./v////8B~A15" +
+  ".PD//w8~A1a.ID~/b.8D~A2c./v////8~A16.PD//wc~A1a.ID///8D~/6.8D~A2c./v////8~A16.OD//wM~A1a.ID//38A+P//" +
+  "//8B~A2c./v///38~A16.PD//w~A1b.ID//wMA8P////8~A2d./v///38~A16.PD/fw~A1b.ID//wAA4Pf//38~A2d.~/5.x8~A1" +
+  "6.OD/Dw~A1b.MD/fwAAwPv//38~A2d.////9x8~A16.MAP~A1d.MB/AAAAgPn//z8~A2d.////jwc~A16.I~A21.fAAAAgOj//z8" +
+  "~A2b.CA////Hw~A3f.OD//x8~A7.w~A23.CA////Hw~A3f.Mb//w8~A6.Bg~A23.DA////Pw~A3f.ID//w8~A6.C~A24.DA////f" +
+  "w~A40.D//w8~A6.K~A24.Dg////Pw~A40.D//w8~A6.O~A24.Dg////Hw~A40.D+/wc~A6.MAZ~A22.Dg////Dw~A40.D4fQ~A7." +
+  "OAf~A22.Dg////AQ~A4b.OAP~A22.DA//8H~A4d.PAD~A22.Dg//8P~A4d.OAD~A22.Dg//8H~A4d.MAB~A22.Dw//8H~A45.g~A" +
+  "7.MAB~A22.Dw/z8~A45./gE~A6.Ps~A23.Cg/z8~A45./AE~A5.gB8~A23.DQ//8B~A44.+~A7.gA8~A23.DQ/z8B~A44.+~A7.w" +
+  "Ac~A23.DY/z8~A45.M~A7.8AEAg~A21.DA/x8~A4d./AM~A23.DA/x8~A4d.fw~A24.Do/x8~A4b.CAPw~A24.Dw/wM~A4b.DAPw" +
+  "~A24.Dg/wE~A4b.DAHw~A24.Ds/wE~A4b.CADw~A24.D8/wM~A73.D4/w8~A73.Do/w8~A73.D8/wc~A73.D8/wM~A73.D8/wE~A" +
+  "2c.U~A46.D+/w~A74.D6fw~A74.D8Pw~A74.D0Pw~A74.DwPwAADw~A70.D0XwAAAQ~A70.Cgew~A74.DAeg~A74.Bg8wE~A75.4" +
+  "gM~A7.B~A6d.6L8~A7.C~A6d.QAM~A781.oAM~A73.BADg~A74.DIEw~A74.B7~A77.P~A75.IAP~A75.OQX~A24.wP8~Ae.PwH4" +
+  "A8AAADgzw~A33.Pk~A25.4v8B~A9.OD~/5.8X8AwD/4//8D~A5.E~A2a.wD4~A25./P8/~A8.~/9.48//v~/6.AQ~A2f.Bw~A23." +
+  "D8~/5.w8AAAD4~/14.Hg~A2f.Dw~A22.OD~/7.8PAMD~/15.Pw~A2f.HxB~A1f.MAP7~/7.8HAPD~/16.785~A2c.D/wL~A1f.+g" +
+  "P~/8.8HAPz~/19.Hw~A29.Cn/8H~A1a.EAAAD8i~/9.8DAP~/1b.w~A2a.MP8H~A14.BAEEBCEAMMD~/a.38A/v~/1b.wM~A28.c" +
+  "fP4P~A11.BAGAP5//z+cAf~/c.8D~/1e.c/~A26.CAf/4/~A10.OA4A/v~/14.+B~/20.AQ~A24.B+//w/~A10./v~/17.3/A~/2" +
+  "0.Pw~A1b.IC/AQ~A6.evx/~A10./v~/17.3/y~/20.Dw~A1c.QAAEI~A6.P5/~Ae.DI~/19.z~/22.Dw~A1b.Pw/9vkRgAMX8P/P" +
+  "~Ae.D~/1a.7~/20.8/~A16.g+~A5.Lz~/5.5z////8/~Ac.QAD~/3b.8P~A17.8ABwDAOD~/b.8P~Ac.QAD8~/3a.8D~A13.HAP/" +
+  "g/w8GAAD~/b.8L~Ad.PD~/3a.58~A12.P~/8.9/8B/4~/a.8~Ae.Pj~/3a.wc~Af.CA~/19.z8~Ad.~/3d.x8~Ae.MD3~/18.fw~" +
+  "Ac.D~/3e.x8~Ae.Gzg~/15.z8AAQ~Ab.Pj~/3e.z8~Ab.DwD8Lg~/15.38~Ad.wP~/3f.38g~Aa.D4/+~/18.8/~Ac.+P~/40.8g" +
+  "~Ac.+P~/17.Qc~A7.Dg/wAA~/42.81~Aa.YA~/18.wQcA4AEAAAD4HwAA~/41.3c~A9.gH8AAP~/16.HwAAHgMAAAD4/wOAD/D~/" +
+  "3e.wE~Aa.OADAID~/17.8AAAwAAAD8/wMAAAXg~/3d.w~Af.Pj~/17.8AAAjgAeD/fwAAAPD~/3d.Pw~Af.MD~/17.8BBwD8APgf" +
+  "AAAA/v~/3f.wE~Ab.DA~/1d.wM~A6.OD~/42.wE~Ad.8P~/1b.x8~A6.Pj~/42.x8~Ad.4P~/1b.w9gAPD/D/7~/42.z8~Ad.+P~" +
+  "/1c.8HwP~/48.8f~A6.D8HwDA~/1e.8f/P~/48.9/~A8.~/71.wc~A6.P~/70.9/AAAA//8D~A520.";
+const MASK_B64 = MASK_PACKED.replace(/~(.)([0-9a-f]+)\./g, (m, c, n) => c.repeat(parseInt(n, 16)));
+const maskBytes = Uint8Array.from(atob(MASK_B64), c => c.charCodeAt(0));
+function isLand(lat, lng) {
+  let col = Math.floor((lng + 180) / 360 * MASK_W);
+  let row = Math.floor((90 - lat) / 180 * MASK_H);
+  col = ((col % MASK_W) + MASK_W) % MASK_W;
+  row = Math.min(MASK_H - 1, Math.max(0, row));
+  const idx = row * MASK_W + col;
+  return (maskBytes[idx >> 3] >> (idx & 7)) & 1;
+}
+function isCoast(lat, lng) {
+  if (!isLand(lat, lng)) return false;
+  const d = 0.5; // one mask cell
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    if (!dx && !dy) continue;
+    if (!isLand(lat + dy * d, lng + dx * d)) return true;
+  }
+  return false;
+}
+
+/* ============================== settings ============================== */
+const S = {
+  rotateSpeed: 0.14,   autoRotate: true,  tilt: 12,
+  dragSpin: true,      scrollZoom: true,
+  density: 150,        dotSize: 1.6,      dotColor: '#ffffff', dotOpacity: 1.0,
+  dotAltitude: 0.015,  dotTint: 0.5,
+  coastDensity: 260,   coastSize: 1.7,
+  oceanDots: false,    oceanOpacity: 0.10,
+  bgColor: '#0a0605',  surfaceLight: 0.15,
+  warmColor: '#ff8a3d', warmStrength: 1.0,
+  coolColor: '#2e5bff', coolStrength: 1.1,
+  lightAngle: 0,       spread: 3.5,
+  glowStrength: 0.65,  shell: false,
+  arcs: true,          arcColor: '#ff6a1a', arcSpeed: 0.5, hubs: true,
+  stars: true,         starDensity: 1200,
+  zoom: 4.2,
+};
+const PRESETS = {
+  'United Carriers': { ...S },
+  'Paper': {
+    rotateSpeed: 0.12, autoRotate: true, tilt: 8,
+    density: 170, dotSize: 1.8, dotColor: '#14161a', dotOpacity: 0.95,
+    dotAltitude: 0.0, dotTint: 0.0,
+    coastDensity: 240, coastSize: 1.8,
+    oceanDots: false, oceanOpacity: 0.08,
+    bgColor: '#f3f1ec', surfaceLight: 0.9,
+    warmColor: '#d8cbb6', warmStrength: 0.5,
+    coolColor: '#c3ccdd', coolStrength: 0.5,
+    lightAngle: 0, spread: 2.4,
+    glowStrength: 0.15, shell: false,
+    arcs: true, arcColor: '#c7401f', arcSpeed: 0.4, hubs: true,
+    stars: false, starDensity: 900, zoom: 4.2,
+  },
+  'Radar': {
+    rotateSpeed: 0.22, autoRotate: true, tilt: 0,
+    density: 140, dotSize: 1.6, dotColor: '#37f58c', dotOpacity: 1,
+    dotAltitude: 0.01, dotTint: 0.3,
+    coastDensity: 280, coastSize: 1.6,
+    oceanDots: true, oceanOpacity: 0.13,
+    bgColor: '#03100a', surfaceLight: 0.35,
+    warmColor: '#b6ff4d', warmStrength: 0.55,
+    coolColor: '#0ea55a', coolStrength: 0.9,
+    lightAngle: 0, spread: 2.8,
+    glowStrength: 0.4, shell: false,
+    arcs: false, arcColor: '#37f58c', arcSpeed: 0.5, hubs: false,
+    stars: false, starDensity: 900, zoom: 4.1,
+  },
+  'Ember': {
+    rotateSpeed: 0.14, autoRotate: true, tilt: 18,
+    density: 170, dotSize: 1.9, dotColor: '#ffe9cf', dotOpacity: 1,
+    dotAltitude: 0.02, dotTint: 0.6,
+    coastDensity: 240, coastSize: 1.9,
+    oceanDots: false, oceanOpacity: 0.1,
+    bgColor: '#0d0603', surfaceLight: 0.3,
+    warmColor: '#ffb15c', warmStrength: 1.1,
+    coolColor: '#ff3d1f', coolStrength: 0.9,
+    lightAngle: 25, spread: 2.6,
+    glowStrength: 0.65, shell: false,
+    arcs: true, arcColor: '#ff9d5c', arcSpeed: 0.6, hubs: true,
+    stars: true, starDensity: 1600, zoom: 4.3,
+  },
+};
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (reducedMotion) { S.autoRotate = false; S.arcSpeed = 0; }
+
+/* ============================== three setup ============================== */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+camera.position.z = S.zoom;
+
+const tiltGroup = new THREE.Group();   // axial tilt
+const spinGroup = new THREE.Group();   // y spin (drag + auto)
+tiltGroup.add(spinGroup);
+scene.add(tiltGroup);
+
+/* ---------- shared light uniforms (warm + cool rim lights) ---------- */
+const L = {
+  uWarm: { value: new THREE.Color(S.warmColor) },
+  uCool: { value: new THREE.Color(S.coolColor) },
+  uWarmI: { value: S.warmStrength },
+  uCoolI: { value: S.coolStrength },
+  uDir: { value: new THREE.Vector2(0, 1) }, // screen-space dir of warm light
+  uSpread: { value: S.spread },
+};
+const lightGLSL = `
+  uniform vec3 uWarm; uniform vec3 uCool;
+  uniform float uWarmI; uniform float uCoolI;
+  uniform vec2 uDir; uniform float uSpread;
+`;
+
+/* ---------- inner sphere (occluder + two-tone rim gradient) ---------- */
+const sphereUniforms = {
+  uBg: { value: new THREE.Color(S.bgColor) },
+  uSurface: { value: S.surfaceLight },
+  uWarm: L.uWarm, uCool: L.uCool, uWarmI: L.uWarmI, uCoolI: L.uCoolI,
+  uDir: L.uDir, uSpread: L.uSpread,
+};
+const innerSphere = new THREE.Mesh(
+  new THREE.SphereGeometry(0.992, 96, 96),
+  new THREE.ShaderMaterial({
+    uniforms: sphereUniforms,
+    vertexShader: `
+      varying vec3 vNv;   // view-space normal
+      varying vec3 vNw;   // world normal
+      varying vec3 vV;    // world view dir
+      void main(){
+        vec4 wp = modelMatrix * vec4(position,1.0);
+        vNw = normalize(mat3(modelMatrix) * normal);
+        vNv = normalize((viewMatrix * vec4(vNw, 0.0)).xyz);
+        vV = normalize(cameraPosition - wp.xyz);
+        gl_Position = projectionMatrix * viewMatrix * wp;
+      }`,
+    fragmentShader: lightGLSL + `
+      uniform vec3 uBg; uniform float uSurface;
+      varying vec3 vNv; varying vec3 vNw; varying vec3 vV;
+      void main(){
+        float ndv = max(dot(normalize(vNw), normalize(vV)), 0.0);
+        float rim = pow(1.0 - ndv, uSpread);
+        vec2 nS = normalize(vNv.xy + vec2(1e-5));
+        float fWarm = smoothstep(-0.25, 1.0, dot(nS,  uDir));
+        float fCool = smoothstep(-0.25, 1.0, dot(nS, -uDir));
+        vec3 base = uBg * (0.10 + uSurface * 0.9);
+        vec3 col = base;
+        float edge = pow(1.0 - ndv, uSpread * 2.2);
+        col += uWarm * (rim * 0.55 + edge * 1.3) * fWarm * uWarmI;
+        col += uCool * (rim * 0.55 + edge * 1.3) * fCool * uCoolI;
+        // soft light bleed onto the facing surface
+        float mid = pow(1.0 - ndv, 1.4);
+        col += (uWarm * fWarm * uWarmI + uCool * fCool * uCoolI) * mid * uSurface * 0.22;
+        gl_FragColor = vec4(col, 1.0);
+      }`,
+  })
+);
+spinGroup.add(innerSphere);
+
+/* ---------- outer atmosphere shell (the "halo ring", off by default) ---------- */
+const atmoShell = new THREE.Mesh(
+  new THREE.SphereGeometry(1.0, 64, 64),
+  new THREE.ShaderMaterial({
+    uniforms: { uWarm: L.uWarm, uCool: L.uCool, uWarmI: L.uWarmI, uCoolI: L.uCoolI, uDir: L.uDir, uSpread: L.uSpread },
+    side: THREE.BackSide, transparent: true, depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    vertexShader: `
+      varying vec3 vNv; varying vec3 vNw; varying vec3 vV;
+      void main(){
+        vec4 wp = modelMatrix * vec4(position,1.0);
+        vNw = normalize(mat3(modelMatrix) * normal);
+        vNv = normalize((viewMatrix * vec4(vNw, 0.0)).xyz);
+        vV = normalize(cameraPosition - wp.xyz);
+        gl_Position = projectionMatrix * viewMatrix * wp;
+      }`,
+    fragmentShader: lightGLSL + `
+      varying vec3 vNv; varying vec3 vNw; varying vec3 vV;
+      void main(){
+        float rim = pow(1.0 + dot(normalize(vNw), normalize(vV)), 3.0) * 0.5;
+        vec2 nS = normalize(vNv.xy + vec2(1e-5));
+        float fWarm = smoothstep(-0.3, 1.0, dot(nS,  uDir));
+        float fCool = smoothstep(-0.3, 1.0, dot(nS, -uDir));
+        vec3 col = uWarm * fWarm * uWarmI + uCool * fCool * uCoolI;
+        gl_FragColor = vec4(col, rim * 0.5);
+      }`,
+  })
+);
+atmoShell.scale.setScalar(1.13);
+atmoShell.visible = S.shell;
+scene.add(atmoShell);
+
+/* ---------- dot layers (fill + coastline) ---------- */
+const dotShared = {
+  uColor: { value: new THREE.Color(S.dotColor) },
+  uOpacity: { value: S.dotOpacity },
+  uOceanOpacity: { value: S.oceanOpacity },
+  uAltitude: { value: S.dotAltitude },
+  uTint: { value: S.dotTint },
+  uPixelRatio: { value: Math.min(devicePixelRatio, 2) },
+};
+function makeDotUniforms(size) {
+  return {
+    uSize: { value: size },
+    uColor: dotShared.uColor, uOpacity: dotShared.uOpacity,
+    uOceanOpacity: dotShared.uOceanOpacity, uAltitude: dotShared.uAltitude,
+    uTint: dotShared.uTint, uPixelRatio: dotShared.uPixelRatio,
+    uWarm: L.uWarm, uCool: L.uCool, uWarmI: L.uWarmI, uCoolI: L.uCoolI,
+    uDir: L.uDir, uSpread: L.uSpread,
+  };
+}
+const fillUniforms = makeDotUniforms(S.dotSize);
+const coastUniforms = makeDotUniforms(S.coastSize);
+const dotVert = `
+  attribute float aKind; // 1 = land, 0 = ocean
+  uniform float uSize; uniform float uPixelRatio; uniform float uAltitude;
+  uniform vec2 uDir;
+  varying float vFade; varying float vKind; varying float vWarm; varying float vCool;
+  void main(){
+    vKind = aKind;
+    vec3 p = position * (1.0 + uAltitude);
+    vec4 wp = modelMatrix * vec4(p, 1.0);
+    vec3 nW = normalize(mat3(modelMatrix) * position);
+    vec3 nV = normalize((viewMatrix * vec4(nW, 0.0)).xyz);
+    vec3 vDir = normalize(cameraPosition - wp.xyz);
+    float facing = dot(nW, vDir);
+    vFade = smoothstep(0.12, 0.45, facing);
+    float rim = pow(1.0 - max(facing, 0.0), 1.6);
+    vec2 nS = normalize(nV.xy + vec2(1e-5));
+    vWarm = rim * smoothstep(-0.2, 1.0, dot(nS,  uDir));
+    vCool = rim * smoothstep(-0.2, 1.0, dot(nS, -uDir));
+    vec4 mv = viewMatrix * wp;
+    gl_PointSize = uSize * uPixelRatio * (4.2 / -mv.z);
+    gl_Position = projectionMatrix * mv;
+  }`;
+const dotFrag = `
+  uniform vec3 uColor; uniform float uOpacity; uniform float uOceanOpacity; uniform float uTint;
+  uniform vec3 uWarm; uniform vec3 uCool; uniform float uWarmI; uniform float uCoolI;
+  varying float vFade; varying float vKind; varying float vWarm; varying float vCool;
+  void main(){
+    vec2 uv = gl_PointCoord - 0.5;
+    float d = length(uv);
+    float mask = 1.0 - smoothstep(0.38, 0.5, d);
+    if (mask < 0.01) discard;
+    vec3 col = uColor;
+    col = mix(col, uWarm, clamp(vWarm * uWarmI, 0.0, 1.0) * uTint);
+    col = mix(col, uCool, clamp(vCool * uCoolI, 0.0, 1.0) * uTint);
+    float a = mask * vFade * mix(uOceanOpacity, uOpacity, vKind);
+    gl_FragColor = vec4(col, a);
+  }`;
+function makePoints(uniforms) {
+  return new THREE.ShaderMaterial({
+    uniforms, vertexShader: dotVert, fragmentShader: dotFrag,
+    transparent: true, depthWrite: false,
+  });
+}
+let fillPoints = null, coastPoints = null;
+function sampleSphere(rows, keep) {
+  const positions = [], kinds = [];
+  for (let r = 0; r < rows; r++) {
+    const lat = -90 + (r + 0.5) * 180 / rows;
+    const phi = (90 - lat) * Math.PI / 180;
+    const ringCount = Math.max(1, Math.round(2 * rows * Math.sin(phi)));
+    for (let c = 0; c < ringCount; c++) {
+      const lng = -180 + (c + 0.5) * 360 / ringCount;
+      const kind = keep(lat, lng);
+      if (kind === null) continue;
+      const theta = (lng + 180) * Math.PI / 180;
+      positions.push(Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta));
+      kinds.push(kind);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('aKind', new THREE.Float32BufferAttribute(kinds, 1));
+  return geo;
+}
+function buildFill() {
+  if (fillPoints) { spinGroup.remove(fillPoints); fillPoints.geometry.dispose(); fillPoints.material.dispose(); fillPoints = null; }
+  const geo = sampleSphere(S.density, (lat, lng) => {
+    const land = isLand(lat, lng);
+    if (!land && !S.oceanDots) return null;
+    return land ? 1 : 0;
+  });
+  fillPoints = new THREE.Points(geo, makePoints(fillUniforms));
+  spinGroup.add(fillPoints);
+}
+function buildCoast() {
+  if (coastPoints) { spinGroup.remove(coastPoints); coastPoints.geometry.dispose(); coastPoints.material.dispose(); coastPoints = null; }
+  if (S.coastDensity < 80) return; // slider floor-off
+  const geo = sampleSphere(S.coastDensity, (lat, lng) => isCoast(lat, lng) ? 1 : null);
+  coastPoints = new THREE.Points(geo, makePoints(coastUniforms));
+  spinGroup.add(coastPoints);
+}
+buildFill(); buildCoast();
+
+/* ---------- helpers ---------- */
+function latLngToVec(lat, lng, r = 1) {
+  const phi = (90 - lat) * Math.PI / 180;
+  const theta = (lng + 180) * Math.PI / 180;
+  return new THREE.Vector3(
+    r * Math.sin(phi) * Math.cos(theta),
+    r * Math.cos(phi),
+    r * Math.sin(phi) * Math.sin(theta)
+  );
+}
+
+/* ---------- arcs between freight hubs ---------- */
+const HUBS = [
+  [1.35, 103.82],   // Singapore
+  [22.32, 114.17],  // Hong Kong
+  [31.23, 121.47],  // Shanghai
+  [35.68, 139.69],  // Tokyo
+  [-33.87, 151.21], // Sydney
+  [-37.81, 144.96], // Melbourne
+  [13.76, 100.50],  // Bangkok
+  [14.60, 120.98],  // Manila
+  [19.08, 72.88],   // Mumbai
+  [25.20, 55.27],   // Dubai
+  [51.92, 4.48],    // Rotterdam
+  [33.74, -118.26], // Los Angeles
+];
+const ROUTES = [[0,1],[0,4],[1,3],[0,8],[1,11],[0,9],[9,10],[2,11],[0,6],[3,4],[2,3],[0,7],[5,0],[8,10]];
+const arcUniforms = {
+  uColor: { value: new THREE.Color(S.arcColor) },
+  uTime: { value: 0 },
+  uSpeed: { value: S.arcSpeed },
+};
+let arcLines = null;
+function buildArcs() {
+  if (arcLines) { spinGroup.remove(arcLines); arcLines.geometry.dispose(); arcLines.material.dispose(); arcLines = null; }
+  if (!S.arcs) return;
+  const SEG = 60;
+  const positions = [], ts = [], offs = [];
+  ROUTES.forEach(([a, b], ri) => {
+    const va = latLngToVec(HUBS[a][0], HUBS[a][1]);
+    const vb = latLngToVec(HUBS[b][0], HUBS[b][1]);
+    const angle = va.angleTo(vb);
+    const lift = 0.1 + Math.min(angle, 1.1) * 0.14;
+    const off = (ri * 0.37) % 1;
+    let prev = null, prevT = 0;
+    for (let i = 0; i <= SEG; i++) {
+      const t = i / SEG;
+      const v = new THREE.Vector3().copy(va).multiplyScalar(Math.sin((1 - t) * angle) / Math.sin(angle))
+        .add(new THREE.Vector3().copy(vb).multiplyScalar(Math.sin(t * angle) / Math.sin(angle)));
+      v.normalize().multiplyScalar(1 + Math.sin(t * Math.PI) * lift);
+      if (prev) {
+        positions.push(prev.x, prev.y, prev.z, v.x, v.y, v.z);
+        ts.push(prevT, t);
+        offs.push(off, off);
+      }
+      prev = v; prevT = t;
+    }
+  });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('aT', new THREE.Float32BufferAttribute(ts, 1));
+  geo.setAttribute('aOff', new THREE.Float32BufferAttribute(offs, 1));
+  arcLines = new THREE.LineSegments(geo, new THREE.ShaderMaterial({
+    uniforms: arcUniforms, transparent: true, depthWrite: false,
+    vertexShader: `
+      attribute float aT; attribute float aOff;
+      varying float vT; varying float vOff; varying float vFade;
+      void main(){
+        vT = aT; vOff = aOff;
+        vec4 wp = modelMatrix * vec4(position,1.0);
+        vec3 nW = normalize(mat3(modelMatrix) * position);
+        vec3 vDir = normalize(cameraPosition - wp.xyz);
+        vFade = smoothstep(0.15, 0.5, dot(nW, vDir));
+        gl_Position = projectionMatrix * viewMatrix * wp;
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uTime; uniform float uSpeed;
+      varying float vT; varying float vOff; varying float vFade;
+      void main(){
+        float base = 0.16;
+        float head = fract(vT - uTime * uSpeed + vOff);
+        float pulse = smoothstep(0.28, 0.0, head) * step(0.0001, uSpeed);
+        float edge = sin(vT * 3.14159);
+        float a = (base + pulse * 0.9) * vFade * smoothstep(0.0, 0.15, edge);
+        gl_FragColor = vec4(uColor, a);
+      }`,
+  }));
+  spinGroup.add(arcLines);
+}
+buildArcs();
+
+/* ---------- hub markers (rounded squares, like the reference) ---------- */
+const hubUniforms = {
+  uColor: { value: new THREE.Color(S.arcColor) },
+  uPixelRatio: { value: Math.min(devicePixelRatio, 2) },
+};
+let hubPoints = null;
+function buildHubs() {
+  if (hubPoints) { spinGroup.remove(hubPoints); hubPoints.geometry.dispose(); hubPoints.material.dispose(); hubPoints = null; }
+  if (!S.hubs) return;
+  const positions = [];
+  HUBS.forEach(([lat, lng]) => { const v = latLngToVec(lat, lng, 1.006); positions.push(v.x, v.y, v.z); });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  hubPoints = new THREE.Points(geo, new THREE.ShaderMaterial({
+    uniforms: hubUniforms, transparent: true, depthWrite: false,
+    vertexShader: `
+      uniform float uPixelRatio;
+      varying float vFade;
+      void main(){
+        vec4 wp = modelMatrix * vec4(position,1.0);
+        vec3 nW = normalize(mat3(modelMatrix) * position);
+        vec3 vDir = normalize(cameraPosition - wp.xyz);
+        vFade = smoothstep(0.1, 0.42, dot(nW, vDir));
+        vec4 mv = viewMatrix * wp;
+        gl_PointSize = 9.0 * uPixelRatio * (4.2 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor;
+      varying float vFade;
+      void main(){
+        vec2 uv = abs(gl_PointCoord - 0.5);
+        float d = max(uv.x, uv.y);
+        float a = (1.0 - smoothstep(0.26, 0.34, d)) * vFade;
+        if (a < 0.02) discard;
+        gl_FragColor = vec4(uColor, a);
+      }`,
+  }));
+  spinGroup.add(hubPoints);
+}
+buildHubs();
+
+/* ---------- stars ---------- */
+let starPoints = null;
+const starUniforms = {
+  uPixelRatio: { value: Math.min(devicePixelRatio, 2) },
+  uColor: { value: new THREE.Color('#cdbfae') },
+};
+function buildStars() {
+  if (starPoints) { scene.remove(starPoints); starPoints.geometry.dispose(); starPoints.material.dispose(); starPoints = null; }
+  if (!S.stars) return;
+  const n = S.starDensity;
+  const positions = [], sizes = [];
+  for (let i = 0; i < n; i++) {
+    const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, rr = Math.sqrt(1 - u * u);
+    const v = new THREE.Vector3(rr * Math.cos(th), u, rr * Math.sin(th)).multiplyScalar(30 + Math.random() * 20);
+    positions.push(v.x, v.y, v.z);
+    sizes.push(0.5 + Math.random() * 1.4);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('aSize', new THREE.Float32BufferAttribute(sizes, 1));
+  starPoints = new THREE.Points(geo, new THREE.ShaderMaterial({
+    uniforms: starUniforms, transparent: true, depthWrite: false,
+    vertexShader: `
+      attribute float aSize; uniform float uPixelRatio;
+      void main(){
+        vec4 mv = modelViewMatrix * vec4(position,1.0);
+        gl_PointSize = aSize * uPixelRatio;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor;
+      void main(){
+        vec2 uv = gl_PointCoord - 0.5;
+        float a = 1.0 - smoothstep(0.2, 0.5, length(uv));
+        gl_FragColor = vec4(uColor, a * 0.7);
+      }`,
+  }));
+  scene.add(starPoints);
+}
+buildStars();
+
+/* ============================== interaction ============================== */
+let dragging = false, px = 0, py = 0, vyaw = 0;
+let pitch = 0, targetZoom = S.zoom;
+const cvs = renderer.domElement;
+cvs.addEventListener('pointerdown', e => {
+  if (!S.dragSpin) return;
+  dragging = true; px = e.clientX; py = e.clientY; cvs.classList.add('dragging');
+  cvs.setPointerCapture(e.pointerId);
+});
+cvs.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const dx = e.clientX - px, dy = e.clientY - py;
+  px = e.clientX; py = e.clientY;
+  vyaw = dx * 0.005;
+  spinGroup.rotation.y += vyaw;
+  pitch = Math.max(-0.7, Math.min(0.7, pitch + dy * 0.004));
+});
+cvs.addEventListener('pointerup', () => { dragging = false; cvs.classList.remove('dragging'); });
+cvs.addEventListener('pointercancel', () => { dragging = false; cvs.classList.remove('dragging'); });
+cvs.addEventListener('wheel', e => {
+  if (!S.scrollZoom) return;
+  e.preventDefault();
+  targetZoom = Math.max(2.5, Math.min(8, targetZoom + e.deltaY * 0.0025));
+  ui.zoom && (ui.zoom.input.value = targetZoom, ui.zoom.refresh(targetZoom));
+  S.zoom = targetZoom;
+  updateGlow();
+}, { passive: false });
+
+/* ============================== glow halo (CSS, two-tone) ============================== */
+const glowEl = document.getElementById('glow');
+function rgbOf(hex) {
+  const c = new THREE.Color(hex);
+  return `${Math.round(c.r*255)},${Math.round(c.g*255)},${Math.round(c.b*255)}`;
+}
+function updateGlow() {
+  const base = Math.min(innerWidth, innerHeight);
+  const size = base * 1.2 * (4.2 / S.zoom);
+  glowEl.style.width = glowEl.style.height = size + 'px';
+  const g = S.glowStrength;
+  const th = S.lightAngle * Math.PI / 180;
+  const ax = 50 + 40 * Math.sin(th), ay = 50 - 40 * Math.cos(th);
+  const bx = 50 - 40 * Math.sin(th), by = 50 + 40 * Math.cos(th);
+  const A = rgbOf(S.warmColor), B = rgbOf(S.coolColor);
+  glowEl.style.background =
+    `radial-gradient(circle at ${ax}% ${ay}%, rgba(${A},${(0.30*g*S.warmStrength).toFixed(3)}) 0%, rgba(${A},0) 52%),` +
+    `radial-gradient(circle at ${bx}% ${by}%, rgba(${B},${(0.30*g*S.coolStrength).toFixed(3)}) 0%, rgba(${B},0) 52%)`;
+}
+
+/* ============================== resize & loop ============================== */
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  updateGlow();
+}
+addEventListener('resize', resize);
+resize();
+
+const clock = new THREE.Clock();
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  if (S.autoRotate && !dragging) spinGroup.rotation.y += S.rotateSpeed * dt;
+  if (!dragging && Math.abs(vyaw) > 0.0001) { spinGroup.rotation.y += vyaw; vyaw *= 0.94; }
+  tiltGroup.rotation.z = S.tilt * Math.PI / 180;
+  tiltGroup.rotation.x = pitch;
+  camera.position.z += (targetZoom - camera.position.z) * 0.08;
+  arcUniforms.uTime.value += dt;
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ============================== control panel ============================== */
+const ui = {};
+const groupsEl = document.getElementById('groups');
+
+function slider(key, label, min, max, step, fmt, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'slider-row';
+  const top = document.createElement('div'); top.className = 'top';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const val = document.createElement('span'); val.className = 'val';
+  top.append(lab, val);
+  const input = document.createElement('input');
+  input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = S[key];
+  const refresh = v => { val.textContent = fmt ? fmt(v) : (+v).toFixed(step < 1 ? (step < 0.1 ? 2 : 1) : 0); };
+  refresh(S[key]);
+  input.addEventListener('input', () => {
+    S[key] = +input.value; refresh(S[key]); onChange && onChange(S[key]); clearPresetActive();
+  });
+  wrap.append(top, input);
+  ui[key] = { input, refresh };
+  return wrap;
+}
+function colorCtl(key, label, onChange) {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const input = document.createElement('input'); input.type = 'color'; input.value = S[key];
+  input.addEventListener('input', () => { S[key] = input.value; onChange && onChange(S[key]); clearPresetActive(); });
+  row.append(lab, input);
+  ui[key] = { input, refresh: () => {} };
+  return row;
+}
+function toggle(key, label, onChange) {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const sw = document.createElement('span'); sw.className = 'switch';
+  const input = document.createElement('input'); input.type = 'checkbox'; input.checked = S[key];
+  const i = document.createElement('i');
+  sw.append(input, i);
+  input.addEventListener('change', () => { S[key] = input.checked; onChange && onChange(S[key]); clearPresetActive(); });
+  row.append(lab, sw);
+  ui[key] = { input, refresh: () => {} };
+  return row;
+}
+function group(title, items, open = true) {
+  const det = document.createElement('details'); det.open = open;
+  const sum = document.createElement('summary'); sum.textContent = title;
+  const grp = document.createElement('div'); grp.className = 'grp';
+  items.forEach(i => grp.appendChild(i));
+  det.append(sum, grp);
+  groupsEl.appendChild(det);
+}
+
+/* updater callbacks */
+const upd = {
+  interact: () => {
+    cvs.style.cursor = S.dragSpin ? 'grab' : 'default';
+    if (!S.dragSpin) { dragging = false; cvs.classList.remove('dragging'); }
+  },
+  dots: () => {
+    fillUniforms.uSize.value = S.dotSize;
+    coastUniforms.uSize.value = S.coastSize;
+    dotShared.uColor.value.set(S.dotColor);
+    dotShared.uOpacity.value = S.dotOpacity;
+    dotShared.uOceanOpacity.value = S.oceanOpacity;
+    dotShared.uAltitude.value = S.dotAltitude;
+    dotShared.uTint.value = S.dotTint;
+  },
+  scene: () => {
+    document.body.style.background = S.bgColor;
+    sphereUniforms.uBg.value.set(S.bgColor);
+    sphereUniforms.uSurface.value = S.surfaceLight;
+    const c = new THREE.Color(S.bgColor);
+    const lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+    document.documentElement.style.setProperty('--pagefg', lum > 0.5 ? '#14161a' : '#e6ebf2');
+  },
+  lights: () => {
+    L.uWarm.value.set(S.warmColor);
+    L.uCool.value.set(S.coolColor);
+    L.uWarmI.value = S.warmStrength;
+    L.uCoolI.value = S.coolStrength;
+    L.uSpread.value = S.spread;
+    const th = S.lightAngle * Math.PI / 180;
+    L.uDir.value.set(Math.sin(th), Math.cos(th));
+    atmoShell.visible = S.shell;
+    updateGlow();
+  },
+  arcs: () => {
+    arcUniforms.uColor.value.set(S.arcColor);
+    arcUniforms.uSpeed.value = S.arcSpeed;
+    hubUniforms.uColor.value.set(S.arcColor);
+  },
+};
+
+group('Motion', [
+  toggle('autoRotate', 'Auto rotate'),
+  toggle('dragSpin', 'Drag to spin', upd.interact),
+  toggle('scrollZoom', 'Scroll to zoom'),
+  slider('rotateSpeed', 'Speed', 0, 0.8, 0.01),
+  slider('tilt', 'Axis tilt', -45, 45, 1, v => v + '°'),
+  slider('zoom', 'Zoom', 2.5, 8, 0.05, v => (+v).toFixed(2), v => { targetZoom = v; updateGlow(); }),
+]);
+group('Dots', [
+  slider('density', 'Fill density', 60, 280, 5, v => v + '', () => buildFill()),
+  slider('coastDensity', 'Coast density', 60, 420, 10, v => v < 80 ? 'off' : v + '', () => buildCoast()),
+  slider('dotSize', 'Fill size', 0.6, 5, 0.05, null, upd.dots),
+  slider('coastSize', 'Coast size', 0.6, 5, 0.05, null, upd.dots),
+  slider('dotAltitude', 'Altitude', 0, 0.2, 0.002, v => (+v).toFixed(3), upd.dots),
+  slider('dotOpacity', 'Opacity', 0.1, 1, 0.01, null, upd.dots),
+  colorCtl('dotColor', 'Dot color', upd.dots),
+  slider('dotTint', 'Light tint', 0, 1, 0.02, null, upd.dots),
+  toggle('oceanDots', 'Ocean dots', () => buildFill()),
+  slider('oceanOpacity', 'Ocean opacity', 0.02, 0.5, 0.01, null, upd.dots),
+]);
+group('Glow', [
+  colorCtl('warmColor', 'Top light', upd.lights),
+  slider('warmStrength', 'Top strength', 0, 2, 0.02, null, upd.lights),
+  colorCtl('coolColor', 'Bottom light', upd.lights),
+  slider('coolStrength', 'Bottom strength', 0, 2, 0.02, null, upd.lights),
+  slider('lightAngle', 'Angle', -180, 180, 1, v => v + '°', upd.lights),
+  slider('spread', 'Rim spread', 1.2, 6, 0.05, null, upd.lights),
+  slider('glowStrength', 'Halo glow', 0, 1.2, 0.02, null, updateGlow),
+  slider('surfaceLight', 'Surface light', 0, 1, 0.02, null, upd.scene),
+  toggle('shell', 'Outer ring', upd.lights),
+]);
+group('Routes', [
+  toggle('arcs', 'Flight arcs', () => buildArcs()),
+  slider('arcSpeed', 'Pulse speed', 0, 1.5, 0.02, null, upd.arcs),
+  colorCtl('arcColor', 'Arc color', upd.arcs),
+  toggle('hubs', 'Hub markers', () => buildHubs()),
+], false);
+group('Scene', [
+  colorCtl('bgColor', 'Background', upd.scene),
+  toggle('stars', 'Stars', () => buildStars()),
+  slider('starDensity', 'Star count', 200, 3000, 50, v => v + '', () => buildStars()),
+], false);
+
+/* presets */
+const presetsEl = document.getElementById('presets');
+let presetButtons = {};
+Object.keys(PRESETS).forEach(name => {
+  const b = document.createElement('button');
+  b.textContent = name;
+  b.addEventListener('click', () => applyPreset(name));
+  presetsEl.appendChild(b);
+  presetButtons[name] = b;
+});
+function clearPresetActive() {
+  Object.values(presetButtons).forEach(b => b.classList.remove('active'));
+}
+function applyPreset(name) {
+  Object.assign(S, PRESETS[name]);
+  if (reducedMotion) { S.autoRotate = false; S.arcSpeed = 0; }
+  targetZoom = S.zoom;
+  Object.keys(ui).forEach(k => {
+    if (!(k in S)) return;
+    const c = ui[k];
+    if (c.input.type === 'checkbox') c.input.checked = S[k];
+    else c.input.value = S[k];
+    c.refresh(S[k]);
+  });
+  buildFill(); buildCoast(); buildArcs(); buildHubs(); buildStars();
+  upd.dots(); upd.scene(); upd.lights(); upd.arcs(); upd.interact(); updateGlow();
+  clearPresetActive();
+  presetButtons[name].classList.add('active');
+}
+upd.dots(); upd.scene(); upd.lights(); upd.interact(); updateGlow();
+presetButtons['United Carriers'].classList.add('active');
+
+/* panel show/hide */
+const panel = document.getElementById('panel');
+document.getElementById('hideUi').addEventListener('click', () => panel.classList.add('hidden'));
+document.getElementById('toggleUi').addEventListener('click', () => panel.classList.remove('hidden'));
+
+/* copy settings */
+const toast = document.getElementById('toast');
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const json = JSON.stringify(S, null, 2);
+  try {
+    await navigator.clipboard.writeText(json);
+    toast.textContent = 'Settings copied as JSON';
+  } catch (e) {
+    toast.textContent = 'Clipboard blocked — settings logged to console';
+    console.log(json);
+  }
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1800);
+});
+</script>
+</body>
+</html>

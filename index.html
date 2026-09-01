@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StanVision Lab — interactive experiments</title>
+<meta name="description" content="A playground from the StanVision studio. WebGL shaders, generative toys and interface experiments — each one small, fast and touchable.">
+<meta property="og:title" content="StanVision Lab">
+<meta property="og:description" content="Interactive experiments in motion, light and interface.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0b;
+    --ink:#edede8;
+    --dim:#8b8b86;
+    --faint:#4c4c49;
+    --line:rgba(237,237,232,.12);
+    --accent:#ff4d00;
+    --card:#101012;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Archivo',sans-serif; font-size:16px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent);color:#0a0a0b}
+  a{color:inherit}
+  .mono{font-family:'IBM Plex Mono',monospace}
+
+  /* grain overlay */
+  body::after{
+    content:""; position:fixed; inset:-50%; z-index:50; pointer-events:none; opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation:grain 7s steps(9) infinite;
+  }
+  @keyframes grain{
+    0%,100%{transform:translate(0,0)} 20%{transform:translate(-3%,2%)}
+    40%{transform:translate(2%,-3%)} 60%{transform:translate(-2%,-2%)} 80%{transform:translate(3%,3%)}
+  }
+
+  .wrap{max-width:1280px; margin:0 auto; padding:0 32px}
+
+  /* ---------- header ---------- */
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:20;
+    background:linear-gradient(rgba(10,10,11,.85), rgba(10,10,11,0));
+  }
+  .nav{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:22px 32px; max-width:1280px; margin:0 auto;
+  }
+  .wordmark{
+    text-decoration:none; font:700 15px/1 'Archivo',sans-serif; letter-spacing:.02em;
+  }
+  .wordmark em{font-style:normal;color:var(--accent)}
+  .nav a.out{
+    text-decoration:none; font-family:'IBM Plex Mono',monospace; font-size:12px;
+    color:var(--dim); letter-spacing:.05em;
+  }
+  .nav a.out:hover{color:var(--ink)}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative; min-height:92vh; display:flex; align-items:flex-end; overflow:hidden}
+  #heroGl{position:absolute; inset:0; width:100%; height:100%; display:block}
+  .hero::after{
+    content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(120% 90% at 30% 110%, rgba(10,10,11,0) 30%, rgba(10,10,11,.55) 70%, rgba(10,10,11,.92) 100%),
+      linear-gradient(rgba(10,10,11,.35), rgba(10,10,11,0) 30%, rgba(10,10,11,.72) 88%, var(--bg) 100%);
+  }
+  .hero-inner{position:relative; z-index:2; width:100%; padding-bottom:72px}
+  .kicker{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.08em;
+    color:var(--dim); display:flex; align-items:center; gap:12px; margin-bottom:26px;
+  }
+  .kicker::before{content:""; width:36px; height:1px; background:var(--accent)}
+  h1{
+    font-weight:800; letter-spacing:-.025em; line-height:.98;
+    font-size:clamp(48px, 8.4vw, 118px); text-wrap:balance; max-width:12ch;
+  }
+  h1 .idx{color:var(--faint)}
+  .hero p{
+    margin-top:28px; max-width:52ch; color:var(--dim); font-size:17px;
+  }
+  .hero p b{color:var(--ink); font-weight:600}
+  .scroll-cue{
+    position:absolute; right:32px; bottom:76px; z-index:2;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em;
+    color:var(--faint); writing-mode:vertical-rl; text-transform:uppercase;
+  }
+
+  /* load reveal */
+  .rev{opacity:0; transform:translateY(22px); animation:rev .9s cubic-bezier(.2,.7,.2,1) forwards}
+  .rev.d1{animation-delay:.08s}.rev.d2{animation-delay:.2s}.rev.d3{animation-delay:.34s}
+  @keyframes rev{to{opacity:1;transform:none}}
+
+  /* ---------- index ---------- */
+  .index{padding:88px 0 40px}
+  .index-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom:1px solid var(--line); padding-bottom:18px; margin-bottom:40px;
+  }
+  .index-head h2{
+    font:700 13px/1 'Archivo',sans-serif; letter-spacing:.18em; text-transform:uppercase;
+  }
+  .index-head .count{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim)}
+  .grid{
+    display:grid; gap:28px;
+    grid-template-columns:repeat(auto-fill, minmax(min(380px,100%), 1fr));
+  }
+  .card{
+    text-decoration:none; display:block; border:1px solid var(--line); border-radius:14px;
+    overflow:hidden; background:var(--card);
+    transition:border-color .3s ease, transform .3s cubic-bezier(.2,.7,.2,1);
+  }
+  .card:hover{border-color:rgba(237,237,232,.34); transform:translateY(-3px)}
+  .thumb{position:relative; aspect-ratio:16/10; overflow:hidden; background:#0d0d0f}
+  .thumb iframe{
+    position:absolute; top:0; left:0; width:1280px; height:800px; border:0;
+    transform-origin:0 0; pointer-events:none; display:block;
+    transition:transform .8s cubic-bezier(.2,.7,.2,1);
+  }
+  .thumb .live{
+    position:absolute; top:14px; left:14px; font-family:'IBM Plex Mono',monospace;
+    font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink);
+    background:rgba(10,10,11,.6); border:1px solid var(--line); border-radius:99px;
+    padding:5px 10px; backdrop-filter:blur(8px); display:flex; align-items:center; gap:7px;
+  }
+  .thumb .live i{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .card-body{padding:20px 22px 22px; display:flex; flex-direction:column; gap:10px}
+  .card-top{display:flex; align-items:baseline; justify-content:space-between}
+  .card-top .num{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent)}
+  .card-top .date{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--faint)}
+  .card h3{
+    font-weight:700; font-size:24px; letter-spacing:-.01em; display:flex; align-items:center; gap:10px;
+  }
+  .card h3 .arr{
+    color:var(--faint); font-weight:500; transition:transform .3s ease, color .3s ease;
+  }
+  .card:hover h3 .arr{transform:translate(4px,-4px); color:var(--accent)}
+  .card .desc{color:var(--dim); font-size:14.5px; max-width:44ch}
+  .tags{display:flex; gap:8px; margin-top:6px; flex-wrap:wrap}
+  .tag{
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.06em;
+    color:var(--dim); border:1px solid var(--line); border-radius:99px; padding:4px 10px;
+  }
+  .index-note{
+    margin-top:44px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--faint);
+    letter-spacing:.03em;
+  }
+
+  /* ---------- footer ---------- */
+  footer{margin-top:96px; border-top:1px solid var(--line)}
+  .foot{
+    display:flex; flex-wrap:wrap; gap:18px; align-items:baseline; justify-content:space-between;
+    padding:34px 32px 44px; max-width:1280px; margin:0 auto;
+  }
+  .foot p{color:var(--dim); font-size:14px}
+  .foot a{color:var(--ink); text-decoration:none; border-bottom:1px solid var(--faint)}
+  .foot a:hover{border-color:var(--ink)}
+  .foot .mono{font-size:11px; color:var(--faint); letter-spacing:.06em}
+
+  @media (max-width:640px){
+    .wrap{padding:0 20px}
+    .nav{padding:18px 20px}
+    .hero-inner{padding-bottom:56px}
+    .scroll-cue{display:none}
+    .foot{padding:30px 20px 40px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .rev{animation:none; opacity:1; transform:none}
+    body::after{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="nav">
+    <a class="wordmark" href="/">StanVision<em>·</em>Lab</a>
+    <a class="out" href="https://stan.vision" target="_blank" rel="noopener">stan.vision ↗</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <canvas id="heroGl" aria-hidden="true"></canvas>
+  <div class="wrap hero-inner">
+    <p class="kicker rev d1">lab.stan.vision — interactive experiments</p>
+    <h1 class="rev d2">Experiments in motion, light &amp; interface<span class="idx">.</span></h1>
+    <p class="rev d3">A playground from the <b>StanVision</b> studio. WebGL shaders, generative toys and interface ideas — each one small, fast and touchable. No briefs, no tickets, just craft.</p>
+  </div>
+  <span class="scroll-cue">Scroll — Index</span>
+</section>
+
+<main class="wrap index">
+  <div class="index-head">
+    <h2>Index</h2>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="grid" id="grid"></div>
+  <p class="index-note">New experiments ship irregularly. The background above is experiment 001 running live.</p>
+</main>
+
+<footer>
+  <div class="foot">
+    <p>Made in Sofia by <a href="https://stan.vision" target="_blank" rel="noopener">StanVision</a> — a UI/UX &amp; Webflow design agency for B2B SaaS.</p>
+    <p class="mono">© 2026 StanVision</p>
+  </div>
+</footer>
+
+<script>
+/* ---------- experiments index ----------
+   To add an experiment: drop its folder in /e/<slug>/
+   (the page must support ?embed to hide its UI),
+   and push one object to this array. Newest first.
+   Cards render the experiment itself, live, in a scaled iframe. */
+const EXPERIMENTS = [
+  {
+    slug: 'dotted-planet',
+    num: '002',
+    title: 'Dotted Planet',
+    date: '2026-09',
+    desc: 'A planet built from thousands of dots. Drag to orbit, switch presets, tune density, glow and atmosphere, copy your settings.',
+    tags: ['WebGL', 'three.js', 'Interactive'],
+  },
+  {
+    slug: 'ink-field',
+    num: '001',
+    title: 'Ink Field',
+    date: '2026-09',
+    desc: 'Domain-warped noise rendered as living ink. Stir it with your cursor, tune the flow, export a frame.',
+    tags: ['WebGL', 'Shader', 'Interactive'],
+  },
+];
+
+const grid = document.getElementById('grid');
+document.getElementById('count').textContent =
+  String(EXPERIMENTS.length).padStart(3,'0') + (EXPERIMENTS.length === 1 ? ' experiment' : ' experiments');
+
+for (const e of EXPERIMENTS) {
+  const a = document.createElement('a');
+  a.className = 'card';
+  a.href = `/${e.slug}`;
+  a.innerHTML = `
+    <div class="thumb">
+      <iframe src="/${e.slug}?embed" title="${e.title} live preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+      <span class="live"><i></i>Live</span>
+    </div>
+    <div class="card-body">
+      <div class="card-top"><span class="num">${e.num}</span><span class="date">${e.date}</span></div>
+      <h3>${e.title}<span class="arr">↗</span></h3>
+      <p class="desc">${e.desc}</p>
+      <div class="tags">${e.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+    </div>`;
+  grid.appendChild(a);
+}
+
+/* scale live previews to card width (iframes render at 1280x800) */
+function scalePreviews() {
+  document.querySelectorAll('.thumb').forEach(th => {
+    const f = th.querySelector('iframe');
+    if (f) f.style.transform = `scale(${th.clientWidth / 1280})`;
+  });
+}
+addEventListener('resize', scalePreviews);
+scalePreviews();
+
+/* ---------- hero shader: calm monochrome variant of Ink Field ---------- */
+const canvas = document.getElementById('heroGl');
+const gl = canvas.getContext('webgl2', {antialias:false});
+if (gl) {
+  const VERT = `#version 300 es
+  void main(){
+    vec2 p = vec2[](vec2(-1,-1),vec2(3,-1),vec2(-1,3))[gl_VertexID];
+    gl_Position = vec4(p,0,1);
+  }`;
+  const FRAG = `#version 300 es
+  precision highp float;
+  out vec4 o;
+  uniform vec2 uRes; uniform float uT; uniform vec2 uM; uniform float uStir;
+  mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
+  float hash(vec2 p){p=fract(p*vec2(234.34,435.345));p+=dot(p,p+34.23);return fract(p.x*p.y);}
+  float noise(vec2 p){
+    vec2 i=floor(p),f=fract(p); f=f*f*(3.-2.*f);
+    return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);
+  }
+  float fbm(vec2 p){
+    float v=0.,a=.55; mat2 m=rot(.62);
+    for(int i=0;i<5;i++){v+=a*noise(p); p=m*p*2.03+11.7; a*=.52;}
+    return v;
+  }
+  void main(){
+    vec2 uv=(gl_FragCoord.xy-.5*uRes)/min(uRes.x,uRes.y);
+    float t=uT*.045;
+    vec2 muv=(uM-.5*uRes)/min(uRes.x,uRes.y);
+    float stir=uStir*exp(-dot(uv-muv,uv-muv)*7.);
+    vec2 p=uv*1.5;
+    vec2 q=vec2(fbm(p+t),fbm(p+vec2(5.2,1.3)-t*.7));
+    float f=fbm(p+(1.5+stir*2.)*q);
+    float shade=smoothstep(.15,.95,f);
+    vec3 col=mix(vec3(.039,.039,.043), vec3(.16,.155,.15), shade);
+    col+=vec3(.9,.34,.05)*pow(f,7.)*(.5+stir*3.);
+    col*=1.-.3*dot(uv,uv);
+    col+=(hash(gl_FragCoord.xy+fract(uT)*100.)-.5)*.03;
+    o=vec4(col,1.);
+  }`;
+  const compile=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh;};
+  const prog=gl.createProgram();
+  gl.attachShader(prog,compile(gl.VERTEX_SHADER,VERT));
+  gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,FRAG));
+  gl.linkProgram(prog); gl.useProgram(prog);
+  const U=n=>gl.getUniformLocation(prog,n);
+
+  let mouse=[0,0], stir=0;
+  addEventListener('pointermove',e=>{
+    const r=canvas.getBoundingClientRect();
+    mouse=[(e.clientX-r.left)*devicePixelRatio,(r.height-(e.clientY-r.top))*devicePixelRatio];
+    stir=Math.min(1,stir+.06);
+  },{passive:true});
+
+  function resize(){
+    const dpr=Math.min(devicePixelRatio,1.75);
+    canvas.width=canvas.clientWidth*dpr; canvas.height=canvas.clientHeight*dpr;
+    gl.viewport(0,0,canvas.width,canvas.height);
+  }
+  addEventListener('resize',resize); resize();
+
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function frame(now){
+    stir*=.97;
+    gl.uniform2f(U('uRes'),canvas.width,canvas.height);
+    gl.uniform1f(U('uT'),now*.001);
+    gl.uniform2f(U('uM'),mouse[0],mouse[1]);
+    gl.uniform1f(U('uStir'),stir);
+    gl.drawArrays(gl.TRIANGLES,0,3);
+    if(!reduced) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
