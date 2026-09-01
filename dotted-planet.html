@@ -13,7 +13,7 @@
     --line:rgba(148,163,184,.16);
     --text:#e6ebf2;
     --mute:#8a94a3;
-    --accent:#5b8cff;
+    --accent:#d8ff43;
     --radius:10px;
   }
   html,body{height:100%;}
@@ -68,7 +68,7 @@
     border-radius:8px; padding:8px 6px; cursor:pointer; transition:border-color .15s, background .15s;
   }
   .presets button:hover{border-color:rgba(148,163,184,.45);}
-  .presets button.active{border-color:var(--accent); background:rgba(91,140,255,.12);}
+  .presets button.active{border-color:var(--accent); background:rgba(216,255,67,.14);}
 
   details{border-bottom:1px solid var(--line); padding:2px 0;}
   details:last-of-type{border-bottom:none;}
@@ -174,7 +174,7 @@
     display:flex; align-items:center; gap:10px;
     font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; letter-spacing:.04em;
   }
-  header a.lab-back .idx{color:#ff4d00;}
+  header a.lab-back .idx{color:#d8ff43;}
   header a.lab-back:hover .lbl{text-decoration:underline; text-underline-offset:3px;}
   html.embed header, html.embed #panel, html.embed #toggleUi, html.embed #toast{display:none !important;}
 </style>
@@ -369,11 +369,11 @@ const S = {
   coastDensity: 260,   coastSize: 1.7,
   oceanDots: false,    oceanOpacity: 0.10,
   bgColor: '#0a0605',  surfaceLight: 0.15,
-  warmColor: '#ff8a3d', warmStrength: 1.0,
+  warmColor: '#c9f24a', warmStrength: 0.95,
   coolColor: '#2e5bff', coolStrength: 1.1,
   lightAngle: 0,       spread: 3.5,
   glowStrength: 0.65,  shell: false,
-  arcs: true,          arcColor: '#ff6a1a', arcSpeed: 0.5, hubs: true,
+  arcs: true,          arcColor: '#d8ff43', arcSpeed: 0.5, hubs: true,
   stars: true,         starDensity: 1200,
   zoom: 4.2,
 };

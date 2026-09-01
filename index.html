@@ -9,31 +9,32 @@
 <meta property="og:description" content="Interactive experiments in motion, light and interface.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0a0a0b;
-    --ink:#edede8;
-    --dim:#8b8b86;
-    --faint:#4c4c49;
-    --line:rgba(237,237,232,.12);
-    --accent:#ff4d00;
-    --card:#101012;
+    --bg:#080809;
+    --ink:#eef0ec;
+    --dim:#8a8d86;
+    --faint:#4a4c47;
+    --line:rgba(238,240,236,.11);
+    --accent:#d8ff43;          /* StanVision lime */
+    --accent-dim:rgba(216,255,67,.14);
+    --card:#0d0e0d;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   body{
     background:var(--bg); color:var(--ink);
-    font-family:'Archivo',sans-serif; font-size:16px; line-height:1.55;
-    -webkit-font-smoothing:antialiased;
+    font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:16px; line-height:1.55;
+    font-weight:400; -webkit-font-smoothing:antialiased;
   }
-  ::selection{background:var(--accent);color:#0a0a0b}
+  ::selection{background:var(--accent);color:#080809}
   a{color:inherit}
   .mono{font-family:'IBM Plex Mono',monospace}
 
   /* grain overlay */
   body::after{
-    content:""; position:fixed; inset:-50%; z-index:50; pointer-events:none; opacity:.05;
+    content:""; position:fixed; inset:-50%; z-index:50; pointer-events:none; opacity:.045;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     animation:grain 7s steps(9) infinite;
   }
@@ -47,19 +48,23 @@
   /* ---------- header ---------- */
   header{
     position:fixed; top:0; left:0; right:0; z-index:20;
-    background:linear-gradient(rgba(10,10,11,.85), rgba(10,10,11,0));
+    background:linear-gradient(rgba(8,8,9,.9), rgba(8,8,9,0));
   }
   .nav{
-    display:flex; align-items:baseline; justify-content:space-between;
+    display:flex; align-items:center; justify-content:space-between;
     padding:22px 32px; max-width:1280px; margin:0 auto;
   }
   .wordmark{
-    text-decoration:none; font:700 15px/1 'Archivo',sans-serif; letter-spacing:.02em;
+    text-decoration:none; display:flex; align-items:center; gap:10px; color:var(--ink);
   }
-  .wordmark em{font-style:normal;color:var(--accent)}
+  .wordmark svg{display:block; height:22px; width:auto}
+  .wordmark .lab{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.16em; text-transform:uppercase;
+    color:#080809; background:var(--accent); border-radius:5px; padding:3px 7px 2px; line-height:1;
+  }
   .nav a.out{
     text-decoration:none; font-family:'IBM Plex Mono',monospace; font-size:12px;
-    color:var(--dim); letter-spacing:.05em;
+    color:var(--dim); letter-spacing:.04em;
   }
   .nav a.out:hover{color:var(--ink)}
 
@@ -69,24 +74,24 @@
   .hero::after{
     content:""; position:absolute; inset:0;
     background:
-      radial-gradient(120% 90% at 30% 110%, rgba(10,10,11,0) 30%, rgba(10,10,11,.55) 70%, rgba(10,10,11,.92) 100%),
-      linear-gradient(rgba(10,10,11,.35), rgba(10,10,11,0) 30%, rgba(10,10,11,.72) 88%, var(--bg) 100%);
+      radial-gradient(120% 90% at 30% 110%, rgba(8,8,9,0) 30%, rgba(8,8,9,.55) 70%, rgba(8,8,9,.92) 100%),
+      linear-gradient(rgba(8,8,9,.35), rgba(8,8,9,0) 30%, rgba(8,8,9,.72) 88%, var(--bg) 100%);
   }
   .hero-inner{position:relative; z-index:2; width:100%; padding-bottom:72px}
   .kicker{
     font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.08em;
-    color:var(--dim); display:flex; align-items:center; gap:12px; margin-bottom:26px;
+    color:var(--dim); display:flex; align-items:center; gap:12px; margin-bottom:28px;
   }
   .kicker::before{content:""; width:36px; height:1px; background:var(--accent)}
   h1{
-    font-weight:800; letter-spacing:-.025em; line-height:.98;
-    font-size:clamp(48px, 8.4vw, 118px); text-wrap:balance; max-width:12ch;
+    font-weight:400; letter-spacing:-.028em; line-height:1.02;
+    font-size:clamp(42px, 7vw, 96px); text-wrap:balance; max-width:15ch;
   }
-  h1 .idx{color:var(--faint)}
+  h1 .idx{color:var(--accent)}
   .hero p{
-    margin-top:28px; max-width:52ch; color:var(--dim); font-size:17px;
+    margin-top:26px; max-width:52ch; color:var(--dim); font-size:17px; font-weight:400;
   }
-  .hero p b{color:var(--ink); font-weight:600}
+  .hero p b{color:var(--ink); font-weight:500}
   .scroll-cue{
     position:absolute; right:32px; bottom:76px; z-index:2;
     font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em;
@@ -105,7 +110,8 @@
     border-bottom:1px solid var(--line); padding-bottom:18px; margin-bottom:40px;
   }
   .index-head h2{
-    font:700 13px/1 'Archivo',sans-serif; letter-spacing:.18em; text-transform:uppercase;
+    font-family:'IBM Plex Mono',monospace; font-weight:500; font-size:12px;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--dim);
   }
   .index-head .count{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--dim)}
   .grid{
@@ -117,8 +123,8 @@
     overflow:hidden; background:var(--card);
     transition:border-color .3s ease, transform .3s cubic-bezier(.2,.7,.2,1);
   }
-  .card:hover{border-color:rgba(237,237,232,.34); transform:translateY(-3px)}
-  .thumb{position:relative; aspect-ratio:16/10; overflow:hidden; background:#0d0d0f}
+  .card:hover{border-color:rgba(216,255,67,.4); transform:translateY(-3px)}
+  .thumb{position:relative; aspect-ratio:16/10; overflow:hidden; background:#0b0c0b}
   .thumb iframe{
     position:absolute; top:0; left:0; width:1280px; height:800px; border:0;
     transform-origin:0 0; pointer-events:none; display:block;
@@ -127,7 +133,7 @@
   .thumb .live{
     position:absolute; top:14px; left:14px; font-family:'IBM Plex Mono',monospace;
     font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink);
-    background:rgba(10,10,11,.6); border:1px solid var(--line); border-radius:99px;
+    background:rgba(8,8,9,.6); border:1px solid var(--line); border-radius:99px;
     padding:5px 10px; backdrop-filter:blur(8px); display:flex; align-items:center; gap:7px;
   }
   .thumb .live i{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
@@ -137,10 +143,10 @@
   .card-top .num{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent)}
   .card-top .date{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--faint)}
   .card h3{
-    font-weight:700; font-size:24px; letter-spacing:-.01em; display:flex; align-items:center; gap:10px;
+    font-weight:500; font-size:23px; letter-spacing:-.015em; display:flex; align-items:center; gap:10px;
   }
   .card h3 .arr{
-    color:var(--faint); font-weight:500; transition:transform .3s ease, color .3s ease;
+    color:var(--faint); font-weight:400; transition:transform .3s ease, color .3s ease;
   }
   .card:hover h3 .arr{transform:translate(4px,-4px); color:var(--accent)}
   .card .desc{color:var(--dim); font-size:14.5px; max-width:44ch}
@@ -162,7 +168,7 @@
   }
   .foot p{color:var(--dim); font-size:14px}
   .foot a{color:var(--ink); text-decoration:none; border-bottom:1px solid var(--faint)}
-  .foot a:hover{border-color:var(--ink)}
+  .foot a:hover{border-color:var(--accent)}
   .foot .mono{font-size:11px; color:var(--faint); letter-spacing:.06em}
 
   @media (max-width:640px){
@@ -182,7 +188,10 @@
 
 <header>
   <nav class="nav">
-    <a class="wordmark" href="/">StanVision<em>·</em>Lab</a>
+    <a class="wordmark" href="/" aria-label="StanVision Lab">
+      <svg viewBox="0 0 178.4 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="StanVision"><g transform="translate(0,0)"><path d="M60.6305 4.65784C64.9329 4.65784 67.7643 7.56284 67.7643 12.2329V23.522H64.5651V12.4168C64.5651 9.43822 62.8368 7.70993 60.0054 7.70993C56.8062 7.70993 54.6734 9.65885 54.6734 13.7773V23.522H51.4742V5.13588H54.6734V7.78347C55.9604 5.68746 57.9462 4.65784 60.6305 4.65784Z" fill="currentColor"/><path d="M44.0664 5.13584V8.29825C42.4852 5.87129 40.1686 4.65781 37.1165 4.65781C34.5424 4.65781 32.3361 5.61388 30.5343 7.48926C28.7324 9.36464 27.8131 11.6445 27.8131 14.3289C27.8131 17.0133 28.7324 19.3299 30.5343 21.2053C32.3361 23.0807 34.5424 24 37.1165 24C40.1686 24 42.4852 22.7865 44.0664 20.3595V23.5219H47.2656V15.8733H43.9223V15.8138C43.6718 17.0408 43.0947 18.1055 42.1911 19.0357C40.9408 20.286 39.3964 20.9111 37.521 20.9111C35.6824 20.9111 34.138 20.286 32.8877 19.0357C31.6374 17.7487 31.0123 16.2043 31.0123 14.3289C31.0123 12.4535 31.6374 10.9091 32.8877 9.65882C34.138 8.37179 35.6824 7.74667 37.521 7.74667C39.3964 7.74667 40.9408 8.37179 42.1911 9.65882C43.0947 10.5625 43.6718 11.6198 43.9223 12.8447V12.809H47.2656V5.13584H44.0664Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M26.6273 8.23697V5.14811H21.7366V0L18.5374 5.00424e-06V5.14811H14.897V8.23697H18.5374V18.2022C18.5374 22.762 21.0379 24.2696 26.6273 23.5342V20.666C26.4686 20.6731 26.3138 20.6804 26.1629 20.6875C23.2015 20.8273 21.7366 20.8964 21.7366 18.2022V8.23697H26.6273ZM18.5393 5.14808L21.7366 5.14811L21.7364 8.23797H18.5393V5.14808Z" fill="currentColor"/><path d="M3.89785 10.1001C3.89785 11.5342 5.51583 12.3064 7.5383 12.858C10.4065 13.4832 14.2308 14.5495 14.1941 18.4842C14.1941 20.1389 13.5322 21.4995 12.2451 22.4923C10.9581 23.4852 9.34013 24 7.31766 24C3.75076 24 1.06639 22.3085 0 19.6977L2.75791 18.1165C3.34627 19.8815 5.07456 20.9847 7.31766 20.9847C9.41368 20.9847 10.9581 20.2125 10.9581 18.4842C10.9581 17.0501 9.34013 16.2411 7.31766 15.763C4.41266 14.9908 0.661899 14.0347 0.661899 10.1369C0.661899 8.55569 1.28703 7.23189 2.50051 6.20227C3.75076 5.17265 5.29519 4.65784 7.17057 4.65784C10.1491 4.65784 12.6129 6.09195 13.7896 8.48214L11.1052 9.9898C10.4433 8.4086 9.1195 7.63638 7.17057 7.63638C5.36874 7.63638 3.89785 8.51892 3.89785 10.1001Z" fill="currentColor"/></g><g transform="translate(69.7,5)"><path d="M10.9396 0.148083V7.80895H7.87522V0.148083H10.9396Z" fill="currentColor"/><path d="M7.87522 10.8733H0.214355V7.80895H7.87522V10.8733Z" fill="currentColor"/><path d="M10.9396 10.8733V18.5342H7.87522V10.8733H10.9396Z" fill="currentColor"/><path d="M10.9396 10.8733H18.6004V7.80895H10.9396V10.8733Z" fill="currentColor"/></g><g transform="translate(88.4,4)"><path d="M82.5001 0.657837C86.8025 0.657837 89.6339 3.56284 89.6339 8.2329V19.522H86.4348V8.41677C86.4348 5.43822 84.7065 3.70993 81.875 3.70993C78.6758 3.70993 76.543 5.65885 76.543 9.77733V19.522H73.3439V1.13588H76.543V3.78347C77.8301 1.68746 79.8158 0.657837 82.5001 0.657837Z" fill="currentColor"/><path d="M67.3794 17.2053C65.504 19.0807 63.1874 20 60.503 20C57.8186 20 55.502 19.0807 53.6266 17.2053C51.7512 15.3299 50.8319 13.0501 50.8319 10.3289C50.8319 7.60778 51.7512 5.3279 53.6266 3.45252C55.502 1.57714 57.8186 0.657837 60.503 0.657837C63.1874 0.657837 65.504 1.57714 67.3794 3.45252C69.2548 5.3279 70.2108 7.60778 70.2108 10.3289C70.2108 13.0501 69.2548 15.3299 67.3794 17.2053ZM60.503 16.8744C62.3416 16.8744 63.886 16.2492 65.1363 14.999C66.3865 13.7487 67.0117 12.2043 67.0117 10.3289C67.0117 8.45354 66.3865 6.90911 65.1363 5.65885C63.886 4.4086 62.3416 3.78347 60.503 3.78347C58.7011 3.78347 57.1567 4.4086 55.9065 5.65885C54.6562 6.90911 54.0311 8.45354 54.0311 10.3289C54.0311 12.2043 54.6562 13.7487 55.9065 14.999C57.1567 16.2492 58.7011 16.8744 60.503 16.8744Z" fill="currentColor"/><path d="M44.4201 19.5219H47.6193V11.8733H44.4201V19.5219Z" fill="currentColor"/><path d="M44.4201 8.80895V1.13582H47.6193V8.80895H44.4201Z" fill="currentColor"/><path d="M31.154 6.10012C31.154 7.53423 32.772 8.30645 34.7945 8.85803C37.6627 9.48316 41.487 10.5495 41.4502 14.4842C41.4502 16.1389 40.7883 17.4995 39.5013 18.4923C38.2143 19.4852 36.5963 20 34.5738 20C31.0069 20 28.3226 18.3085 27.2562 15.6977L30.0141 14.1165C30.6024 15.8815 32.3307 16.9847 34.5738 16.9847C36.6699 16.9847 38.2143 16.2125 38.2143 14.4842C38.2143 13.0501 36.5963 12.2411 34.5738 11.763C31.6688 10.9908 27.9181 10.0347 27.9181 6.13689C27.9181 4.55569 28.5432 3.23189 29.7567 2.20227C31.0069 1.17265 32.5514 0.657837 34.4268 0.657837C37.4053 0.657837 39.869 2.09195 41.0457 4.48214L38.3614 5.9898C37.6995 4.4086 36.3757 3.63638 34.4268 3.63638C32.6249 3.63638 31.154 4.51892 31.154 6.10012Z" fill="currentColor"/><path d="M20.9906 19.5219H24.1898V11.8733H20.9906V19.5219Z" fill="currentColor"/><path d="M20.9906 8.80895V1.13582H24.1898V8.80895H20.9906Z" fill="currentColor"/><path d="M9.69355 16.1021L15.4668 1.13586H18.9234L11.5689 19.5219H7.81817L0.463745 1.13586H3.92032L9.69355 16.1021Z" fill="currentColor"/></g></svg>
+      <span class="lab">Lab</span>
+    </a>
     <a class="out" href="https://stan.vision" target="_blank" rel="noopener">stan.vision ↗</a>
   </nav>
 </header>
@@ -191,8 +200,8 @@
   <canvas id="heroGl" aria-hidden="true"></canvas>
   <div class="wrap hero-inner">
     <p class="kicker rev d1">lab.stan.vision — interactive experiments</p>
-    <h1 class="rev d2">Experiments in motion, light &amp; interface<span class="idx">.</span></h1>
-    <p class="rev d3">A playground from the <b>StanVision</b> studio. WebGL shaders, generative toys and interface ideas — each one small, fast and touchable. No briefs, no tickets, just craft.</p>
+    <h1 class="rev d2">A playground for motion, light and interface<span class="idx">.</span></h1>
+    <p class="rev d3">Small experiments from the <b>StanVision</b> studio — WebGL shaders, generative toys and interface ideas, each one fast and touchable. No briefs, no tickets, just craft.</p>
   </div>
   <span class="scroll-cue">Scroll — Index</span>
 </section>
@@ -203,7 +212,7 @@
     <span class="count" id="count"></span>
   </div>
   <div class="grid" id="grid"></div>
-  <p class="index-note">New experiments ship irregularly. The background above is experiment 001 running live.</p>
+  <p class="index-note">New experiments ship irregularly. Every preview above is the real experiment running live.</p>
 </main>
 
 <footer>
@@ -270,7 +279,7 @@ function scalePreviews() {
 addEventListener('resize', scalePreviews);
 scalePreviews();
 
-/* ---------- hero shader: calm monochrome variant of Ink Field ---------- */
+/* ---------- hero shader: calm monochrome variant of Ink Field, lime accent ---------- */
 const canvas = document.getElementById('heroGl');
 const gl = canvas.getContext('webgl2', {antialias:false});
 if (gl) {
@@ -303,8 +312,8 @@ if (gl) {
     vec2 q=vec2(fbm(p+t),fbm(p+vec2(5.2,1.3)-t*.7));
     float f=fbm(p+(1.5+stir*2.)*q);
     float shade=smoothstep(.15,.95,f);
-    vec3 col=mix(vec3(.039,.039,.043), vec3(.16,.155,.15), shade);
-    col+=vec3(.9,.34,.05)*pow(f,7.)*(.5+stir*3.);
+    vec3 col=mix(vec3(.031,.033,.031), vec3(.15,.16,.14), shade);
+    col+=vec3(.72,.95,.20)*pow(f,7.)*(.55+stir*3.2);
     col*=1.-.3*dot(uv,uv);
     col+=(hash(gl_FragCoord.xy+fract(uT)*100.)-.5)*.03;
     o=vec4(col,1.);
