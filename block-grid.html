@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>007 · Block Grid — StanVision Lab</title>
+<meta name="description" content="A square pattern generator. Noise, shapes, the StanVision +, type or your own image, quantised into a grid of blocks that recombine. Tonal palettes or full-colour mosaic, cursor reveal, PNG export. A StanVision Lab experiment.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ink:#0a0a0b;
+    --panel:rgba(13,17,23,.86);
+    --line:rgba(148,163,184,.16);
+    --text:#e6ebf2;
+    --mute:#8a94a3;
+    --accent:#d8ff43;
+    --radius:10px;
+  }
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--ink); color:var(--text);
+    font-family:"Archivo",system-ui,-apple-system,sans-serif;
+    overflow:hidden; -webkit-font-smoothing:antialiased;
+  }
+  #stage{position:fixed; inset:0;}
+  #glow{position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    pointer-events:none; border-radius:50%; filter:blur(2px);}
+  canvas{display:block; cursor:grab;}
+  canvas.dragging{cursor:grabbing;}
+
+  header{
+    position:fixed; top:20px; left:24px; z-index:5; pointer-events:none;
+  }
+  header h1{
+    margin:0; font-size:14px; font-weight:600; letter-spacing:.02em;
+  }
+  header p{
+    margin:4px 0 0; font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:11px; letter-spacing:.04em;
+  }
+  header{color:var(--pagefg,#e6ebf2);}
+  header p{opacity:.55;}
+
+  #panel{
+    position:fixed; top:16px; right:16px; bottom:16px; width:288px; z-index:6;
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    display:flex; flex-direction:column; overflow:hidden;
+    transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s;
+  }
+  #panel.hidden{transform:translateX(calc(100% + 24px)); opacity:0; pointer-events:none;}
+  #panel .head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px 12px; border-bottom:1px solid var(--line);
+  }
+  #panel .head span{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--mute);
+  }
+  #panel .body{overflow-y:auto; padding:6px 16px 16px; flex:1; scrollbar-width:thin; scrollbar-color:rgba(148,163,184,.3) transparent;}
+  #panel .body::-webkit-scrollbar{width:6px;}
+  #panel .body::-webkit-scrollbar-thumb{background:rgba(148,163,184,.25); border-radius:3px;}
+
+  .presets{display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:14px 0 4px;}
+  .presets button{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:8px 6px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .presets button:hover{border-color:rgba(148,163,184,.45);}
+  .presets button.active{border-color:var(--accent); background:rgba(216,255,67,.14);}
+
+  details{border-bottom:1px solid var(--line); padding:2px 0;}
+  details:last-of-type{border-bottom:none;}
+  summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+    padding:12px 2px; font-size:12px; font-weight:600; letter-spacing:.02em; user-select:none;
+  }
+  summary::-webkit-details-marker{display:none;}
+  summary::after{content:""; width:7px; height:7px; border-right:1.4px solid var(--mute);
+    border-bottom:1.4px solid var(--mute); transform:rotate(45deg); transition:transform .18s; margin-right:3px;}
+  details[open] summary::after{transform:rotate(-135deg); margin-top:4px;}
+  .grp{padding:0 2px 14px; display:flex; flex-direction:column; gap:11px;}
+
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:22px;}
+  .row label{font-size:12px; color:var(--mute); flex:0 0 auto;}
+  .row .val{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--text);
+    min-width:38px; text-align:right; font-variant-numeric:tabular-nums;
+  }
+  .slider-row{display:flex; flex-direction:column; gap:6px;}
+  .slider-row .top{display:flex; justify-content:space-between; align-items:baseline;}
+  .slider-row .top label{font-size:12px; color:var(--mute);}
+  .slider-row .top .val{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--text);
+    font-variant-numeric:tabular-nums;
+  }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer; margin:0;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
+    background:var(--text); margin-top:-5px; border:none;
+    transition:transform .12s; box-shadow:0 0 0 3px rgba(5,7,11,.6);
+  }
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+  input[type=range]::-moz-range-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-moz-range-thumb{width:12px; height:12px; border-radius:50%; background:var(--text); border:none;}
+
+  input[type=color]{
+    -webkit-appearance:none; appearance:none; width:44px; height:22px; border:1px solid var(--line);
+    border-radius:6px; background:none; padding:0; cursor:pointer;
+  }
+  input[type=color]::-webkit-color-swatch-wrapper{padding:2px;}
+  input[type=color]::-webkit-color-swatch{border:none; border-radius:4px;}
+  input[type=color]::-moz-color-swatch{border:none; border-radius:4px;}
+
+  .switch{position:relative; width:32px; height:18px; flex:0 0 auto;}
+  .switch input{position:absolute; opacity:0; inset:0; margin:0; cursor:pointer;}
+  .switch i{
+    position:absolute; inset:0; border-radius:9px; background:rgba(148,163,184,.25);
+    transition:background .18s; pointer-events:none;
+  }
+  .switch i::after{
+    content:""; position:absolute; left:2px; top:2px; width:14px; height:14px; border-radius:50%;
+    background:var(--text); transition:transform .18s, background .18s;
+  }
+  .switch input:checked + i{background:var(--accent);}
+  .switch input:checked + i::after{transform:translateX(14px); background:#0f1409;}
+
+  .footbar{
+    border-top:1px solid var(--line); padding:12px 16px; display:flex; gap:8px;
+  }
+  .footbar button{
+    flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em;
+    color:#0a0605; background:var(--text); border:none; border-radius:8px; padding:9px 0; cursor:pointer;
+    transition:opacity .15s;
+  }
+  .footbar button:hover{opacity:.85;}
+
+  #toggleUi{
+    position:fixed; top:24px; right:16px; z-index:7; width:34px; height:34px;
+    border-radius:9px; border:1px solid var(--line); background:var(--panel);
+    backdrop-filter:blur(14px); color:var(--mute); cursor:pointer; font-size:15px; line-height:1;
+    display:none; align-items:center; justify-content:center;
+  }
+  #panel.hidden ~ #toggleUi{display:flex;}
+
+  #toast{
+    position:fixed; left:50%; bottom:28px; transform:translate(-50%,12px); z-index:9;
+    background:var(--text); color:#0a0605; font-size:12px; font-weight:500;
+    padding:8px 14px; border-radius:8px; opacity:0; transition:opacity .2s, transform .2s;
+    pointer-events:none;
+  }
+  #toast.show{opacity:1; transform:translate(-50%,0);}
+
+  .hidebtn{background:none; border:none; color:var(--mute); font-size:15px; cursor:pointer; padding:2px 4px; line-height:1;}
+  .hidebtn:hover{color:var(--text);}
+
+  @media (max-width:720px){
+    #panel{top:auto; left:12px; right:12px; bottom:12px; width:auto; max-height:46vh;}
+    #panel.hidden{transform:translateY(calc(100% + 20px));}
+    header{left:16px; top:16px;}
+    #toggleUi{top:auto; bottom:20px;}
+  }
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
+
+  /* lab header conventions */
+  header{pointer-events:none;}
+  header a.lab-back{
+    pointer-events:auto; color:var(--text); text-decoration:none;
+    display:flex; align-items:center; gap:10px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; letter-spacing:.04em;
+  }
+  header a.lab-back .idx{color:#d8ff43;}
+  header a.lab-back:hover .lbl{text-decoration:underline; text-underline-offset:3px;}
+  html.embed header, html.embed #panel, html.embed #toggleUi, html.embed #toast{display:none !important;}
+  /* block grid additions */
+  #stage{position:fixed; inset:0;}
+  #stage canvas{display:block; width:100%; height:100%; cursor:crosshair;}
+  #stage.drop::after{
+    content:"Drop an image to use it as the source"; position:absolute; inset:16px; border:1px dashed rgba(216,255,67,.7); border-radius:16px;
+    display:flex; align-items:center; justify-content:center; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent);
+    background:rgba(0,0,0,.35); pointer-events:none;
+  }
+  .sect{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--mute); padding:14px 2px 0;
+  }
+  .modes{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:8px 0 4px;}
+  .modes.c2{grid-template-columns:repeat(2,1fr);}
+  .modes.c5{grid-template-columns:repeat(5,1fr);}
+  .modes.c5 button{padding:7px 0; font-size:10.5px; letter-spacing:.01em;}
+  .modes button{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:7px 4px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .modes button:hover{border-color:rgba(148,163,184,.45);}
+  .modes button.active{border-color:var(--accent); background:rgba(216,255,67,.14);}
+  .btnrow{display:flex; gap:8px;}
+  .btnrow button{
+    flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:8px 6px; cursor:pointer; transition:border-color .15s;
+  }
+  .btnrow button:hover{border-color:rgba(148,163,184,.45);}
+  .footbar button{font-size:10px; letter-spacing:.02em; white-space:nowrap; padding:9px 0;}
+  .sub{display:flex; flex-direction:column; gap:11px;}
+  .sub[hidden]{display:none;}
+  input[type=text]{
+    width:100%; box-sizing:border-box; font-family:"Archivo",system-ui,sans-serif; font-size:13px; font-weight:600;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line); border-radius:8px; padding:9px 10px; outline:none;
+  }
+  input[type=text]:focus{border-color:rgba(148,163,184,.45);}
+  .note{margin:0; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; line-height:1.5; color:var(--mute);}
+  #hint{
+    position:fixed; left:24px; bottom:22px; z-index:5; pointer-events:none;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em;
+    color:var(--pagefg,#e6ebf2); opacity:.5;
+  }
+  html.embed #hint{display:none !important;}
+  @media (max-width:720px){ #hint{display:none;} }
+</style>
+</head>
+<body>
+<script>if(location.search.indexOf('embed')>-1)document.documentElement.classList.add('embed');</script>
+<div id="stage"><canvas id="gl"></canvas></div>
+
+<header>
+  <a class="lab-back" href="/"><span class="idx">007</span><span class="lbl">Block Grid</span></a>
+  <p>StanVision Lab — WebGL / pattern generator</p>
+</header>
+<div id="hint">move the cursor · space = scatter · r = random · h = hide panel</div>
+
+<aside id="panel">
+  <div class="head">
+    <span>Controls</span>
+    <button class="hidebtn" id="hideUi" title="Hide panel" aria-label="Hide panel">&times;</button>
+  </div>
+  <div class="body">
+    <div class="presets" id="presets"></div>
+    <div id="groups"></div>
+  </div>
+  <div class="footbar">
+    <button id="loadBtn" class="secondary">LOAD IMAGE</button>
+    <button id="randomBtn" class="secondary">RANDOMISE</button>
+    <button id="copyBtn">COPY SETTINGS</button>
+  </div>
+</aside>
+<button id="toggleUi" title="Show controls" aria-label="Show controls">☰</button>
+<input type="file" id="fileIn" accept="image/*" hidden>
+
+<div id="toast">Copied to clipboard</div>
+
+<script id="fs" type="x-shader/x-fragment">
+precision highp float;
+uniform vec2 uRes; uniform float uTime;
+uniform float uCell, uGap, uRound, uSizeByVal;
+uniform int uSource, uMode, uMaskMode, uShpType;
+uniform sampler2D uTex; uniform float uTexAspect, uZoom; uniform vec2 uOffset;
+uniform vec3 uBg, uLine, uC0, uC1, uC2; uniform float uLineA, uMidPos;
+uniform float uSteps, uDither, uContrast, uGamma, uInvert, uZeroBg;
+uniform float uSat, uPoster, uTint;
+uniform vec2 uMouse; uniform float uMaskR, uMaskFeather;
+uniform float uFlicker, uFlickerRate, uShift, uShiftRate, uScatter;
+uniform float uNScale, uNFlow, uNDetail, uNWarp;
+uniform vec4 uShp[8]; uniform float uShpN, uShpSoft;
+uniform float uPlusArm, uPlusHole, uPlusGlow, uPlusRot;
+
+float hash12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * .1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+vec2 hash22(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973)); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.xx + p3.yz) * p3.zy); }
+float vnoise(vec2 p){
+  vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3. - 2. * f);
+  return mix(mix(hash12(i), hash12(i + vec2(1, 0)), u.x), mix(hash12(i + vec2(0, 1)), hash12(i + vec2(1, 1)), u.x), u.y);
+}
+float fbm(vec2 p){
+  float v = 0., a = .5; mat2 r = mat2(.8, .6, -.6, .8);
+  for (int i = 0; i < 6; i++){ if (float(i) >= uNDetail) break; v += a * vnoise(p); p = r * p * 2.03 + 11.7; a *= .5; }
+  return v / (1. - a);
+}
+float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2. + a.y * a.y * .75); }
+float bayer4(vec2 a){ return bayer2(.5 * a) * .25 + bayer2(a); }
+float sdBox(vec2 p, vec2 b){ vec2 d = abs(p) - b; return length(max(d, 0.)) + min(max(d.x, d.y), 0.); }
+
+/* screen px -> centred field coords, y in [-.5,.5] */
+vec2 toField(vec2 px){ return (((px - uOffset) / uRes) - .5) * vec2(uRes.x / uRes.y, 1.) / uZoom; }
+/* field coords -> texture uv with cover fit */
+vec2 toTex(vec2 q){
+  float sa = uRes.x / uRes.y;
+  if (uTexAspect > sa) return q / vec2(uTexAspect, 1.) + .5;
+  return q / vec2(sa, sa / uTexAspect) + .5;
+}
+bool inTex(vec2 t){ return t.x >= 0. && t.x <= 1. && t.y >= 0. && t.y <= 1.; }
+
+/* value in [0,1] and colour at field point q */
+void field(vec2 q, out float v, out vec3 col){
+  col = vec3(0.); v = 0.;
+  if (uSource == 0){
+    vec2 p = q * uNScale + vec2(uTime * uNFlow * .15, uTime * uNFlow * .07);
+    if (uNWarp > 0.){ vec2 w = vec2(fbm(p + 3.1), fbm(p - 7.3)); p += (w - .5) * uNWarp * 2.; }
+    v = fbm(p);
+    v = smoothstep(.32, .9, v);
+  } else if (uSource == 1){
+    for (int i = 0; i < 8; i++){
+      if (float(i) >= uShpN) break;
+      vec4 s = uShp[i];
+      vec2 c = s.xy + .05 * vec2(sin(uTime * .21 + float(i) * 1.9), cos(uTime * .17 + float(i) * 2.7));
+      vec2 p = q - c;
+      float t = (uShpType == 4) ? mod(s.w, 4.) : float(uShpType);
+      float d;
+      if (t < .5) d = length(p) - s.z;
+      else if (t < 1.5) d = sdBox(p, vec2(s.z));
+      else if (t < 2.5) d = sdBox(vec2(p.x + p.y, p.x - p.y) * .7071, vec2(s.z));
+      else d = abs(length(p) - s.z * .8) - s.z * .28;
+      float f = clamp(-d / (s.z * max(uShpSoft, .001)), 0., 1.);
+      v = max(v, f);
+    }
+  } else if (uSource == 2){
+    float a = uPlusRot; vec2 p = mat2(cos(a), -sin(a), sin(a), cos(a)) * q;
+    float sz = .34, arm = sz * uPlusArm;
+    float d = min(sdBox(p, vec2(sz, arm)), sdBox(p, vec2(arm, sz)));
+    d = max(d, -sdBox(p, vec2(arm * uPlusHole)));
+    v = d < 0. ? 1. : clamp(1. - d / max(uPlusGlow, .001), 0., 1.) * .8;
+  } else {
+    vec2 t = toTex(q);
+    if (inTex(t)){ vec4 s = texture2D(uTex, t); col = s.rgb; v = (uSource == 3) ? s.a : dot(s.rgb, vec3(.299, .587, .114)); }
+    else { col = uBg; v = 0.; }
+  }
+}
+/* box-averaged sample over one cell (for mosaic + crisp tonal) */
+void fieldCell(vec2 centrePx, float cellPx, out float v, out vec3 col){
+  v = 0.; col = vec3(0.);
+  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++){
+    float fv; vec3 fc;
+    field(toField(centrePx + vec2(float(i), float(j)) * cellPx * .3), fv, fc);
+    v += fv; col += fc;
+  }
+  v /= 9.; col /= 9.;
+}
+vec3 ramp(float t){
+  return t < uMidPos ? mix(uC0, uC1, t / max(uMidPos, .001)) : mix(uC1, uC2, (t - uMidPos) / max(1. - uMidPos, .001));
+}
+float tone(float v){
+  v = pow(clamp(v, 0., 1.), uGamma);
+  v = (v - .5) * uContrast + .5;
+  if (uInvert > .5) v = 1. - v;
+  return clamp(v, 0., 1.);
+}
+vec3 grade(vec3 c){
+  float l = dot(c, vec3(.299, .587, .114));
+  c = mix(vec3(l), c, uSat);
+  c = pow(max(c, 0.), vec3(uGamma));
+  c = (c - .5) * uContrast + .5;
+  if (uInvert > .5) c = 1. - c;
+  if (uPoster > 1.5) c = floor(clamp(c, 0., .9999) * uPoster) / (uPoster - 1.);
+  return clamp(c, 0., 1.);
+}
+
+void main(){
+  vec2 px = gl_FragCoord.xy;
+  float cell = uCell;
+  vec2 cid = floor(px / cell);
+  vec2 f = px / cell - cid;              /* 0..1 inside cell */
+
+  /* row shift + scatter: which cell do we sample for this slot */
+  vec2 sid = cid;
+  if (uShift > 0.){
+    float ph = floor(uTime * uShiftRate) ;
+    float r = hash12(vec2(cid.y, ph));
+    if (r < uShift * .5) sid.x += floor((hash12(vec2(cid.y * 3.1, ph)) - .5) * (2. + uShift * 10.));
+  }
+  if (uScatter > 0.001){
+    vec2 h = hash22(cid + 17.) - .5;
+    sid += floor(h * uScatter * 14.);
+  }
+  if (uFlicker > 0.){
+    float ph = floor(uTime * uFlickerRate);
+    if (hash12(cid * 1.7 + ph) < uFlicker * .25){ vec2 h = hash22(cid + ph) - .5; sid += floor(h * 6.); }
+  }
+  vec2 centrePx = (sid + .5) * cell;
+
+  /* cursor mask: is this cell "crisp"? */
+  bool crisp = false;
+  if (uMaskMode > 0){
+    float d = distance((cid + .5) * cell, uMouse) / max(uMaskR, 1.);
+    float p = 1. - smoothstep(1. - uMaskFeather, 1. + uMaskFeather, d);
+    if (uMaskMode == 2) p = 1. - p;
+    crisp = hash12(cid + 3.3) < p;
+  }
+
+  vec3 outc;
+  if (crisp && uSource == 4){
+    float v; vec3 c; field(toField(px), v, c);
+    outc = grade(c);
+  } else {
+    if (crisp){ cell *= .5; cid = floor(px / cell); f = px / cell - cid; sid = cid; centrePx = (sid + .5) * cell; }
+    float v; vec3 c; fieldCell(centrePx, cell, v, c);
+    float tv = tone(v);
+    /* quantise */
+    float steps = max(uSteps, 2.);
+    float dth = (bayer4(cid) - .5) * uDither / steps;
+    float lvl = floor(clamp(tv + dth, 0., .9999) * steps);
+    float t = lvl / (steps - 1.);
+    vec3 blockCol;
+    bool empty = false;
+    if (uMode == 0){
+      blockCol = ramp(t);
+      if (uZeroBg > .5 && lvl < .5) empty = true;
+    } else {
+      vec3 g = grade(c);
+      blockCol = mix(g, ramp(t), uTint);
+      if (uSource < 3){ blockCol = ramp(t); if (uZeroBg > .5 && lvl < .5) empty = true; }
+    }
+    /* block geometry */
+    float size = 1. - uGap / cell;
+    if (uSizeByVal > 0.) size *= mix(1., mix(.15, 1., tv), uSizeByVal);
+    vec2 lp = (f - .5) * 2.;               /* -1..1 */
+    float rad = uRound * size;
+    float d = sdBox(lp, vec2(size - rad)) - rad;
+    float aa = 2. / cell;
+    float inside = 1. - smoothstep(-aa, aa, d);
+    vec3 lineCol = mix(uBg, uLine, uLineA);
+    /* grid line: 1px at the cell edge */
+    float edge = min(min(f.x, 1. - f.x), min(f.y, 1. - f.y)) * cell;
+    float line = 1. - smoothstep(.5, 1.5, edge);
+    vec3 ground = mix(uBg, lineCol, line);
+    outc = empty ? ground : mix(ground, blockCol, inside);
+  }
+  gl_FragColor = vec4(outc, 1.);
+}
+</script>
+<script>
+'use strict';
+/* ============================== settings ============================== */
+const S = {
+  source: 'Noise', mode: 'Tonal', zoom: 1,
+  text: 'STAN',
+  nScale: 3.2, nFlow: 0.6, nDetail: 4, nWarp: 0.6,
+  shpN: 5, shpSoft: 1, shpType: 'Mix',
+  plusArm: 0.34, plusHole: 0.5, plusGlow: 0.25, plusRot: 0,
+  cell: 14, gap: 1, round: 0, sizeByVal: 0, lineA: 0.22, lineColor: '#d8ff43',
+  steps: 4, c0: '#26330a', c1: '#7a9a1e', c2: '#d8ff43', midPos: 0.5, zeroBg: true, dither: 0.5,
+  poster: 0, sat: 1, tint: 0,
+  bg: '#0a0a0b', contrast: 1.1, gamma: 1.9, invert: false,
+  flicker: 0.25, flickerRate: 6, shift: 0, shiftRate: 4,
+  maskMode: 'Reveal', maskR: 180, maskFeather: 0.5, lag: 0.12, idle: true,
+};
+const PRESETS = {
+  'Lab': { ...S },
+  'Protege': {
+    ...S, source: 'Image', mode: 'Tonal', zoom: 1.15,
+    cell: 12, gap: 1, round: 0, lineA: 0.55, lineColor: '#4a1e78',
+    steps: 4, c0: '#2d0b4f', c1: '#8b3ddd', c2: '#d9a8ff', midPos: 0.5, zeroBg: true, dither: 0.6,
+    bg: '#22083b', contrast: 1.4, gamma: 1.1,
+    flicker: 0.15, flickerRate: 4, shift: 0.1, shiftRate: 3,
+    maskMode: 'Reveal', maskR: 220, maskFeather: 0.6,
+  },
+  'Mosaic': {
+    ...S, source: 'Image', mode: 'Mosaic', zoom: 1,
+    cell: 22, gap: 2, round: 0.08, lineA: 0, lineColor: '#ffffff',
+    poster: 0, sat: 1.15, tint: 0, steps: 6, zeroBg: false, dither: 0,
+    bg: '#e9e6e0', contrast: 1.05, gamma: 1,
+    flicker: 0.2, flickerRate: 3, shift: 0,
+    maskMode: 'Pixelate', maskR: 260, maskFeather: 0.7,
+  },
+  'Plus': {
+    ...S, source: 'Plus', mode: 'Tonal',
+    plusArm: 0.34, plusHole: 0.5, plusGlow: 0.3, plusRot: 0,
+    cell: 18, gap: 2, round: 0, lineA: 0.12, lineColor: '#ffffff',
+    steps: 3, c0: '#17181a', c1: '#5d5f66', c2: '#d8ff43', midPos: 0.55, zeroBg: true, dither: 0.7,
+    bg: '#0a0a0b', contrast: 1, gamma: 1,
+    flicker: 0.35, flickerRate: 8, shift: 0.15, shiftRate: 6,
+    maskMode: 'Off',
+  },
+  'Type': {
+    ...S, source: 'Text', text: 'BLOCK', mode: 'Tonal',
+    cell: 10, gap: 1, round: 1, sizeByVal: 1, lineA: 0, lineColor: '#ffffff',
+    steps: 5, c0: '#222222', c1: '#8a8a8a', c2: '#ffffff', midPos: 0.5, zeroBg: true, dither: 0.4,
+    bg: '#000000', contrast: 1, gamma: 0.8,
+    flicker: 0.2, flickerRate: 10, shift: 0.3, shiftRate: 5,
+    maskMode: 'Off',
+  },
+  'Paper': {
+    ...S, source: 'Shapes', shpN: 4, shpSoft: 1, shpType: 'Circle', mode: 'Tonal',
+    cell: 16, gap: 3, round: 1, sizeByVal: 0.6, lineA: 0, lineColor: '#000000',
+    steps: 6, c0: '#efece4', c1: '#b08a5a', c2: '#1c1c1c', midPos: 0.5, zeroBg: true, dither: 0.3,
+    bg: '#efece4', contrast: 1.05, gamma: 1,
+    flicker: 0.05, flickerRate: 2, shift: 0,
+    maskMode: 'Off',
+  },
+};
+const SOURCES = ['Noise', 'Shapes', 'Plus', 'Text', 'Image'];
+const IS_EMBED = document.documentElement.classList.contains('embed');
+const DEMO_IMG = 'data:image/webp;base64,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';
+
+/* ============================== gl ============================== */
+const cvs = document.getElementById('gl');
+const gl = cvs.getContext('webgl', { antialias: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
+const DPR = Math.min(devicePixelRatio || 1, IS_EMBED ? 1 : 2);
+function compile(type, src){ const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const prog = gl.createProgram();
+gl.attachShader(prog, compile(gl.VERTEX_SHADER, 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0., 1.); }'));
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, document.getElementById('fs').textContent));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+const U = {};
+['uRes','uTime','uCell','uGap','uRound','uSizeByVal','uSource','uMode','uMaskMode','uShpType','uTex','uTexAspect','uZoom','uOffset',
+ 'uBg','uLine','uC0','uC1','uC2','uLineA','uMidPos','uSteps','uDither','uContrast','uGamma','uInvert','uZeroBg','uSat','uPoster','uTint',
+ 'uMouse','uMaskR','uMaskFeather','uFlicker','uFlickerRate','uShift','uShiftRate','uScatter','uNScale','uNFlow','uNDetail','uNWarp',
+ 'uShp','uShpN','uShpSoft','uPlusArm','uPlusHole','uPlusGlow','uPlusRot'].forEach(n => U[n] = gl.getUniformLocation(prog, n));
+
+/* texture: 1024² power-of-two canvas, image stretched in, aspect carried separately */
+const TEX = 1024;
+const tcv = document.createElement('canvas'); tcv.width = tcv.height = TEX;
+const tctx = tcv.getContext('2d');
+const tex = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, tex);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+let texAspect = 1.6, userImg = null;
+function uploadTex(){ gl.bindTexture(gl.TEXTURE_2D, tex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tcv); }
+function setImage(img){
+  tctx.clearRect(0, 0, TEX, TEX);
+  tctx.drawImage(img, 0, 0, TEX, TEX);
+  texAspect = img.naturalWidth / img.naturalHeight || 1;
+  uploadTex();
+}
+function drawText(){
+  const W = innerWidth, H = innerHeight;
+  texAspect = W / H;
+  tctx.clearRect(0, 0, TEX, TEX);
+  tctx.save();
+  tctx.scale(TEX / W, TEX / H);
+  const txt = (S.text || ' ').toUpperCase();
+  let fs = H * 0.5;
+  tctx.font = `800 ${fs}px Archivo, system-ui, sans-serif`;
+  const w = tctx.measureText(txt).width;
+  if (w > W * 0.86) { fs *= W * 0.86 / w; tctx.font = `800 ${fs}px Archivo, system-ui, sans-serif`; }
+  tctx.fillStyle = '#fff'; tctx.textAlign = 'center'; tctx.textBaseline = 'middle';
+  tctx.fillText(txt, W / 2, H / 2 + fs * 0.04);
+  tctx.restore();
+  uploadTex();
+}
+const demoImg = new Image();
+demoImg.onload = () => { if (!userImg && S.source === 'Image') setImage(demoImg); };
+demoImg.src = DEMO_IMG;
+function refreshTexture(){
+  if (S.source === 'Text') drawText();
+  else if (S.source === 'Image') { const im = userImg || (demoImg.complete && demoImg.naturalWidth ? demoImg : null); if (im) setImage(im); }
+}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (S.source === 'Text') drawText(); });
+
+/* shapes seed */
+let shapes = new Float32Array(32);
+function seedShapes(){
+  for (let i = 0; i < 8; i++){
+    shapes[i * 4] = (Math.random() - .5) * 1.4;
+    shapes[i * 4 + 1] = (Math.random() - .5) * .9;
+    shapes[i * 4 + 2] = .1 + Math.random() * .26;
+    shapes[i * 4 + 3] = Math.floor(Math.random() * 4);
+  }
+}
+seedShapes();
+
+/* ============================== state / frame ============================== */
+const panel = document.getElementById('panel');
+const hex = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
+const mouse = { x: innerWidth * .5, y: innerHeight * .5, tx: innerWidth * .5, ty: innerHeight * .5, seen: false };
+let scatter = 0, t0 = performance.now();
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let offsetX = 0;
+function layout(){ offsetX = (!IS_EMBED && innerWidth > 720 && !panel.classList.contains('hidden')) ? -160 : 0; }
+function setFg(){
+  const c = hex(S.bg); const lum = .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
+  document.documentElement.style.setProperty('--pagefg', lum > 0.55 ? '#14161a' : '#e6ebf2');
+  document.body.style.background = S.bg;
+}
+function resize(){
+  const w = Math.floor(innerWidth * DPR), h = Math.floor(innerHeight * DPR);
+  if (cvs.width !== w || cvs.height !== h){ cvs.width = w; cvs.height = h; if (S.source === 'Text') drawText(); }
+}
+addEventListener('resize', () => { resize(); layout(); });
+
+function setUniforms(w, h, dpr, time){
+  gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uTime, time);
+  gl.uniform1f(U.uCell, Math.max(2, S.cell * dpr)); gl.uniform1f(U.uGap, S.gap * dpr);
+  gl.uniform1f(U.uRound, S.round); gl.uniform1f(U.uSizeByVal, S.sizeByVal);
+  gl.uniform1i(U.uSource, SOURCES.indexOf(S.source)); gl.uniform1i(U.uMode, S.mode === 'Mosaic' ? 1 : 0);
+  gl.uniform1i(U.uMaskMode, ['Off', 'Reveal', 'Pixelate'].indexOf(S.maskMode));
+  gl.uniform1i(U.uShpType, ['Circle', 'Box', 'Diamond', 'Ring', 'Mix'].indexOf(S.shpType));
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex); gl.uniform1i(U.uTex, 0);
+  gl.uniform1f(U.uTexAspect, texAspect); gl.uniform1f(U.uZoom, S.zoom);
+  gl.uniform2f(U.uOffset, offsetX * dpr * (w / (innerWidth * dpr)), 0);
+  gl.uniform3fv(U.uBg, hex(S.bg)); gl.uniform3fv(U.uLine, hex(S.lineColor));
+  gl.uniform3fv(U.uC0, hex(S.c0)); gl.uniform3fv(U.uC1, hex(S.c1)); gl.uniform3fv(U.uC2, hex(S.c2));
+  gl.uniform1f(U.uLineA, S.lineA); gl.uniform1f(U.uMidPos, S.midPos);
+  gl.uniform1f(U.uSteps, S.steps); gl.uniform1f(U.uDither, S.dither); gl.uniform1f(U.uContrast, S.contrast);
+  gl.uniform1f(U.uGamma, S.gamma); gl.uniform1f(U.uInvert, S.invert ? 1 : 0); gl.uniform1f(U.uZeroBg, S.zeroBg ? 1 : 0);
+  gl.uniform1f(U.uSat, S.sat); gl.uniform1f(U.uPoster, S.poster); gl.uniform1f(U.uTint, S.tint);
+  gl.uniform2f(U.uMouse, mouse.x * dpr, h - mouse.y * dpr);
+  gl.uniform1f(U.uMaskR, S.maskR * dpr); gl.uniform1f(U.uMaskFeather, S.maskFeather);
+  gl.uniform1f(U.uFlicker, reducedMotion ? 0 : S.flicker); gl.uniform1f(U.uFlickerRate, S.flickerRate);
+  gl.uniform1f(U.uShift, reducedMotion ? 0 : S.shift); gl.uniform1f(U.uShiftRate, S.shiftRate); gl.uniform1f(U.uScatter, scatter);
+  gl.uniform1f(U.uNScale, S.nScale); gl.uniform1f(U.uNFlow, reducedMotion ? 0 : S.nFlow); gl.uniform1f(U.uNDetail, S.nDetail); gl.uniform1f(U.uNWarp, S.nWarp);
+  gl.uniform4fv(U.uShp, shapes); gl.uniform1f(U.uShpN, S.shpN); gl.uniform1f(U.uShpSoft, S.shpSoft);
+  gl.uniform1f(U.uPlusArm, S.plusArm); gl.uniform1f(U.uPlusHole, S.plusHole); gl.uniform1f(U.uPlusGlow, S.plusGlow); gl.uniform1f(U.uPlusRot, S.plusRot * Math.PI / 180);
+}
+function frame(now){
+  requestAnimationFrame(frame);
+  resize();
+  const time = (now - t0) / 1000;
+  /* idle cursor when nobody is moving it (always in embed) */
+  if ((S.idle && !mouse.seen) || IS_EMBED){
+    const a = time * .35;
+    mouse.tx = innerWidth * (.5 + .32 * Math.sin(a));
+    mouse.ty = innerHeight * (.5 + .28 * Math.sin(2 * a + 1.2));
+  }
+  mouse.x += (mouse.tx - mouse.x) * (0.04 + S.lag * .6);
+  mouse.y += (mouse.ty - mouse.y) * (0.04 + S.lag * .6);
+  scatter *= .9; if (scatter < .001) scatter = 0;
+  gl.viewport(0, 0, cvs.width, cvs.height);
+  setUniforms(cvs.width, cvs.height, DPR, time);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+let idleTimer;
+addEventListener('pointermove', e => {
+  mouse.tx = e.clientX; mouse.ty = e.clientY; mouse.seen = true;
+  clearTimeout(idleTimer); idleTimer = setTimeout(() => mouse.seen = false, 4000);
+});
+function scatterBurst(){ scatter = 1; }
+
+/* ============================== export ============================== */
+function exportPNG(scale, fixed){
+  const w = fixed ? fixed[0] : Math.floor(innerWidth * scale), h = fixed ? fixed[1] : Math.floor(innerHeight * scale);
+  const dpr = fixed ? fixed[1] / innerHeight : scale;
+  const ow = cvs.width, oh = cvs.height;
+  cvs.width = w; cvs.height = h;
+  if (S.source === 'Text') drawText();
+  gl.viewport(0, 0, w, h);
+  setUniforms(w, h, dpr, (performance.now() - t0) / 1000);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  const url = cvs.toDataURL('image/png');
+  cvs.width = ow; cvs.height = oh;
+  const a = document.createElement('a'); a.href = url; a.download = `block-grid-${w}x${h}.png`; a.click();
+  showToast(`Exported ${w} × ${h}`);
+}
+
+/* ============================== control panel ============================== */
+const ui = {};
+const groupsEl = document.getElementById('groups');
+function slider(key, label, min, max, step, fmt, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'slider-row';
+  const top = document.createElement('div'); top.className = 'top';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const val = document.createElement('span'); val.className = 'val';
+  top.append(lab, val);
+  const input = document.createElement('input');
+  input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = S[key];
+  const refresh = v => { val.textContent = fmt ? fmt(v) : (+v).toFixed(step < 1 ? (step < 0.1 ? (step < 0.01 ? 3 : 2) : 1) : 0); };
+  refresh(S[key]);
+  input.addEventListener('input', () => {
+    S[key] = +input.value; refresh(S[key]); onChange && onChange(S[key]); clearPresetActive();
+  });
+  wrap.append(top, input);
+  ui[key] = { input, refresh };
+  return wrap;
+}
+function colorCtl(key, label, onChange) {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const input = document.createElement('input'); input.type = 'color'; input.value = S[key];
+  input.addEventListener('input', () => { S[key] = input.value; onChange && onChange(S[key]); clearPresetActive(); });
+  row.append(lab, input);
+  ui[key] = { input, refresh: () => {} };
+  return row;
+}
+function toggle(key, label, onChange) {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const sw = document.createElement('span'); sw.className = 'switch';
+  const input = document.createElement('input'); input.type = 'checkbox'; input.checked = S[key];
+  const i = document.createElement('i');
+  sw.append(input, i);
+  input.addEventListener('change', () => { S[key] = input.checked; onChange && onChange(S[key]); clearPresetActive(); });
+  row.append(lab, sw);
+  ui[key] = { input, refresh: () => {} };
+  return row;
+}
+function modes(key, options, onChange, cls) {
+  const wrap = document.createElement('div'); wrap.className = 'modes' + (cls ? ' ' + cls : '');
+  const btns = {};
+  options.forEach(o => {
+    const b = document.createElement('button'); b.textContent = o;
+    b.addEventListener('click', () => { S[key] = o; refresh(); onChange && onChange(o); clearPresetActive(); });
+    wrap.appendChild(b); btns[o] = b;
+  });
+  const refresh = () => Object.keys(btns).forEach(o => btns[o].classList.toggle('active', S[key] === o));
+  refresh();
+  ui[key] = { input: { type: 'modes' }, refresh };
+  return wrap;
+}
+function textCtl(key, onChange) {
+  const input = document.createElement('input'); input.type = 'text'; input.value = S[key]; input.maxLength = 16; input.spellcheck = false;
+  input.addEventListener('input', () => { S[key] = input.value; onChange && onChange(S[key]); clearPresetActive(); });
+  ui[key] = { input, refresh: () => {} };
+  return input;
+}
+function sect(title) { const d = document.createElement('div'); d.className = 'sect'; d.textContent = title; return d; }
+function note(txt) { const p = document.createElement('p'); p.className = 'note'; p.textContent = txt; return p; }
+function buttons(list) {
+  const row = document.createElement('div'); row.className = 'btnrow';
+  list.forEach(([label, fn]) => { const b = document.createElement('button'); b.textContent = label; b.addEventListener('click', fn); row.appendChild(b); });
+  return row;
+}
+function sub(items) { const d = document.createElement('div'); d.className = 'sub'; items.forEach(i => d.appendChild(i)); return d; }
+function group(title, items, open = true) {
+  const det = document.createElement('details'); det.open = open;
+  const sum = document.createElement('summary'); sum.textContent = title;
+  const grp = document.createElement('div'); grp.className = 'grp';
+  items.forEach(i => grp.appendChild(i));
+  det.append(sum, grp);
+  groupsEl.appendChild(det);
+}
+
+const subs = {};
+subs.Noise = sub([sect('Noise'), slider('nScale', 'Scale', 0.5, 8, 0.05), slider('nFlow', 'Flow', 0, 3, 0.05), slider('nDetail', 'Detail', 1, 6, 1), slider('nWarp', 'Warp', 0, 2, 0.02)]);
+subs.Shapes = sub([sect('Shapes'), modes('shpType', ['Circle', 'Box', 'Diamond', 'Ring', 'Mix'], null, 'c5'), slider('shpN', 'Count', 1, 8, 1), slider('shpSoft', 'Gradient', 0.02, 2, 0.02), buttons([['NEW SHAPES', () => { seedShapes(); clearPresetActive(); }]])]);
+subs.Plus = sub([sect('Plus'), slider('plusArm', 'Arm width', 0.15, 0.6, 0.01), slider('plusHole', 'Hole', 0, 0.9, 0.01), slider('plusGlow', 'Halo', 0, 1, 0.01), slider('plusRot', 'Rotate', -90, 90, 1, v => v + '°')]);
+subs.Text = sub([sect('Text'), textCtl('text', drawText)]);
+subs.Image = sub([sect('Image'), note('Drop any image on the canvas or use LOAD IMAGE. Files stay in the browser.')]);
+function showSub(){ Object.keys(subs).forEach(k => subs[k].hidden = k !== S.source); }
+function onSource(){ showSub(); refreshTexture(); }
+group('Source', [
+  modes('source', SOURCES, onSource, 'c5'),
+  slider('zoom', 'Zoom', 0.5, 3, 0.02, v => (+v).toFixed(2) + '×'),
+  subs.Noise, subs.Shapes, subs.Plus, subs.Text, subs.Image,
+]);
+group('Grid', [
+  slider('cell', 'Cell size', 4, 64, 1, v => v + ' px'),
+  slider('gap', 'Gap', 0, 12, 0.5, v => (+v).toFixed(1) + ' px'),
+  slider('round', 'Corner', 0, 1, 0.01),
+  slider('sizeByVal', 'Size by value', 0, 1, 0.01),
+  slider('lineA', 'Grid lines', 0, 1, 0.01),
+  colorCtl('lineColor', 'Line colour'),
+]);
+group('Colour', [
+  modes('mode', ['Tonal', 'Mosaic'], null, 'c2'),
+  colorCtl('bg', 'Background', setFg),
+  sect('Tonal ramp'),
+  slider('steps', 'Steps', 2, 8, 1),
+  colorCtl('c0', 'Low'), colorCtl('c1', 'Mid'), colorCtl('c2', 'High'),
+  slider('midPos', 'Mid position', 0.05, 0.95, 0.01),
+  toggle('zeroBg', 'Lowest step = empty'),
+  slider('dither', 'Dither', 0, 1, 0.01),
+  sect('Mosaic'),
+  slider('poster', 'Posterise', 0, 8, 1, v => v < 2 ? 'off' : v + ' lvl'),
+  slider('sat', 'Saturation', 0, 2, 0.01),
+  slider('tint', 'Tint with ramp', 0, 1, 0.01),
+  sect('Grade'),
+  slider('contrast', 'Contrast', 0.4, 2.5, 0.01),
+  slider('gamma', 'Gamma', 0.3, 2.5, 0.01),
+  toggle('invert', 'Invert'),
+]);
+group('Motion', [
+  slider('flicker', 'Recombine', 0, 1, 0.01),
+  slider('flickerRate', 'Rate', 0.5, 20, 0.5, v => (+v).toFixed(1) + ' Hz'),
+  slider('shift', 'Row shift', 0, 1, 0.01),
+  slider('shiftRate', 'Shift rate', 0.5, 20, 0.5, v => (+v).toFixed(1) + ' Hz'),
+], false);
+group('Cursor', [
+  modes('maskMode', ['Off', 'Reveal', 'Pixelate']),
+  slider('maskR', 'Radius', 40, 600, 2, v => v + ' px'),
+  slider('maskFeather', 'Feather', 0, 1, 0.01),
+  slider('lag', 'Follow', 0.02, 0.6, 0.01),
+  toggle('idle', 'Idle drift when still'),
+], false);
+group('Export', [
+  buttons([['PNG 1×', () => exportPNG(1)], ['PNG 2×', () => exportPNG(2)], ['4K', () => exportPNG(1, [3840, 2160])]]),
+], false);
+showSub();
+
+/* presets */
+const presetsEl = document.getElementById('presets');
+const presetButtons = {};
+Object.keys(PRESETS).forEach(name => {
+  const b = document.createElement('button');
+  b.textContent = name;
+  b.addEventListener('click', () => applyPreset(name));
+  presetsEl.appendChild(b);
+  presetButtons[name] = b;
+});
+function clearPresetActive() { Object.values(presetButtons).forEach(b => b.classList.remove('active')); }
+function refreshUi() {
+  Object.keys(ui).forEach(k => {
+    if (!(k in S)) return;
+    const c = ui[k];
+    if (c.input.type === 'checkbox') c.input.checked = S[k];
+    else if (c.input.type !== 'modes') c.input.value = S[k];
+    c.refresh(S[k]);
+  });
+}
+function applyAll() { showSub(); refreshTexture(); setFg(); }
+function applyPreset(name) {
+  Object.assign(S, PRESETS[name]);
+  refreshUi(); applyAll();
+  clearPresetActive();
+  if (presetButtons[name]) presetButtons[name].classList.add('active');
+}
+
+/* randomise */
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+function hsl(h, s, l) {
+  h = ((h % 360) + 360) % 360; const a = s * Math.min(l, 1 - l);
+  const f = n => { const k = (n + h / 30) % 12; const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(c * 255).toString(16).padStart(2, '0'); };
+  return '#' + f(0) + f(8) + f(4);
+}
+function randomise() {
+  const dark = Math.random() < 0.65;
+  const hue = rnd(0, 360);
+  S.source = pick(['Noise', 'Noise', 'Shapes', 'Plus', 'Text', 'Image']);
+  S.mode = S.source === 'Image' && Math.random() < 0.5 ? 'Mosaic' : 'Tonal';
+  S.zoom = +rnd(0.8, 1.6).toFixed(2);
+  S.nScale = +rnd(1, 4.5).toFixed(2); S.nFlow = +rnd(0.2, 1.4).toFixed(2); S.nDetail = pick([2, 3, 4, 5]); S.nWarp = +rnd(0, 1.2).toFixed(2);
+  S.shpN = pick([2, 3, 4, 5, 7]); S.shpSoft = +pick([0.05, 0.4, 1, 1.5]).toFixed(2); S.shpType = pick(['Circle', 'Box', 'Diamond', 'Ring', 'Mix']); seedShapes();
+  S.plusArm = +rnd(0.22, 0.45).toFixed(2); S.plusHole = +rnd(0.2, 0.7).toFixed(2); S.plusGlow = +rnd(0, 0.5).toFixed(2); S.plusRot = pick([0, 0, 0, 45, Math.round(rnd(-40, 40))]);
+  S.cell = pick([6, 8, 10, 12, 14, 18, 22, 28]); S.gap = +pick([0, 1, 1, 2, 3, 4]).toFixed(1); S.round = pick([0, 0, 0, 0.3, 1]); S.sizeByVal = pick([0, 0, 0, 0.5, 1]);
+  S.lineA = pick([0, 0.15, 0.3, 0.55]); S.steps = pick([2, 3, 3, 4, 4, 5, 6]);
+  S.bg = dark ? hsl(hue, rnd(0.1, 0.6), rnd(0.03, 0.12)) : hsl(hue, rnd(0.05, 0.3), rnd(0.86, 0.96));
+  const h2 = hue + pick([0, 0, 25, -25, 150, 180]);
+  S.c0 = dark ? hsl(hue, rnd(0.3, 0.7), rnd(0.12, 0.25)) : hsl(hue, rnd(0.1, 0.4), rnd(0.7, 0.85));
+  S.c1 = dark ? hsl(h2, rnd(0.5, 0.9), rnd(0.4, 0.55)) : hsl(h2, rnd(0.3, 0.7), rnd(0.4, 0.55));
+  S.c2 = dark ? hsl(h2 + rnd(-15, 15), rnd(0.6, 1), rnd(0.65, 0.85)) : hsl(h2, rnd(0.3, 0.8), rnd(0.08, 0.2));
+  S.lineColor = dark ? S.c2 : S.c2;
+  S.midPos = +rnd(0.35, 0.65).toFixed(2); S.zeroBg = Math.random() < 0.75; S.dither = +pick([0, 0.3, 0.5, 0.8]).toFixed(2);
+  S.poster = pick([0, 0, 4, 6]); S.sat = +rnd(0.8, 1.4).toFixed(2); S.tint = pick([0, 0, 0.3]);
+  S.contrast = +rnd(0.9, 1.5).toFixed(2); S.gamma = +rnd(0.7, 1.3).toFixed(2); S.invert = false;
+  S.flicker = +pick([0, 0.1, 0.25, 0.4]).toFixed(2); S.flickerRate = pick([2, 4, 6, 10]);
+  S.shift = +pick([0, 0, 0.1, 0.3]).toFixed(2); S.shiftRate = pick([2, 4, 6]);
+  S.maskMode = pick(['Off', 'Reveal', 'Reveal', 'Pixelate']); S.maskR = Math.round(rnd(120, 320)); S.maskFeather = +rnd(0.3, 0.8).toFixed(2);
+  refreshUi(); applyAll(); clearPresetActive();
+}
+
+/* load / drop an image */
+const fileIn = document.getElementById('fileIn'), stage = document.getElementById('stage');
+document.getElementById('loadBtn').addEventListener('click', () => fileIn.click());
+fileIn.addEventListener('change', () => fileIn.files[0] && loadFile(fileIn.files[0]));
+function loadFile(f) {
+  const img = new Image();
+  img.onload = () => {
+    userImg = img; S.source = 'Image'; refreshUi(); applyAll(); clearPresetActive();
+    showToast('Image loaded'); URL.revokeObjectURL(img.src);
+  };
+  img.src = URL.createObjectURL(f);
+}
+if (!IS_EMBED) {
+  addEventListener('dragover', e => { e.preventDefault(); stage.classList.add('drop'); });
+  addEventListener('dragleave', e => { if (!e.relatedTarget) stage.classList.remove('drop'); });
+  addEventListener('drop', e => { e.preventDefault(); stage.classList.remove('drop'); const f = e.dataTransfer.files[0]; if (f && f.type.startsWith('image/')) loadFile(f); });
+}
+
+/* panel show/hide, buttons, keys */
+document.getElementById('hideUi').addEventListener('click', () => { panel.classList.add('hidden'); layout(); });
+document.getElementById('toggleUi').addEventListener('click', () => { panel.classList.remove('hidden'); layout(); });
+document.getElementById('randomBtn').addEventListener('click', randomise);
+const toast = document.getElementById('toast');
+function showToast(msg) { toast.textContent = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1800); }
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const json = JSON.stringify(S, null, 2);
+  try { await navigator.clipboard.writeText(json); showToast('Settings copied as JSON'); }
+  catch (e) { console.log(json); showToast('Clipboard blocked — settings logged to console'); }
+});
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { if (e.target.tagName === 'BUTTON') return; e.preventDefault(); scatterBurst(); }
+  else if (e.key === 'r') randomise();
+  else if (e.key === 'h') { panel.classList.toggle('hidden'); layout(); }
+});
+
+/* ============================== boot ============================== */
+const q = new URLSearchParams(location.search);
+const startPreset = q.get('preset') && PRESETS[q.get('preset')] ? q.get('preset') : 'Lab';
+applyPreset(startPreset);
+resize(); layout();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
