@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>004 · Gradient Lab — StanVision Lab</title>
+<meta name="description" content="Generative WebGL gradients that are not boring: mesh, silk, aurora, smoke, swirl and stripes. Tune motion, warp and colour, export a PNG, copy your settings. A StanVision Lab experiment.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ink:#0a0605;
+    --panel:rgba(13,17,23,.86);
+    --line:rgba(148,163,184,.16);
+    --text:#e6ebf2;
+    --mute:#8a94a3;
+    --accent:#d8ff43;
+    --radius:10px;
+  }
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--ink); color:var(--text);
+    font-family:"Archivo",system-ui,-apple-system,sans-serif;
+    overflow:hidden; -webkit-font-smoothing:antialiased;
+  }
+  #stage{position:fixed; inset:0;}
+  #glow{position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    pointer-events:none; border-radius:50%; filter:blur(2px);}
+  canvas{display:block; cursor:grab;}
+  canvas.dragging{cursor:grabbing;}
+
+  header{
+    position:fixed; top:20px; left:24px; z-index:5; pointer-events:none;
+  }
+  header h1{
+    margin:0; font-size:14px; font-weight:600; letter-spacing:.02em;
+  }
+  header p{
+    margin:4px 0 0; font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:11px; letter-spacing:.04em;
+  }
+  header{color:var(--pagefg,#e6ebf2);}
+  header p{opacity:.55;}
+
+  #panel{
+    position:fixed; top:16px; right:16px; bottom:16px; width:288px; z-index:6;
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    display:flex; flex-direction:column; overflow:hidden;
+    transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s;
+  }
+  #panel.hidden{transform:translateX(calc(100% + 24px)); opacity:0; pointer-events:none;}
+  #panel .head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px 12px; border-bottom:1px solid var(--line);
+  }
+  #panel .head span{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--mute);
+  }
+  #panel .body{overflow-y:auto; padding:6px 16px 16px; flex:1; scrollbar-width:thin; scrollbar-color:rgba(148,163,184,.3) transparent;}
+  #panel .body::-webkit-scrollbar{width:6px;}
+  #panel .body::-webkit-scrollbar-thumb{background:rgba(148,163,184,.25); border-radius:3px;}
+
+  .presets{display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:14px 0 4px;}
+  .presets button{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:8px 6px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .presets button:hover{border-color:rgba(148,163,184,.45);}
+  .presets button.active{border-color:var(--accent); background:rgba(216,255,67,.14);}
+
+  details{border-bottom:1px solid var(--line); padding:2px 0;}
+  details:last-of-type{border-bottom:none;}
+  summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+    padding:12px 2px; font-size:12px; font-weight:600; letter-spacing:.02em; user-select:none;
+  }
+  summary::-webkit-details-marker{display:none;}
+  summary::after{content:""; width:7px; height:7px; border-right:1.4px solid var(--mute);
+    border-bottom:1.4px solid var(--mute); transform:rotate(45deg); transition:transform .18s; margin-right:3px;}
+  details[open] summary::after{transform:rotate(-135deg); margin-top:4px;}
+  .grp{padding:0 2px 14px; display:flex; flex-direction:column; gap:11px;}
+
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:22px;}
+  .row label{font-size:12px; color:var(--mute); flex:0 0 auto;}
+  .row .val{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--text);
+    min-width:38px; text-align:right; font-variant-numeric:tabular-nums;
+  }
+  .slider-row{display:flex; flex-direction:column; gap:6px;}
+  .slider-row .top{display:flex; justify-content:space-between; align-items:baseline;}
+  .slider-row .top label{font-size:12px; color:var(--mute);}
+  .slider-row .top .val{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--text);
+    font-variant-numeric:tabular-nums;
+  }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer; margin:0;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
+    background:var(--text); margin-top:-5px; border:none;
+    transition:transform .12s; box-shadow:0 0 0 3px rgba(5,7,11,.6);
+  }
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+  input[type=range]::-moz-range-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-moz-range-thumb{width:12px; height:12px; border-radius:50%; background:var(--text); border:none;}
+
+  input[type=color]{
+    -webkit-appearance:none; appearance:none; width:44px; height:22px; border:1px solid var(--line);
+    border-radius:6px; background:none; padding:0; cursor:pointer;
+  }
+  input[type=color]::-webkit-color-swatch-wrapper{padding:2px;}
+  input[type=color]::-webkit-color-swatch{border:none; border-radius:4px;}
+  input[type=color]::-moz-color-swatch{border:none; border-radius:4px;}
+
+  .switch{position:relative; width:32px; height:18px; flex:0 0 auto;}
+  .switch input{position:absolute; opacity:0; inset:0; margin:0; cursor:pointer;}
+  .switch i{
+    position:absolute; inset:0; border-radius:9px; background:rgba(148,163,184,.25);
+    transition:background .18s; pointer-events:none;
+  }
+  .switch i::after{
+    content:""; position:absolute; left:2px; top:2px; width:14px; height:14px; border-radius:50%;
+    background:var(--text); transition:transform .18s, background .18s;
+  }
+  .switch input:checked + i{background:var(--accent);}
+  .switch input:checked + i::after{transform:translateX(14px); background:#0f1409;}
+
+  .footbar{
+    border-top:1px solid var(--line); padding:12px 16px; display:flex; gap:8px;
+  }
+  .footbar button{
+    flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em;
+    color:#0a0605; background:var(--text); border:none; border-radius:8px; padding:9px 0; cursor:pointer;
+    transition:opacity .15s;
+  }
+  .footbar button:hover{opacity:.85;}
+
+  #toggleUi{
+    position:fixed; top:24px; right:16px; z-index:7; width:34px; height:34px;
+    border-radius:9px; border:1px solid var(--line); background:var(--panel);
+    backdrop-filter:blur(14px); color:var(--mute); cursor:pointer; font-size:15px; line-height:1;
+    display:none; align-items:center; justify-content:center;
+  }
+  #panel.hidden ~ #toggleUi{display:flex;}
+
+  #toast{
+    position:fixed; left:50%; bottom:28px; transform:translate(-50%,12px); z-index:9;
+    background:var(--text); color:#0a0605; font-size:12px; font-weight:500;
+    padding:8px 14px; border-radius:8px; opacity:0; transition:opacity .2s, transform .2s;
+    pointer-events:none;
+  }
+  #toast.show{opacity:1; transform:translate(-50%,0);}
+
+  .hidebtn{background:none; border:none; color:var(--mute); font-size:15px; cursor:pointer; padding:2px 4px; line-height:1;}
+  .hidebtn:hover{color:var(--text);}
+
+  @media (max-width:720px){
+    #panel{top:auto; left:12px; right:12px; bottom:12px; width:auto; max-height:46vh;}
+    #panel.hidden{transform:translateY(calc(100% + 20px));}
+    header{left:16px; top:16px;}
+    #toggleUi{top:auto; bottom:20px;}
+  }
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
+
+  /* lab header conventions */
+  header{pointer-events:none;}
+  header a.lab-back{
+    pointer-events:auto; color:var(--text); text-decoration:none;
+    display:flex; align-items:center; gap:10px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; letter-spacing:.04em;
+  }
+  header a.lab-back .idx{color:#d8ff43;}
+  header a.lab-back:hover .lbl{text-decoration:underline; text-underline-offset:3px;}
+  html.embed header, html.embed #panel, html.embed #toggleUi, html.embed #toast{display:none !important;}
+
+  /* gradient lab additions */
+  :root{--ink:#0a0a0b;}
+  canvas{cursor:default;}
+  #gl{position:fixed; inset:0; width:100%; height:100%; display:block;}
+  .modes{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:0 0 14px;}
+  .modes button{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:8px 4px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .modes button:hover{border-color:rgba(148,163,184,.45);}
+  .modes button.active{border-color:var(--accent); background:rgba(216,255,67,.14);}
+  .sect{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--mute); padding:14px 2px 8px;
+  }
+  .presets{padding-top:0;}
+  .btnrow{display:flex; gap:8px;}
+  .btnrow button{
+    flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:8px 6px; cursor:pointer; transition:border-color .15s;
+  }
+  .btnrow button:hover{border-color:rgba(148,163,184,.45);}
+  .swatches{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  .swatches .sw{display:flex; flex-direction:column; gap:5px; align-items:center;}
+  .swatches .sw input[type=color]{width:100%; height:30px;}
+  .swatches .sw label{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10px; color:var(--mute); letter-spacing:.06em;}
+  .seg{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .seg button{
+    flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--mute);
+    background:none; border:none; border-right:1px solid var(--line); padding:6px 0; cursor:pointer;
+  }
+  .seg button:last-child{border-right:none;}
+  .seg button.active{color:var(--text); background:rgba(148,163,184,.14);}
+  .footbar button.secondary{background:rgba(148,163,184,.12); color:var(--text); border:1px solid var(--line);}
+  html.embed #gl{cursor:default;}
+</style>
+</head>
+<body>
+<script>if(location.search.indexOf('embed')>-1)document.documentElement.classList.add('embed');</script>
+<canvas id="gl"></canvas>
+
+<header>
+  <a class="lab-back" href="/"><span class="idx">004</span><span class="lbl">Gradient Lab</span></a>
+  <p>StanVision Lab — WebGL / GLSL</p>
+</header>
+
+<aside id="panel">
+  <div class="head">
+    <span>Controls</span>
+    <button class="hidebtn" id="hideUi" title="Hide panel" aria-label="Hide panel">&times;</button>
+  </div>
+  <div class="body">
+    <div class="sect">Type</div>
+    <div class="modes" id="modes"></div>
+    <div class="sect" style="padding-top:2px">Presets</div>
+    <div class="presets" id="presets"></div>
+    <div id="groups"></div>
+  </div>
+  <div class="footbar">
+    <button id="copyBtn" class="secondary">COPY SETTINGS</button>
+    <button id="pngBtn">EXPORT PNG</button>
+  </div>
+</aside>
+<button id="toggleUi" title="Show controls" aria-label="Show controls">☰</button>
+
+<div id="toast">Copied to clipboard</div>
+
+<script id="frag" type="x-shader/x-fragment">
+precision highp float;
+uniform vec2  uRes;
+uniform float uTime;
+uniform int   uMode;
+uniform vec3  uC0, uC1, uC2, uC3, uBg;
+uniform float uScale, uWarp, uDetail, uSoft, uContrast, uAngle, uGrain, uVignette, uSeed, uBlend;
+uniform vec2  uMouse;
+uniform float uMouseStr;
+
+/* ---- simplex noise (Ashima / Ian McEwan) ---- */
+vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+float snoise(vec3 v){
+  const vec2 C=vec2(1.0/6.0,1.0/3.0); const vec4 D=vec4(0.0,0.5,1.0,2.0);
+  vec3 i=floor(v+dot(v,C.yyy)); vec3 x0=v-i+dot(i,C.xxx);
+  vec3 g=step(x0.yzx,x0.xyz); vec3 l=1.0-g; vec3 i1=min(g.xyz,l.zxy); vec3 i2=max(g.xyz,l.zxy);
+  vec3 x1=x0-i1+C.xxx; vec3 x2=x0-i2+C.yyy; vec3 x3=x0-D.yyy;
+  i=mod289(i);
+  vec4 p=permute(permute(permute(i.z+vec4(0.0,i1.z,i2.z,1.0))+i.y+vec4(0.0,i1.y,i2.y,1.0))+i.x+vec4(0.0,i1.x,i2.x,1.0));
+  float n_=0.142857142857; vec3 ns=n_*D.wyz-D.xzx;
+  vec4 j=p-49.0*floor(p*ns.z*ns.z); vec4 x_=floor(j*ns.z); vec4 y_=floor(j-7.0*x_);
+  vec4 x=x_*ns.x+ns.yyyy; vec4 y=y_*ns.x+ns.yyyy; vec4 h=1.0-abs(x)-abs(y);
+  vec4 b0=vec4(x.xy,y.xy); vec4 b1=vec4(x.zw,y.zw);
+  vec4 s0=floor(b0)*2.0+1.0; vec4 s1=floor(b1)*2.0+1.0; vec4 sh=-step(h,vec4(0.0));
+  vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy; vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+  vec3 p0=vec3(a0.xy,h.x); vec3 p1=vec3(a0.zw,h.y); vec3 p2=vec3(a1.xy,h.z); vec3 p3=vec3(a1.zw,h.w);
+  vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+  p0*=norm.x; p1*=norm.y; p2*=norm.z; p3*=norm.w;
+  vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0); m=m*m;
+  return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+}
+float fbm(vec2 p, float t){
+  float v=0.0, a=0.5, tot=0.0;
+  mat2 R=mat2(0.8,0.6,-0.6,0.8);
+  for(int i=0;i<6;i++){
+    if(float(i)>=uDetail) break;
+    v+=a*snoise(vec3(p,t)); tot+=a;
+    p=R*p*2.02+vec2(1.7,9.2); a*=0.5; t*=1.15;
+  }
+  return v/max(tot,0.001);
+}
+float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+float qs(float t){return t*t*t*(t*(6.0*t-15.0)+10.0);}
+float tri(float x){return 1.0-abs(fract(x)*2.0-1.0);}
+
+/* 4-stop palette, blended in (approx) linear light. uBlend widens/narrows the crossfades. */
+vec3 stop(int i){ return i==0?uC0:(i==1?uC1:(i==2?uC2:uC3)); }
+vec3 palette(float t){
+  t=clamp(t,0.0,1.0);
+  float s=t*3.0;
+  float w=mix(0.15,1.0,uBlend);
+  vec3 col=uC0;
+  for(int i=0;i<3;i++){
+    float f=clamp((s-float(i)-(0.5-w*0.5))/w,0.0,1.0);
+    f=qs(f);
+    col=mix(col,stop(i+1),f*step(float(i),s));
+  }
+  return col;
+}
+
+/* ---------------- modes ---------------- */
+vec3 modeMesh(vec2 p,float t){
+  vec2 base[4];
+  base[0]=vec2(-0.55,-0.40); base[1]=vec2(0.55,-0.50); base[2]=vec2(0.48,0.48); base[3]=vec2(-0.50,0.42);
+  float sig=mix(0.12,0.9,uSoft)*uScale;
+  vec2 q=p+uWarp*0.35*vec2(fbm(p*1.3+uSeed,t*0.6),fbm(p*1.3+uSeed+5.0,t*0.6+3.0));
+  vec3 acc=vec3(0.0); float wsum=0.0;
+  for(int i=0;i<4;i++){
+    float fi=float(i);
+    vec2 pos=base[i]*uScale+0.32*vec2(snoise(vec3(fi*7.1+uSeed,3.3,t*0.25)),snoise(vec3(fi*7.1+uSeed+11.0,9.7,t*0.25+2.0)));
+    float d=length(q-pos);
+    float w=exp(-d*d/(sig*sig));
+    acc+=w*stop(i); wsum+=w;
+  }
+  vec3 col=acc/max(wsum,1e-4);
+  float cov=1.0-exp(-wsum*1.6);
+  return mix(uBg,col,cov);
+}
+vec3 modeSilk(vec2 p,float t){
+  /* Harri-style: two blurred wave boundaries mixing three lightness fields, then mapped to the palette */
+  float freq=1.4*uScale;
+  float w1=0.0, w2=0.0;
+  w1+=0.28*snoise(vec3(p.x*freq*0.5+uSeed, t*0.20, 1.0));
+  w1+=0.14*snoise(vec3(p.x*freq*1.1+uSeed, t*0.32, 7.0));
+  w1+=0.06*snoise(vec3(p.x*freq*2.3+uSeed, t*0.45, 3.0));
+  w2+=0.28*snoise(vec3(p.x*freq*0.5+uSeed+40.0, t*0.18, 12.0));
+  w2+=0.14*snoise(vec3(p.x*freq*1.2+uSeed+40.0, t*0.30, 5.0));
+  w2+=0.06*snoise(vec3(p.x*freq*2.4+uSeed+40.0, t*0.50, 9.0));
+  float y1=-0.22+w1*uWarp*1.6, y2=0.22+w2*uWarp*1.6;
+  float blur=mix(0.02,0.9,uSoft);
+  float a1=qs(clamp((p.y-y1)/blur+0.5,0.0,1.0));
+  float a2=qs(clamp((p.y-y2)/blur+0.5,0.0,1.0));
+  float l0=0.5+0.5*fbm(p*1.2*uScale+uSeed,t*0.35);
+  float l1=0.5+0.5*fbm(p*1.2*uScale+uSeed+20.0,t*0.35+11.0);
+  float l2=0.5+0.5*fbm(p*1.2*uScale+uSeed+50.0,t*0.35+23.0);
+  float l=mix(mix(l0,l1,a1),l2,a2);
+  /* bias by wave index so each band leans to a different part of the palette */
+  float band=mix(mix(0.0,0.5,a1),1.0,a2);
+  float v=clamp(band*0.55+l*0.45,0.0,1.0);
+  return palette(v);
+}
+vec3 modeAurora(vec2 p,float t){
+  vec2 q=vec2(p.x*0.7*uScale, p.y*0.18*uScale);
+  float sway=uWarp*0.6*fbm(vec2(p.y*0.8,t*0.15)+uSeed,t*0.1);
+  q.x+=sway;
+  float n=fbm(q*2.2+uSeed, t*0.28);
+  float m=fbm(q*5.0+uSeed+30.0, t*0.5);
+  float band=n*0.7+m*0.3;
+  float curtain=smoothstep(-0.1,0.35,band);
+  curtain=pow(curtain,mix(2.5,0.8,uSoft));
+  /* vertical falloff: brighter high, fading low */
+  float vert=smoothstep(-0.95,0.15,p.y)*smoothstep(1.0,0.2,p.y);
+  float inten=curtain*vert;
+  float v=clamp(0.5+0.5*n+0.25*m+(p.y*0.25),0.0,1.0);
+  vec3 col=palette(v);
+  return mix(uBg,col,clamp(inten*1.4,0.0,1.0));
+}
+vec3 modeSmoke(vec2 p,float t){
+  vec2 q=vec2(fbm(p*uScale+uSeed,t*0.3),fbm(p*uScale+vec2(5.2,1.3)+uSeed,t*0.3+7.0));
+  vec2 r=vec2(fbm(p*uScale+2.6*q*uWarp+vec2(1.7,9.2)+uSeed,t*0.4+2.0),fbm(p*uScale+2.6*q*uWarp+vec2(8.3,2.8)+uSeed,t*0.4+5.0));
+  float f=fbm(p*uScale+2.6*r*uWarp,t*0.2);
+  float v=0.5+0.5*f;
+  v=mix(v,qs(v),1.0-uSoft);
+  return palette(v);
+}
+vec3 modeSwirl(vec2 p,float t){
+  float r=length(p);
+  float a=atan(p.y,p.x)/6.2831853;
+  float twist=(uWarp*2.2)*r*uScale;
+  float n=uWarp*0.6*fbm(p*1.5*uScale+uSeed,t*0.35);
+  float x=a*max(1.0,floor(uScale*2.0+0.5))+twist+n+t*0.05;
+  float v=tri(x);
+  v=mix(v,qs(v),1.0-uSoft);
+  float core=smoothstep(0.0,0.35,r);
+  return mix(palette(0.5+0.5*fbm(p*2.0+uSeed,t*0.4)),palette(v),core);
+}
+vec3 modeStripes(vec2 p,float t){
+  float n=fbm(p*1.1*uScale+uSeed,t*0.35);
+  float x=p.y*1.5*uScale+uWarp*1.4*n+t*0.04;
+  float v=tri(x);
+  float k=mix(0.06,1.0,uSoft);
+  v=smoothstep(0.5-k*0.5,0.5+k*0.5,v);
+  return palette(v);
+}
+
+void main(){
+  vec2 uv=gl_FragCoord.xy/uRes;
+  float asp=uRes.x/uRes.y;
+  vec2 p=(uv-0.5)*vec2(asp,1.0)*2.0;
+  /* cursor push */
+  vec2 m=(uMouse-0.5)*vec2(asp,1.0)*2.0;
+  vec2 dm=p-m; float dd=dot(dm,dm);
+  p+=dm*uMouseStr*0.55*exp(-dd*2.2);
+  /* rotate */
+  float ca=cos(uAngle), sa=sin(uAngle);
+  p=mat2(ca,-sa,sa,ca)*p;
+  float t=uTime;
+  vec3 col;
+  if(uMode==0) col=modeMesh(p,t);
+  else if(uMode==1) col=modeSilk(p,t);
+  else if(uMode==2) col=modeAurora(p,t);
+  else if(uMode==3) col=modeSmoke(p,t);
+  else if(uMode==4) col=modeSwirl(p,t);
+  else col=modeStripes(p,t);
+  /* to sRGB, contrast, vignette, grain */
+  col=pow(max(col,0.0),vec3(1.0/2.2));
+  col=(col-0.5)*uContrast+0.5;
+  float vg=1.0-uVignette*smoothstep(0.35,1.6,length((uv-0.5)*vec2(asp,1.0)*2.0));
+  col*=vg;
+  float g=hash(gl_FragCoord.xy+fract(uTime)*17.0)-0.5;
+  col+=g*uGrain*0.18;
+  gl_FragColor=vec4(clamp(col,0.0,1.0),1.0);
+}
+</script>
+<script>
+/* ============================== state ============================== */
+const MODES = ['Mesh','Silk','Aurora','Smoke','Swirl','Stripes'];
+const PRESETS = {
+  'Dusk':     { mode:0, c0:'#ff7a59', c1:'#ffb86b', c2:'#7a5cff', c3:'#2e1a47', bg:'#14101f', speed:0.35, scale:1.0, warp:0.6, detail:3, soft:0.55, contrast:1.05, angle:0, grain:0.25, vignette:0.3, blend:0.6, mouse:0.5 },
+  'Silk':     { mode:1, c0:'#f5e6d3', c1:'#e8b4a0', c2:'#9c8fd9', c3:'#3b2f5e', bg:'#1a1530', speed:0.3, scale:0.8, warp:0.5, detail:2, soft:0.4, contrast:1.0, angle:0, grain:0.2, vignette:0.15, blend:0.7, mouse:0.4 },
+  'Borealis': { mode:2, c0:'#35ffc3', c1:'#4d8cff', c2:'#b14dff', c3:'#0a2a3a', bg:'#030a12', speed:0.45, scale:1.0, warp:0.6, detail:4, soft:0.5, contrast:1.1, angle:0, grain:0.3, vignette:0.25, blend:0.8, mouse:0.3 },
+  'Smoke':    { mode:3, c0:'#ffffff', c1:'#a0a0a8', c2:'#3a3a44', c3:'#0b0b0e', bg:'#0b0b0e', speed:0.25, scale:0.6, warp:0.5, detail:2, soft:1.0, contrast:1.15, angle:0, grain:0.35, vignette:0.35, blend:1.0, mouse:0.6 },
+  'Candy':    { mode:4, c0:'#ff4d6d', c1:'#ffd166', c2:'#06d6a0', c3:'#118ab2', bg:'#0a0a0b', speed:0.4, scale:1.2, warp:0.45, detail:2, soft:0.9, contrast:1.0, angle:0, grain:0.15, vignette:0.2, blend:1.0, mouse:0.5 },
+  'Lab':      { mode:5, c0:'#ff4d00', c1:'#ff9a5c', c2:'#2a1208', c3:'#0a0a0b', bg:'#0a0a0b', speed:0.3, scale:1.0, warp:0.55, detail:2, soft:0.85, contrast:1.05, angle:-0.35, grain:0.3, vignette:0.2, blend:0.7, mouse:0.5 },
+};
+const S = Object.assign({}, PRESETS['Dusk']);
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const embed = document.documentElement.classList.contains('embed');
+
+/* ============================== gl ============================== */
+const cvs = document.getElementById('gl');
+const gl = cvs.getContext('webgl', { antialias:false, alpha:false, preserveDrawingBuffer:true, powerPreference:'high-performance' });
+if (!gl) { document.body.insertAdjacentHTML('beforeend','<p style="position:fixed;inset:0;display:grid;place-items:center;font:14px Archivo">WebGL is not available in this browser.</p>'); throw new Error('no webgl'); }
+
+function compile(type, src){
+  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(s)); throw new Error('shader'); }
+  return s;
+}
+const prog = gl.createProgram();
+gl.attachShader(prog, compile(gl.VERTEX_SHADER, 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}'));
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, document.getElementById('frag').textContent));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(prog)); throw new Error('link'); }
+gl.useProgram(prog);
+const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+const aLoc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(aLoc); gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
+const U = {};
+['uRes','uTime','uMode','uC0','uC1','uC2','uC3','uBg','uScale','uWarp','uDetail','uSoft','uContrast','uAngle','uGrain','uVignette','uSeed','uBlend','uMouse','uMouseStr']
+  .forEach(n => U[n] = gl.getUniformLocation(prog, n));
+
+function hexLin(h){ const n = parseInt(h.slice(1),16); return [((n>>16)&255)/255, ((n>>8)&255)/255, (n&255)/255].map(c => Math.pow(c, 2.2)); }
+let seed = 0;
+function pushUniforms(){
+  gl.uniform1i(U.uMode, S.mode);
+  gl.uniform3fv(U.uC0, hexLin(S.c0)); gl.uniform3fv(U.uC1, hexLin(S.c1));
+  gl.uniform3fv(U.uC2, hexLin(S.c2)); gl.uniform3fv(U.uC3, hexLin(S.c3));
+  gl.uniform3fv(U.uBg, hexLin(S.bg));
+  gl.uniform1f(U.uScale, S.scale); gl.uniform1f(U.uWarp, S.warp); gl.uniform1f(U.uDetail, S.detail);
+  gl.uniform1f(U.uSoft, S.soft); gl.uniform1f(U.uContrast, S.contrast); gl.uniform1f(U.uAngle, S.angle);
+  gl.uniform1f(U.uGrain, S.grain); gl.uniform1f(U.uVignette, S.vignette); gl.uniform1f(U.uSeed, seed);
+  gl.uniform1f(U.uBlend, S.blend);
+  document.body.style.background = S.bg;
+  const [r,g,b] = hexLin(S.bg); const lum = 0.2126*r + 0.7152*g + 0.0722*b;
+  document.documentElement.style.setProperty('--pagefg', lum > 0.25 ? '#14161a' : '#e6ebf2');
+}
+
+let W = 0, H = 0, dpr = 1;
+function resize(){
+  dpr = Math.min(devicePixelRatio || 1, embed ? 1 : 2);
+  W = Math.floor(innerWidth * dpr); H = Math.floor(innerHeight * dpr);
+  cvs.width = W; cvs.height = H; gl.viewport(0, 0, W, H);
+}
+addEventListener('resize', resize); resize();
+
+/* mouse */
+const mouse = { x:0.5, y:0.5, tx:0.5, ty:0.5, str:0, tstr:0 };
+addEventListener('pointermove', e => { mouse.tx = e.clientX / innerWidth; mouse.ty = 1 - e.clientY / innerHeight; mouse.tstr = 1; });
+document.addEventListener('pointerleave', () => { mouse.tstr = 0; });
+document.addEventListener('pointerenter', () => { mouse.tstr = 1; });
+
+let time = 0, last = performance.now();
+function draw(now){
+  const dt = Math.min((now - last) / 1000, 0.1); last = now;
+  if (!reducedMotion) time += dt * S.speed;
+  mouse.x += (mouse.tx - mouse.x) * 0.06; mouse.y += (mouse.ty - mouse.y) * 0.06; mouse.str += (mouse.tstr - mouse.str) * 0.05;
+  gl.uniform2f(U.uRes, W, H); gl.uniform1f(U.uTime, time);
+  gl.uniform2f(U.uMouse, mouse.x, mouse.y); gl.uniform1f(U.uMouseStr, embed ? 0 : S.mouse * mouse.str);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  requestAnimationFrame(draw);
+}
+pushUniforms(); requestAnimationFrame(draw);
+
+/* ============================== control panel ============================== */
+const ui = {};
+const groupsEl = document.getElementById('groups');
+
+function slider(key, label, min, max, step, fmt, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'slider-row';
+  const top = document.createElement('div'); top.className = 'top';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const val = document.createElement('span'); val.className = 'val';
+  top.append(lab, val);
+  const input = document.createElement('input');
+  input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = S[key];
+  const refresh = v => { val.textContent = fmt ? fmt(v) : (+v).toFixed(step < 1 ? (step < 0.1 ? 2 : 1) : 0); };
+  refresh(S[key]);
+  input.addEventListener('input', () => {
+    S[key] = +input.value; refresh(S[key]); onChange && onChange(S[key]); clearPresetActive();
+  });
+  wrap.append(top, input);
+  ui[key] = { input, refresh };
+  return wrap;
+}
+function colorCtl(key, label, onChange) {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const input = document.createElement('input'); input.type = 'color'; input.value = S[key];
+  input.addEventListener('input', () => { S[key] = input.value; onChange && onChange(S[key]); clearPresetActive(); });
+  row.append(lab, input);
+  ui[key] = { input, refresh: () => {} };
+  return row;
+}
+function swatches(keys, onChange) {
+  const grid = document.createElement('div'); grid.className = 'swatches';
+  keys.forEach((key, i) => {
+    const sw = document.createElement('div'); sw.className = 'sw';
+    const input = document.createElement('input'); input.type = 'color'; input.value = S[key];
+    const lab = document.createElement('label'); lab.textContent = '0' + (i + 1);
+    input.addEventListener('input', () => { S[key] = input.value; onChange && onChange(S[key]); clearPresetActive(); });
+    sw.append(input, lab); grid.appendChild(sw);
+    ui[key] = { input, refresh: () => {} };
+  });
+  return grid;
+}
+function buttons(list) {
+  const row = document.createElement('div'); row.className = 'btnrow';
+  list.forEach(([label, fn]) => {
+    const b = document.createElement('button'); b.textContent = label; b.addEventListener('click', fn); row.appendChild(b);
+  });
+  return row;
+}
+function group(title, items, open = true) {
+  const det = document.createElement('details'); det.open = open;
+  const sum = document.createElement('summary'); sum.textContent = title;
+  const grp = document.createElement('div'); grp.className = 'grp';
+  items.forEach(i => grp.appendChild(i));
+  det.append(sum, grp);
+  groupsEl.appendChild(det);
+}
+
+/* palette helpers */
+function hsl(h, s, l) {
+  h = ((h % 360) + 360) % 360; s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return '#' + [f(0), f(8), f(4)].map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join('');
+}
+function shuffleColors() {
+  const h = Math.random() * 360;
+  const schemes = [
+    [0, 30, 200, 230],       // warm pair + cool pair
+    [0, 40, 80, 120],        // analogous sweep
+    [0, 180, 20, 200],       // complementary
+    [0, 120, 240, 0],        // triad
+  ];
+  const sc = schemes[Math.floor(Math.random() * schemes.length)];
+  const dark = Math.random() < 0.7;
+  S.c0 = hsl(h + sc[0], 75 + Math.random() * 20, 62);
+  S.c1 = hsl(h + sc[1], 70 + Math.random() * 25, 55);
+  S.c2 = hsl(h + sc[2], 60 + Math.random() * 30, dark ? 42 : 70);
+  S.c3 = hsl(h + sc[3], 50 + Math.random() * 30, dark ? 16 : 85);
+  S.bg = dark ? hsl(h + sc[3], 35, 6) : hsl(h + sc[0], 30, 94);
+  syncUi(); pushUniforms(); clearPresetActive();
+}
+function reseed() { seed = Math.random() * 100; pushUniforms(); }
+function randomize() {
+  S.mode = Math.floor(Math.random() * MODES.length);
+  S.scale = +(0.7 + Math.random() * 1.3).toFixed(2);
+  S.warp = +(0.2 + Math.random() * 0.8).toFixed(2);
+  S.soft = +(0.2 + Math.random() * 0.7).toFixed(2);
+  S.detail = 2 + Math.floor(Math.random() * 4);
+  S.blend = +(0.4 + Math.random() * 0.6).toFixed(2);
+  S.angle = +((Math.random() - 0.5) * 1.2).toFixed(2);
+  seed = Math.random() * 100;
+  shuffleColors(); setModeActive();
+}
+
+/* modes */
+const modesEl = document.getElementById('modes');
+const modeButtons = MODES.map((name, i) => {
+  const b = document.createElement('button'); b.textContent = name;
+  b.addEventListener('click', () => { S.mode = i; setModeActive(); pushUniforms(); clearPresetActive(); });
+  modesEl.appendChild(b); return b;
+});
+function setModeActive() { modeButtons.forEach((b, i) => b.classList.toggle('active', i === S.mode)); }
+
+/* groups */
+group('Colours', [
+  swatches(['c0','c1','c2','c3'], pushUniforms),
+  colorCtl('bg', 'Background', pushUniforms),
+  slider('blend', 'Crossfade', 0, 1, 0.01, null, pushUniforms),
+  buttons([['SHUFFLE COLOURS', shuffleColors], ['NEW SEED', reseed]]),
+]);
+group('Form', [
+  slider('scale', 'Scale', 0.4, 2.5, 0.05, null, pushUniforms),
+  slider('warp', 'Warp', 0, 1.5, 0.01, null, pushUniforms),
+  slider('detail', 'Detail', 1, 6, 1, v => v + ' oct', pushUniforms),
+  slider('soft', 'Softness', 0, 1, 0.01, null, pushUniforms),
+  slider('angle', 'Rotation', -3.14, 3.14, 0.01, v => Math.round(v * 57.2958) + '°', pushUniforms),
+]);
+group('Motion', [
+  slider('speed', 'Speed', 0, 1.5, 0.01),
+  slider('mouse', 'Cursor push', 0, 1, 0.01),
+]);
+group('Finish', [
+  slider('contrast', 'Contrast', 0.6, 1.6, 0.01, null, pushUniforms),
+  slider('grain', 'Grain', 0, 1, 0.01, null, pushUniforms),
+  slider('vignette', 'Vignette', 0, 1, 0.01, null, pushUniforms),
+], false);
+var exportScale = 1;
+group('Export', [
+  (() => {
+    const row = document.createElement('div'); row.className = 'row';
+    const lab = document.createElement('label'); lab.textContent = 'PNG size';
+    const seg = document.createElement('div'); seg.className = 'seg';
+    [['1×',1],['2×',2],['4K',0]].forEach(([l, v]) => {
+      const b = document.createElement('button'); b.textContent = l; b.dataset.v = v;
+      b.classList.toggle('active', v === exportScale);
+      b.addEventListener('click', () => { exportScale = v; [...seg.children].forEach(c => c.classList.toggle('active', c === b)); });
+      seg.appendChild(b);
+    });
+    row.append(lab, seg); return row;
+  })(),
+  buttons([['SURPRISE ME', randomize]]),
+], false);
+
+function syncUi() {
+  Object.keys(ui).forEach(k => {
+    if (!(k in S)) return;
+    const c = ui[k];
+    if (c.input.type === 'checkbox') c.input.checked = S[k]; else c.input.value = S[k];
+    c.refresh(S[k]);
+  });
+}
+
+/* presets */
+const presetsEl = document.getElementById('presets');
+const presetButtons = {};
+Object.keys(PRESETS).forEach(name => {
+  const b = document.createElement('button');
+  b.textContent = name;
+  b.addEventListener('click', () => applyPreset(name));
+  presetsEl.appendChild(b);
+  presetButtons[name] = b;
+});
+function clearPresetActive() { Object.values(presetButtons).forEach(b => b.classList.remove('active')); }
+function applyPreset(name) {
+  Object.assign(S, PRESETS[name]);
+  syncUi(); setModeActive(); pushUniforms();
+  clearPresetActive(); presetButtons[name].classList.add('active');
+}
+setModeActive();
+presetButtons['Dusk'].classList.add('active');
+
+/* embed: pick a preset from the query, e.g. ?embed&preset=Borealis */
+const qp = new URLSearchParams(location.search).get('preset');
+if (qp && PRESETS[qp]) applyPreset(qp);
+
+/* panel show/hide */
+const panel = document.getElementById('panel');
+document.getElementById('hideUi').addEventListener('click', () => panel.classList.add('hidden'));
+document.getElementById('toggleUi').addEventListener('click', () => panel.classList.remove('hidden'));
+
+/* toast */
+const toast = document.getElementById('toast');
+function say(msg) { toast.textContent = msg; toast.classList.add('show'); clearTimeout(say.t); say.t = setTimeout(() => toast.classList.remove('show'), 1800); }
+
+/* copy settings */
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const json = JSON.stringify(Object.assign({}, S, { modeName: MODES[S.mode], seed: +seed.toFixed(3) }), null, 2);
+  try { await navigator.clipboard.writeText(json); say('Settings copied as JSON'); }
+  catch (e) { console.log(json); say('Clipboard blocked — settings logged to console'); }
+});
+
+/* export png */
+document.getElementById('pngBtn').addEventListener('click', () => {
+  const ow = cvs.width, oh = cvs.height;
+  let w, h;
+  if (exportScale === 0) { w = 3840; h = Math.round(3840 * innerHeight / innerWidth); }
+  else { w = Math.floor(innerWidth * exportScale); h = Math.floor(innerHeight * exportScale); }
+  const max = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+  if (w > max || h > max) { const k = max / Math.max(w, h); w = Math.floor(w * k); h = Math.floor(h * k); }
+  cvs.width = w; cvs.height = h; gl.viewport(0, 0, w, h);
+  gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uTime, time);
+  gl.uniform2f(U.uMouse, mouse.x, mouse.y); gl.uniform1f(U.uMouseStr, S.mouse * mouse.str);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  cvs.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `gradient-${MODES[S.mode].toLowerCase()}-${w}x${h}.png`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    say(`Exported ${w}×${h} PNG`);
+    cvs.width = ow; cvs.height = oh; gl.viewport(0, 0, ow, oh);
+  }, 'image/png');
+});
+
+/* keyboard: space = random, s = shuffle colours, h = hide panel */
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); randomize(); }
+  if (e.key === 's') shuffleColors();
+  if (e.key === 'h') panel.classList.toggle('hidden');
+});
+</script>
+</body>
+</html>
