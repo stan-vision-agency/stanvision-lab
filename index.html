@@ -9,7 +9,7 @@
 <meta property="og:description" content="Interactive experiments in motion, light and interface.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#080809;
@@ -25,7 +25,7 @@
   html{scroll-behavior:smooth}
   body{
     background:var(--bg); color:var(--ink);
-    font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:16px; line-height:1.55;
+    font-family:'Inter',system-ui,sans-serif; font-size:16px; line-height:1.55;
     font-weight:400; -webkit-font-smoothing:antialiased;
   }
   ::selection{background:var(--accent);color:#080809}
@@ -222,14 +222,13 @@
 
 <script>
 /* ---------- experiments index ----------
-   To add an experiment: drop its folder in /e/<slug>/
-   (the page must support ?embed to hide its UI),
-   and push one object to this array. Curated order (Stan decides).
+   To add an experiment: create <slug>.html (it must support ?embed to hide its UI)
+   and add one object to this array. Order of the array = order on the page.
+   Numbers are assigned automatically below — never hardcode them.
    Cards render the experiment itself, live, in a scaled iframe. */
 const EXPERIMENTS = [
   {
     slug: 'glass-plus',
-    num: '005',
     title: 'Glass Plus',
     date: '2026-09',
     desc: 'The StanVision + as a glass object you light with the cursor. Blender render, runtime normal map, studio sheen and a lime lamp that follows the pointer. One WebGL fragment shader.',
@@ -237,7 +236,6 @@ const EXPERIMENTS = [
   },
   {
     slug: 'dotted-planet',
-    num: '002',
     title: 'Dotted Planet',
     date: '2026-09',
     desc: 'A planet built from thousands of dots. Drag to orbit, switch presets, tune density, glow and atmosphere, copy your settings.',
@@ -245,7 +243,6 @@ const EXPERIMENTS = [
   },
   {
     slug: 'air-type',
-    num: '003',
     title: 'Air Type',
     date: '2026-09',
     desc: 'A wordmark rasterised into a grid of squares that disperse like air around the cursor. Type your own word, tune the physics, copy your settings.',
@@ -253,7 +250,6 @@ const EXPERIMENTS = [
   },
   {
     slug: 'wave-grid',
-    num: '006',
     title: 'Wave Grid',
     date: '2026-09',
     desc: 'A field of instanced columns that ripple outward from the cursor. Waves lift, tilt and swell the blocks; tune physics, light, colour and post, copy your settings.',
@@ -261,7 +257,6 @@ const EXPERIMENTS = [
   },
   {
     slug: 'gradient-lab',
-    num: '004',
     title: 'Gradient Lab',
     date: '2026-09',
     desc: 'Gradients that are not boring. Six GLSL types (mesh, silk, aurora, smoke, swirl, stripes), palette shuffle, cursor push, PNG export up to 4K.',
@@ -269,7 +264,6 @@ const EXPERIMENTS = [
   },
   {
     slug: 'ink-field',
-    num: '001',
     title: 'Ink Field',
     date: '2026-09',
     desc: 'Domain-warped noise rendered as living ink. Stir it with your cursor, tune the flow, export a frame.',
@@ -281,7 +275,8 @@ const grid = document.getElementById('grid');
 document.getElementById('count').textContent =
   String(EXPERIMENTS.length).padStart(3,'0') + (EXPERIMENTS.length === 1 ? ' experiment' : ' experiments');
 
-for (const e of EXPERIMENTS) {
+EXPERIMENTS.forEach((e, i) => {
+  const num = String(EXPERIMENTS.length - i).padStart(3, '0');
   const a = document.createElement('a');
   a.className = 'card';
   a.href = `/${e.slug}`;
@@ -291,13 +286,13 @@ for (const e of EXPERIMENTS) {
       <span class="live"><i></i>Live</span>
     </div>
     <div class="card-body">
-      <div class="card-top"><span class="num">${e.num}</span><span class="date">${e.date}</span></div>
+      <div class="card-top"><span class="num">${num}</span><span class="date">${e.date}</span></div>
       <h3>${e.title}<span class="arr">↗</span></h3>
       <p class="desc">${e.desc}</p>
       <div class="tags">${e.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
     </div>`;
   grid.appendChild(a);
-}
+});
 
 /* scale live previews to card width (iframes render at 1280x800) */
 function scalePreviews() {
