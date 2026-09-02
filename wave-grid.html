@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>006 · Wave Grid — StanVision Lab</title>
+<meta name="description" content="A grid of instanced columns that ripple outward from the cursor. Waves propagate, tilt and swell the blocks; tune physics, light, colour and post. A StanVision Lab experiment.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ink:#0a0605;
+    --panel:rgba(13,17,23,.86);
+    --line:rgba(148,163,184,.16);
+    --text:#e6ebf2;
+    --mute:#8a94a3;
+    --accent:#d8ff43;
+    --radius:10px;
+  }
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--ink); color:var(--text);
+    font-family:"Archivo",system-ui,-apple-system,sans-serif;
+    overflow:hidden; -webkit-font-smoothing:antialiased;
+  }
+  #stage{position:fixed; inset:0;}
+  #glow{position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    pointer-events:none; border-radius:50%; filter:blur(2px);}
+  canvas{display:block; cursor:grab;}
+  canvas.dragging{cursor:grabbing;}
+
+  header{
+    position:fixed; top:20px; left:24px; z-index:5; pointer-events:none;
+  }
+  header h1{
+    margin:0; font-size:14px; font-weight:600; letter-spacing:.02em;
+  }
+  header p{
+    margin:4px 0 0; font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:11px; letter-spacing:.04em;
+  }
+  header{color:var(--pagefg,#e6ebf2);}
+  header p{opacity:.55;}
+
+  #panel{
+    position:fixed; top:16px; right:16px; bottom:16px; width:288px; z-index:6;
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    display:flex; flex-direction:column; overflow:hidden;
+    transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s;
+  }
+  #panel.hidden{transform:translateX(calc(100% + 24px)); opacity:0; pointer-events:none;}
+  #panel .head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px 12px; border-bottom:1px solid var(--line);
+  }
+  #panel .head span{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--mute);
+  }
+  #panel .body{overflow-y:auto; padding:6px 16px 16px; flex:1; scrollbar-width:thin; scrollbar-color:rgba(148,163,184,.3) transparent;}
+  #panel .body::-webkit-scrollbar{width:6px;}
+  #panel .body::-webkit-scrollbar-thumb{background:rgba(148,163,184,.25); border-radius:3px;}
+
+  .presets{display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:14px 0 4px;}
+  .presets button{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:8px 6px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .presets button:hover{border-color:rgba(148,163,184,.45);}
+  .presets button.active{border-color:var(--accent); background:rgba(216,255,67,.14);}
+
+  details{border-bottom:1px solid var(--line); padding:2px 0;}
+  details:last-of-type{border-bottom:none;}
+  summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+    padding:12px 2px; font-size:12px; font-weight:600; letter-spacing:.02em; user-select:none;
+  }
+  summary::-webkit-details-marker{display:none;}
+  summary::after{content:""; width:7px; height:7px; border-right:1.4px solid var(--mute);
+    border-bottom:1.4px solid var(--mute); transform:rotate(45deg); transition:transform .18s; margin-right:3px;}
+  details[open] summary::after{transform:rotate(-135deg); margin-top:4px;}
+  .grp{padding:0 2px 14px; display:flex; flex-direction:column; gap:11px;}
+
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:22px;}
+  .row label{font-size:12px; color:var(--mute); flex:0 0 auto;}
+  .row .val{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--text);
+    min-width:38px; text-align:right; font-variant-numeric:tabular-nums;
+  }
+  .slider-row{display:flex; flex-direction:column; gap:6px;}
+  .slider-row .top{display:flex; justify-content:space-between; align-items:baseline;}
+  .slider-row .top label{font-size:12px; color:var(--mute);}
+  .slider-row .top .val{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--text);
+    font-variant-numeric:tabular-nums;
+  }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer; margin:0;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
+    background:var(--text); margin-top:-5px; border:none;
+    transition:transform .12s; box-shadow:0 0 0 3px rgba(5,7,11,.6);
+  }
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+  input[type=range]::-moz-range-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-moz-range-thumb{width:12px; height:12px; border-radius:50%; background:var(--text); border:none;}
+
+  input[type=color]{
+    -webkit-appearance:none; appearance:none; width:44px; height:22px; border:1px solid var(--line);
+    border-radius:6px; background:none; padding:0; cursor:pointer;
+  }
+  input[type=color]::-webkit-color-swatch-wrapper{padding:2px;}
+  input[type=color]::-webkit-color-swatch{border:none; border-radius:4px;}
+  input[type=color]::-moz-color-swatch{border:none; border-radius:4px;}
+
+  .switch{position:relative; width:32px; height:18px; flex:0 0 auto;}
+  .switch input{position:absolute; opacity:0; inset:0; margin:0; cursor:pointer;}
+  .switch i{
+    position:absolute; inset:0; border-radius:9px; background:rgba(148,163,184,.25);
+    transition:background .18s; pointer-events:none;
+  }
+  .switch i::after{
+    content:""; position:absolute; left:2px; top:2px; width:14px; height:14px; border-radius:50%;
+    background:var(--text); transition:transform .18s, background .18s;
+  }
+  .switch input:checked + i{background:var(--accent);}
+  .switch input:checked + i::after{transform:translateX(14px); background:#0f1409;}
+
+  .footbar{
+    border-top:1px solid var(--line); padding:12px 16px; display:flex; gap:8px;
+  }
+  .footbar button{
+    flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em;
+    color:#0a0605; background:var(--text); border:none; border-radius:8px; padding:9px 0; cursor:pointer;
+    transition:opacity .15s;
+  }
+  .footbar button:hover{opacity:.85;}
+
+  #toggleUi{
+    position:fixed; top:24px; right:16px; z-index:7; width:34px; height:34px;
+    border-radius:9px; border:1px solid var(--line); background:var(--panel);
+    backdrop-filter:blur(14px); color:var(--mute); cursor:pointer; font-size:15px; line-height:1;
+    display:none; align-items:center; justify-content:center;
+  }
+  #panel.hidden ~ #toggleUi{display:flex;}
+
+  #toast{
+    position:fixed; left:50%; bottom:28px; transform:translate(-50%,12px); z-index:9;
+    background:var(--text); color:#0a0605; font-size:12px; font-weight:500;
+    padding:8px 14px; border-radius:8px; opacity:0; transition:opacity .2s, transform .2s;
+    pointer-events:none;
+  }
+  #toast.show{opacity:1; transform:translate(-50%,0);}
+
+  .hidebtn{background:none; border:none; color:var(--mute); font-size:15px; cursor:pointer; padding:2px 4px; line-height:1;}
+  .hidebtn:hover{color:var(--text);}
+
+  @media (max-width:720px){
+    #panel{top:auto; left:12px; right:12px; bottom:12px; width:auto; max-height:46vh;}
+    #panel.hidden{transform:translateY(calc(100% + 20px));}
+    header{left:16px; top:16px;}
+    #toggleUi{top:auto; bottom:20px;}
+  }
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
+
+  /* lab header conventions */
+  header{pointer-events:none;}
+  header a.lab-back{
+    pointer-events:auto; color:var(--text); text-decoration:none;
+    display:flex; align-items:center; gap:10px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; letter-spacing:.04em;
+  }
+  header a.lab-back .idx{color:#d8ff43;}
+  header a.lab-back:hover .lbl{text-decoration:underline; text-underline-offset:3px;}
+  html.embed header, html.embed #panel, html.embed #toggleUi, html.embed #toast{display:none !important;}
+  /* wave grid additions */
+  :root{ --ink:#808080; }
+  canvas{cursor:default;}
+  .sect{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--mute); padding:14px 2px 0;
+  }
+  .modes{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:8px 0 4px;}
+  .modes button{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:7px 4px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .modes button:hover{border-color:rgba(148,163,184,.45);}
+  .modes button.active{border-color:var(--accent); background:rgba(216,255,67,.14);}
+  .btnrow{display:flex; gap:8px;}
+  .btnrow button{
+    flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:8px 6px; cursor:pointer; transition:border-color .15s;
+  }
+  .btnrow button:hover{border-color:rgba(148,163,184,.45);}
+  .footbar button.secondary{background:rgba(148,163,184,.12); color:var(--text);}
+  #hint{
+    position:fixed; left:24px; bottom:22px; z-index:5; pointer-events:none;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em;
+    color:var(--pagefg,#e6ebf2); opacity:.5;
+  }
+  html.embed #hint{display:none !important;}
+  @media (max-width:720px){ #hint{display:none;} }
+</style>
+</head>
+<body>
+<script>if(location.search.indexOf('embed')>-1)document.documentElement.classList.add('embed');</script>
+<canvas id="stage"></canvas>
+
+<header>
+  <a class="lab-back" href="/"><span class="idx">006</span><span class="lbl">Wave Grid</span></a>
+  <p>StanVision Lab — WebGL / three.js</p>
+</header>
+<div id="hint">move the cursor · space = ripple · r = random · h = hide panel</div>
+
+<aside id="panel">
+  <div class="head">
+    <span>Controls</span>
+    <button class="hidebtn" id="hideUi" title="Hide panel" aria-label="Hide panel">&times;</button>
+  </div>
+  <div class="body">
+    <div class="presets" id="presets"></div>
+    <div id="groups"></div>
+  </div>
+  <div class="footbar">
+    <button id="randomBtn" class="secondary">RANDOMISE</button>
+    <button id="copyBtn">COPY SETTINGS</button>
+  </div>
+</aside>
+<button id="toggleUi" title="Show controls" aria-label="Show controls">☰</button>
+
+<div id="toast">Copied to clipboard</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+/* ============================== settings ============================== */
+const S = {
+  // grid
+  gridSize: 40, shape: 'Box', cubeW: 0.8, gap: 0.01, cubeH: 3, jitter: 0.2,
+  // wave physics (Franky / arkon.digital defaults)
+  amplitude: 0.4, maxHeight: 0.4, speed: 6, freq: 1.2, width: 3, fade: 2, spacing: 0.1, distFalloff: 0.1,
+  // response
+  lift: 1, tilt: 0, swell: 0,
+  // idle + ambient
+  idle: true, idleEvery: 1.5, idleStrength: 0.8,
+  ambient: false, ambAmp: 0.25, ambFreq: 0.6, ambSpeed: 1.0, ambAngle: 35,
+  // colour
+  colorBase: '#ffffff', colorHigh: '#0055ff', colorLow: '#0055ff', lowMix: 0,
+  bgAuto: true, bgColor: '#808080',
+  // light
+  ambientI: 0.5, keyI: 4, fillI: 1, keyAngle: -73, keyElev: 26, shadows: true, exposure: 1.95,
+  // camera
+  camDist: 12, fov: 40, pitch: 0, orbit: 0, parallax: 1,
+  // post
+  rgbShift: 0.005, vigRadius: 0.3, vigSoft: 0.3, vigDark: 0.5, grain: 0,
+};
+const PRESETS = {
+  'Arkon': { ...S },
+  'Lab': {
+    ...S,
+    gridSize: 36, cubeW: 0.8, gap: 0.06, cubeH: 2.6, jitter: 0.15,
+    amplitude: 0.5, maxHeight: 0.5, speed: 7, freq: 1.4, width: 2.6,
+    lift: 1, tilt: 6, swell: 0,
+    colorBase: '#17171a', colorHigh: '#ff4d00', colorLow: '#2a2a30', lowMix: 1,
+    bgAuto: false, bgColor: '#0a0a0b',
+    ambientI: 0.9, keyI: 3.2, fillI: 0.6, keyAngle: -55, keyElev: 32, exposure: 1.15,
+    pitch: 18, orbit: 20, rgbShift: 0.003, vigRadius: 0.25, vigSoft: 0.4, vigDark: 0.6, grain: 0.05,
+  },
+  'Paper': {
+    ...S,
+    gridSize: 30, shape: 'Hex', cubeW: 0.9, gap: 0.1, cubeH: 2, jitter: 0,
+    amplitude: 0.5, maxHeight: 0.5, speed: 5, freq: 1.0, width: 3.5, fade: 2.6,
+    lift: 0.4, tilt: 0, swell: 0.6,
+    colorBase: '#efece4', colorHigh: '#1c1c1c', colorLow: '#efece4', lowMix: 0,
+    bgAuto: false, bgColor: '#d7d3ca',
+    ambientI: 0.7, keyI: 3.4, fillI: 1.2, keyAngle: -40, keyElev: 40, exposure: 1.0,
+    pitch: 8, orbit: 0, rgbShift: 0, vigRadius: 0.4, vigSoft: 0.4, vigDark: 0.25, grain: 0.06,
+  },
+  'Tide': {
+    ...S,
+    gridSize: 44, cubeW: 0.7, gap: 0.05, cubeH: 3, jitter: 0.3,
+    amplitude: 0.6, maxHeight: 0.6, speed: 5, freq: 1.0, width: 3, fade: 2.4,
+    lift: 1, tilt: 14, swell: 0,
+    ambient: true, ambAmp: 0.35, ambFreq: 0.55, ambSpeed: 1.1, ambAngle: 35,
+    idle: false,
+    colorBase: '#0b2744', colorHigh: '#8fe3ff', colorLow: '#061627', lowMix: 1,
+    bgAuto: false, bgColor: '#04101c',
+    ambientI: 0.6, keyI: 3.8, fillI: 1.4, keyAngle: -95, keyElev: 22, exposure: 1.0,
+    pitch: 26, orbit: -30, rgbShift: 0.004, vigRadius: 0.3, vigSoft: 0.4, vigDark: 0.55, grain: 0.03,
+  },
+  'Pixels': {
+    ...S,
+    gridSize: 60, shape: 'Box', cubeW: 0.5, gap: 0.08, cubeH: 0.9, jitter: 0,
+    amplitude: 0.5, maxHeight: 0.5, speed: 8, freq: 1.8, width: 2.2, fade: 1.6,
+    lift: 0.4, tilt: 0, swell: 1.4,
+    colorBase: '#101012', colorHigh: '#d8ff43', colorLow: '#101012', lowMix: 0,
+    bgAuto: false, bgColor: '#070708',
+    ambientI: 0.8, keyI: 2.6, fillI: 0.8, keyAngle: -73, keyElev: 50, exposure: 1.0,
+    camDist: 22, fov: 35, pitch: 0, orbit: 0, parallax: 0.6, rgbShift: 0.006, vigRadius: 0.35, vigSoft: 0.35, vigDark: 0.5, grain: 0.08,
+  },
+  'Pillars': {
+    ...S,
+    gridSize: 24, shape: 'Cylinder', cubeW: 0.75, gap: 0.25, cubeH: 4, jitter: 0.1,
+    amplitude: 1.2, maxHeight: 1.2, speed: 6, freq: 0.9, width: 3.5, fade: 2.5,
+    lift: 1, tilt: 10, swell: 0,
+    colorBase: '#e9e4dc', colorHigh: '#ff4d00', colorLow: '#b9b2a6', lowMix: 1,
+    bgAuto: false, bgColor: '#141312',
+    ambientI: 0.5, keyI: 4.2, fillI: 1.0, keyAngle: -60, keyElev: 30, exposure: 0.95,
+    camDist: 14, fov: 38, pitch: 34, orbit: 35, rgbShift: 0.003, vigRadius: 0.3, vigSoft: 0.45, vigDark: 0.6, grain: 0.04,
+  },
+};
+
+const IS_EMBED = document.documentElement.classList.contains('embed');
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MAX_TRAIL = 128;
+
+/* ============================== renderer ============================== */
+const cvs = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ canvas: cvs, antialias: true, powerPreference: 'high-performance' });
+renderer.physicallyCorrectLights = true;
+renderer.toneMapping = THREE.NoToneMapping;
+renderer.outputEncoding = THREE.LinearEncoding;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+const DPR = Math.min(devicePixelRatio || 1, IS_EMBED ? 1 : 2);
+renderer.setPixelRatio(DPR);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(S.fov, 1, 0.1, 200);
+scene.add(camera);
+
+/* HDR target + own post pass (vignette · rgb shift · ACES · grain) */
+const gl = renderer.getContext();
+const hasHalf = renderer.capabilities.isWebGL2 ? !!gl.getExtension('EXT_color_buffer_float') : !!gl.getExtension('OES_texture_half_float');
+const rt = new THREE.WebGLRenderTarget(2, 2, {
+  type: hasHalf ? THREE.HalfFloatType : THREE.UnsignedByteType,
+  minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: true,
+});
+const postUniforms = {
+  tDiffuse: { value: rt.texture },
+  uShift: { value: S.rgbShift }, uRadius: { value: S.vigRadius }, uSoft: { value: S.vigSoft }, uDark: { value: S.vigDark },
+  uExposure: { value: S.exposure }, uGrain: { value: S.grain }, uTime: { value: 0 },
+};
+const postScene = new THREE.Scene();
+const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+  uniforms: postUniforms, depthTest: false, depthWrite: false,
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+  fragmentShader: `
+    precision highp float;
+    varying vec2 vUv;
+    uniform sampler2D tDiffuse;
+    uniform float uShift, uRadius, uSoft, uDark, uExposure, uGrain, uTime;
+    vec3 aces(vec3 c){
+      const mat3 IN = mat3(0.59719,0.07600,0.02840, 0.35458,0.90834,0.13383, 0.04823,0.01566,0.83777);
+      const mat3 OUT = mat3(1.60475,-0.10208,-0.00327, -0.53108,1.10813,-0.07276, -0.07367,-0.00605,1.07602);
+      c = IN * c;
+      vec3 a = c*(c+0.0245786)-0.000090537;
+      vec3 b = c*(0.983729*c+0.4329510)+0.238081;
+      return clamp(OUT*(a/b), 0.0, 1.0);
+    }
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)) + uTime) * 43758.5453); }
+    void main(){
+      float d = distance(vUv, vec2(0.5));
+      float vig = smoothstep(uRadius, uRadius + uSoft, d);
+      float sh = uShift * vig;
+      float r = texture2D(tDiffuse, vUv + vec2(sh)).r;
+      float g = texture2D(tDiffuse, vUv).g;
+      float b = texture2D(tDiffuse, vUv - vec2(sh)).b;
+      vec3 col = aces(vec3(r,g,b) * uExposure / 0.6);
+      col = pow(col, vec3(1.0/2.2));
+      col *= 1.0 - vig * uDark;
+      col += (hash(gl_FragCoord.xy) - 0.5) * uGrain;
+      gl_FragColor = vec4(col, 1.0);
+    }`,
+})));
+
+/* ============================== lights ============================== */
+const ambientLight = new THREE.AmbientLight(0xffffff, S.ambientI);
+scene.add(ambientLight);
+const keyLight = new THREE.DirectionalLight(0xffffff, S.keyI);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.radius = 6;
+keyLight.shadow.camera.near = 0.1;
+keyLight.shadow.camera.far = 120;
+keyLight.shadow.bias = 0.0001;
+scene.add(keyLight);
+const fillLight = new THREE.DirectionalLight(0xffffff, S.fillI);
+fillLight.position.set(10, 5, -3);
+scene.add(fillLight);
+
+function updateLights() {
+  ambientLight.intensity = S.ambientI;
+  keyLight.intensity = S.keyI;
+  fillLight.intensity = S.fillI;
+  const az = S.keyAngle * Math.PI / 180, el = S.keyElev * Math.PI / 180;
+  const r = 24;
+  keyLight.position.set(Math.cos(el) * Math.cos(az) * r, Math.sin(el) * r, Math.cos(el) * Math.sin(az) * r);
+  keyLight.castShadow = S.shadows;
+  renderer.shadowMap.enabled = S.shadows;
+  if (grid) grid.material.needsUpdate = true;
+}
+function fitShadow(bounds) {
+  const c = keyLight.shadow.camera, e = bounds * 0.55 + 3;
+  c.left = -e; c.right = e; c.top = e; c.bottom = -e;
+  c.updateProjectionMatrix();
+}
+
+/* ============================== trail ============================== */
+const trail = [];
+let lastPoint = null, timeSinceMove = 0, idleTimer = 0, placingIdle = true;
+const trailData = new Float32Array(MAX_TRAIL * 4);
+const trailTex = new THREE.DataTexture(trailData, MAX_TRAIL, 1, THREE.RGBAFormat, THREE.FloatType);
+trailTex.minFilter = trailTex.magFilter = THREE.NearestFilter;
+trailTex.needsUpdate = true;
+
+const waveUniforms = {
+  uTrail: { value: trailTex }, uTrailCount: { value: 0 },
+  uSpeed: { value: S.speed }, uFreq: { value: S.freq }, uWidth: { value: S.width }, uFade: { value: S.fade },
+  uAmplitude: { value: S.amplitude }, uMaxH: { value: S.maxHeight }, uJitter: { value: S.jitter }, uFalloff: { value: S.distFalloff },
+  uLift: { value: S.lift }, uTilt: { value: S.tilt * Math.PI / 180 }, uSwell: { value: S.swell },
+  uHalfH: { value: S.cubeH / 2 },
+  uAmbAmp: { value: 0 }, uAmbFreq: { value: S.ambFreq }, uAmbSpeed: { value: S.ambSpeed }, uAmbAngle: { value: S.ambAngle * Math.PI / 180 },
+  uTime: { value: 0 },
+  uColorBase: { value: new THREE.Color(S.colorBase) }, uColorHigh: { value: new THREE.Color(S.colorHigh) },
+  uColorLow: { value: new THREE.Color(S.colorLow) }, uLowMix: { value: S.lowMix },
+};
+
+function pushPoint(x, z, distDelta) {
+  if (trail.length >= MAX_TRAIL) trail.shift();
+  trail.push({ x, z, age: 0, distDelta });
+}
+function addRandomPoint(strength) {
+  const x = (Math.random() - 0.5) * bounds * 0.6, z = (Math.random() - 0.5) * bounds * 0.6;
+  pushPoint(x, z, (strength ?? S.idleStrength) + Math.random() * 0.2);
+}
+function updateTrail(dt) {
+  const expiry = S.fade * 4;
+  for (let i = trail.length - 1; i >= 0; i--) { trail[i].age += dt; if (trail[i].age > expiry) trail.splice(i, 1); }
+  timeSinceMove += dt;
+  if (S.idle && !reducedMotion) {
+    if (timeSinceMove >= 3 && !placingIdle) { placingIdle = true; idleTimer = 0; }
+    if (placingIdle) { idleTimer += dt; if (idleTimer >= S.idleEvery) { addRandomPoint(); idleTimer = 0; } }
+  }
+  const count = Math.min(trail.length, MAX_TRAIL);
+  if (count > 0 || waveUniforms.uTrailCount.value > 0) {
+    for (let i = 0; i < count; i++) {
+      const t = trail[i], k = i * 4;
+      trailData[k] = t.x; trailData[k + 1] = t.z; trailData[k + 2] = t.age; trailData[k + 3] = t.distDelta;
+    }
+    trailTex.needsUpdate = true;
+    waveUniforms.uTrailCount.value = count;
+  }
+}
+
+/* pointer → world plane */
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+const rayPlane = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide }));
+rayPlane.rotation.x = -Math.PI / 2;
+rayPlane.updateMatrixWorld(true);
+const mouse = new THREE.Vector2(0, 0), mouseLerp = new THREE.Vector2(0, 0);
+
+function onPointer(e) {
+  const W = innerWidth, H = innerHeight;
+  mouse.set((e.clientX / W) * 2 - 1, -(e.clientY / H) * 2 + 1);
+  ndc.copy(mouse);
+  raycaster.setFromCamera(ndc, camera);
+  const hit = raycaster.intersectObject(rayPlane);
+  if (!hit.length) return;
+  const { x, z } = hit[0].point;
+  let dd = 0;
+  if (lastPoint) {
+    const dx = x - lastPoint.x, dz = z - lastPoint.z;
+    dd = Math.hypot(dx, dz);
+    if (dd < S.spacing) return;
+  }
+  pushPoint(x, z, dd);
+  lastPoint = { x, z };
+  timeSinceMove = 0; placingIdle = false; idleTimer = 0;
+}
+addEventListener('pointermove', onPointer, { passive: true });
+addEventListener('pointerdown', e => {
+  if (e.target !== cvs) return;
+  lastPoint = null; onPointer(e);
+  if (trail.length) trail[trail.length - 1].distDelta = 1.2;
+});
+
+/* ============================== grid ============================== */
+let grid = null, bounds = 1;
+const dummy = new THREE.Object3D();
+
+function makeGeometry() {
+  const w = S.cubeW, h = S.cubeH;
+  switch (S.shape) {
+    case 'Cylinder': return new THREE.CylinderGeometry(w / 2, w / 2, h, 24, 1);
+    case 'Hex': { const g = new THREE.CylinderGeometry(w / 2, w / 2, h, 6, 1); g.rotateY(Math.PI / 6); return g; }
+    default: return new THREE.BoxGeometry(w, h, w);
+  }
+}
+
+const VERT_HEAD = `
+  varying float vHeight;
+  attribute vec2 aOffset;
+  uniform sampler2D uTrail;
+  uniform int uTrailCount;
+  uniform float uSpeed, uFreq, uWidth, uFade, uAmplitude, uMaxH, uJitter, uFalloff;
+  uniform float uLift, uTilt, uSwell, uHalfH;
+  uniform float uAmbAmp, uAmbFreq, uAmbSpeed, uAmbAngle, uTime;
+  vec2 hash2(vec2 p){
+    p = vec2(dot(p, vec2(127.1,311.7)), dot(p, vec2(269.5,183.3)));
+    return fract(sin(p) * 43758.5453123) - 0.5;
+  }
+  vec3 rotAxis(vec3 v, vec3 ax, float a){
+    float c = cos(a), s = sin(a);
+    return v * c + cross(ax, v) * s + ax * dot(ax, v) * (1.0 - c);
+  }`;
+
+function VERT_BODY(hasNormal) {
+  return `
+  #include <begin_vertex>
+  vHeight = 0.0;
+  {
+    vec2 jit = hash2(aOffset) * uJitter;
+    vec2 wxz = aOffset + jit;
+    float wave = 0.0, tw = 0.0;
+    vec2 grad = vec2(0.0);
+    for (int i = 0; i < ${MAX_TRAIL}; i++) {
+      if (i >= uTrailCount) break;
+      vec4 td = texture2D(uTrail, vec2((float(i) + 0.5) / ${MAX_TRAIL}.0, 0.5));
+      vec2 d = wxz - td.rg;
+      float dist = length(d);
+      float rel = dist - uSpeed * td.b;
+      float win = exp(-(rel * rel) / (uWidth * uWidth));
+      float fade = exp(-td.b / uFade);
+      float att = 1.0 / (1.0 + dist * uFalloff);
+      float w = fade * win * att * td.a;
+      float c = cos(uFreq * rel);
+      wave += w * c; tw += w;
+      grad += w * c * (d / max(dist, 0.001));
+    }
+    float tn = max(tw, 1.0);
+    wave /= tn; grad /= tn;
+    if (uAmbAmp > 0.0) {
+      vec2 dir = vec2(cos(uAmbAngle), sin(uAmbAngle));
+      vec2 per = vec2(-dir.y, dir.x);
+      float p1 = dot(wxz, dir) * uAmbFreq - uTime * uAmbSpeed;
+      float p2 = dot(wxz, per) * uAmbFreq * 0.61 + uTime * uAmbSpeed * 0.53;
+      float a = 0.7 * sin(p1) + 0.3 * sin(p2);
+      wave += uAmbAmp * a;
+      grad += uAmbAmp * (0.7 * cos(p1) * dir * uAmbFreq + 0.3 * cos(p2) * per * uAmbFreq * 0.61) * 0.8;
+    }
+    float disp = clamp(wave * uAmplitude, -uMaxH, uMaxH);
+    vHeight = disp;
+    float t = disp / uMaxH;
+    // swell: scale footprint about the column axis
+    float sc = 1.0 + max(t, 0.0) * uSwell;
+    transformed.xz *= sc;
+    // tilt: lean along the wave gradient, pivot at the base
+    float gl = length(grad) * uAmplitude;
+    if (uTilt > 0.0 && gl > 0.0001) {
+      vec2 gd = grad / length(grad);
+      vec3 ax = normalize(vec3(gd.y, 0.0, -gd.x));
+      float ang = clamp(gl / uMaxH, -1.0, 1.0) * uTilt;
+      vec3 p = transformed; p.y += uHalfH;
+      p = rotAxis(p, ax, ang); p.y -= uHalfH;
+      transformed = p;
+      ${hasNormal ? 'objectNormal = rotAxis(objectNormal, ax, ang);' : ''}
+    }
+    // lift: stretch the column upward (top vertices only, base stays planted)
+    if (position.y > 0.0) transformed.y += disp * uLift;
+  }`;
+}
+
+function patchVertex(src, hasNormal) {
+  return src.replace('#include <common>', '#include <common>\n' + VERT_HEAD)
+            .replace('#include <begin_vertex>', VERT_BODY(hasNormal));
+}
+function attachUniforms(shader) { Object.keys(waveUniforms).forEach(k => { shader.uniforms[k] = waveUniforms[k]; }); }
+
+function buildGrid() {
+  if (grid) { scene.remove(grid); grid.geometry.dispose(); }
+  const n = S.gridSize, count = n * n;
+  const geometry = makeGeometry();
+  const offsets = new THREE.InstancedBufferAttribute(new Float32Array(count * 2), 2);
+  geometry.setAttribute('aOffset', offsets);
+
+  const material = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 30 });
+  material.onBeforeCompile = shader => {
+    attachUniforms(shader);
+    shader.vertexShader = patchVertex(shader.vertexShader, true);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+        varying float vHeight;
+        uniform vec3 uColorBase, uColorHigh, uColorLow;
+        uniform float uMaxH, uLowMix;`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        float ht = clamp(vHeight / uMaxH, -1.0, 1.0);
+        vec3 c = mix(uColorBase, uColorHigh, max(ht, 0.0));
+        c = mix(c, uColorLow, max(-ht, 0.0) * uLowMix);
+        diffuseColor.rgb = c;`);
+  };
+  const depthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+  depthMaterial.onBeforeCompile = shader => {
+    attachUniforms(shader);
+    shader.vertexShader = patchVertex(shader.vertexShader, false);
+  };
+
+  grid = new THREE.InstancedMesh(geometry, material, count);
+  grid.customDepthMaterial = depthMaterial;
+  grid.castShadow = true; grid.receiveShadow = true;
+  grid.frustumCulled = false;
+
+  const spacing = S.cubeW + S.gap, off = ((n - 1) * spacing) / 2;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    const idx = i * n + j, x = i * spacing - off, z = j * spacing - off;
+    dummy.position.set(x, 0, z); dummy.updateMatrix();
+    grid.setMatrixAt(idx, dummy.matrix);
+    offsets.setXY(idx, x, z);
+  }
+  grid.instanceMatrix.needsUpdate = true;
+  bounds = n * spacing;
+  waveUniforms.uHalfH.value = S.cubeH / 2;
+  fitShadow(bounds);
+  scene.add(grid);
+}
+
+/* ============================== camera ============================== */
+const qA = new THREE.Quaternion(), qB = new THREE.Quaternion(), qDown = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+const X = new THREE.Vector3(1, 0, 0), Y = new THREE.Vector3(0, 1, 0), tmpV = new THREE.Vector3();
+function updateCamera() {
+  const k = S.parallax;
+  const alpha = S.pitch * Math.PI / 180 + mouseLerp.y * Math.PI * 0.03 * k;
+  const beta = S.orbit * Math.PI / 180 + mouseLerp.x * Math.PI * 0.05 * k;
+  qA.setFromAxisAngle(X, alpha); qB.setFromAxisAngle(Y, beta);
+  tmpV.set(0, S.camDist, 0).applyQuaternion(qA).applyQuaternion(qB);
+  camera.position.copy(tmpV);
+  camera.quaternion.copy(qB).multiply(qA).multiply(qDown);
+  if (camera.fov !== S.fov) { camera.fov = S.fov; camera.updateProjectionMatrix(); }
+}
+
+/* ============================== scene colour ============================== */
+function updateColors() {
+  waveUniforms.uColorBase.value.set(S.colorBase);
+  waveUniforms.uColorHigh.value.set(S.colorHigh);
+  waveUniforms.uColorLow.value.set(S.colorLow);
+  waveUniforms.uLowMix.value = S.lowMix;
+  const bg = S.bgAuto ? new THREE.Color(S.colorBase).multiplyScalar(0.5) : new THREE.Color(S.bgColor);
+  scene.background = bg;
+  // page chrome contrast (approximate the tonemapped output)
+  const lum = Math.pow(Math.min(1, (0.2126 * bg.r + 0.7152 * bg.g + 0.0722 * bg.b) * S.exposure / 0.6), 1 / 2.2);
+  document.documentElement.style.setProperty('--pagefg', lum > 0.55 ? '#14161a' : '#e6ebf2');
+  document.body.style.background = '#' + bg.getHexString();
+}
+function updateWave() {
+  const u = waveUniforms;
+  u.uSpeed.value = S.speed; u.uFreq.value = S.freq; u.uWidth.value = S.width; u.uFade.value = S.fade;
+  u.uAmplitude.value = S.amplitude; u.uMaxH.value = Math.max(S.maxHeight, 0.01); u.uJitter.value = S.jitter; u.uFalloff.value = S.distFalloff;
+  u.uLift.value = S.lift; u.uTilt.value = S.tilt * Math.PI / 180; u.uSwell.value = S.swell;
+  u.uAmbAmp.value = (S.ambient && !reducedMotion) ? S.ambAmp : 0;
+  u.uAmbFreq.value = S.ambFreq; u.uAmbSpeed.value = S.ambSpeed; u.uAmbAngle.value = S.ambAngle * Math.PI / 180;
+}
+function updatePost() {
+  postUniforms.uShift.value = S.rgbShift; postUniforms.uRadius.value = S.vigRadius; postUniforms.uSoft.value = S.vigSoft;
+  postUniforms.uDark.value = S.vigDark; postUniforms.uExposure.value = S.exposure; postUniforms.uGrain.value = S.grain;
+}
+
+/* ============================== resize / loop ============================== */
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  rt.setSize(Math.floor(w * DPR), Math.floor(h * DPR));
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+
+const clock = new THREE.Clock();
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+  mouseLerp.x += (mouse.x - mouseLerp.x) * 0.04;
+  mouseLerp.y += (mouse.y - mouseLerp.y) * 0.04;
+  updateCamera();
+  updateTrail(dt);
+  waveUniforms.uTime.value = t;
+  postUniforms.uTime.value = t;
+  renderer.setRenderTarget(rt);
+  renderer.render(scene, camera);
+  renderer.setRenderTarget(null);
+  renderer.render(postScene, postCam);
+  requestAnimationFrame(frame);
+}
+
+/* ============================== control panel ============================== */
+const ui = {};
+const groupsEl = document.getElementById('groups');
+
+function slider(key, label, min, max, step, fmt, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'slider-row';
+  const top = document.createElement('div'); top.className = 'top';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const val = document.createElement('span'); val.className = 'val';
+  top.append(lab, val);
+  const input = document.createElement('input');
+  input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = S[key];
+  const refresh = v => { val.textContent = fmt ? fmt(v) : (+v).toFixed(step < 1 ? (step < 0.1 ? (step < 0.01 ? 3 : 2) : 1) : 0); };
+  refresh(S[key]);
+  input.addEventListener('input', () => {
+    S[key] = +input.value; refresh(S[key]); onChange && onChange(S[key]); clearPresetActive();
+  });
+  wrap.append(top, input);
+  ui[key] = { input, refresh };
+  return wrap;
+}
+function colorCtl(key, label, onChange) {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const input = document.createElement('input'); input.type = 'color'; input.value = S[key];
+  input.addEventListener('input', () => { S[key] = input.value; onChange && onChange(S[key]); clearPresetActive(); });
+  row.append(lab, input);
+  ui[key] = { input, refresh: () => {} };
+  return row;
+}
+function toggle(key, label, onChange) {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const sw = document.createElement('span'); sw.className = 'switch';
+  const input = document.createElement('input'); input.type = 'checkbox'; input.checked = S[key];
+  const i = document.createElement('i');
+  sw.append(input, i);
+  input.addEventListener('change', () => { S[key] = input.checked; onChange && onChange(S[key]); clearPresetActive(); });
+  row.append(lab, sw);
+  ui[key] = { input, refresh: () => {} };
+  return row;
+}
+function modes(key, options, onChange) {
+  const wrap = document.createElement('div'); wrap.className = 'modes';
+  const btns = {};
+  options.forEach(o => {
+    const b = document.createElement('button'); b.textContent = o;
+    b.addEventListener('click', () => { S[key] = o; refresh(); onChange && onChange(o); clearPresetActive(); });
+    wrap.appendChild(b); btns[o] = b;
+  });
+  const refresh = () => Object.keys(btns).forEach(o => btns[o].classList.toggle('active', S[key] === o));
+  refresh();
+  ui[key] = { input: { type: 'modes' }, refresh };
+  return wrap;
+}
+function sect(title) { const d = document.createElement('div'); d.className = 'sect'; d.textContent = title; return d; }
+function group(title, items, open = true) {
+  const det = document.createElement('details'); det.open = open;
+  const sum = document.createElement('summary'); sum.textContent = title;
+  const grp = document.createElement('div'); grp.className = 'grp';
+  items.forEach(i => grp.appendChild(i));
+  det.append(sum, grp);
+  groupsEl.appendChild(det);
+}
+
+const deg = v => v + '°';
+group('Grid', [
+  modes('shape', ['Box', 'Cylinder', 'Hex'], buildGrid),
+  slider('gridSize', 'Columns', 8, 70, 1, v => v + ' × ' + v, buildGrid),
+  slider('cubeW', 'Width', 0.2, 1.6, 0.02, null, buildGrid),
+  slider('gap', 'Gap', 0, 1, 0.01, null, buildGrid),
+  slider('cubeH', 'Height', 0.2, 6, 0.1, null, buildGrid),
+  slider('jitter', 'Jitter', 0, 2, 0.01, null, updateWave),
+]);
+group('Wave', [
+  slider('amplitude', 'Amplitude', 0, 3, 0.02, null, updateWave),
+  slider('maxHeight', 'Max height', 0.05, 3, 0.05, null, updateWave),
+  slider('speed', 'Speed', 1, 20, 0.1, null, updateWave),
+  slider('freq', 'Frequency', 0.1, 5, 0.05, null, updateWave),
+  slider('width', 'Ring width', 0.5, 10, 0.1, null, updateWave),
+  slider('fade', 'Fade time', 0.2, 6, 0.1, v => (+v).toFixed(1) + 's', updateWave),
+  slider('distFalloff', 'Distance falloff', 0, 0.5, 0.01, null, updateWave),
+  slider('spacing', 'Trail spacing', 0.05, 3, 0.05),
+  sect('Response'),
+  slider('lift', 'Lift', 0, 2, 0.02, null, updateWave),
+  slider('tilt', 'Tilt', 0, 45, 1, deg, updateWave),
+  slider('swell', 'Swell', 0, 3, 0.02, null, updateWave),
+]);
+group('Motion', [
+  toggle('idle', 'Idle ripples'),
+  slider('idleEvery', 'Every', 0.3, 5, 0.1, v => (+v).toFixed(1) + 's'),
+  slider('idleStrength', 'Strength', 0.1, 2, 0.05),
+  sect('Ambient swell'),
+  toggle('ambient', 'Rolling waves', updateWave),
+  slider('ambAmp', 'Amount', 0, 1, 0.01, null, updateWave),
+  slider('ambFreq', 'Wavelength', 0.1, 2, 0.01, null, updateWave),
+  slider('ambSpeed', 'Flow speed', 0, 4, 0.05, null, updateWave),
+  slider('ambAngle', 'Direction', -180, 180, 1, deg, updateWave),
+], false);
+group('Colour', [
+  colorCtl('colorBase', 'Base', updateColors),
+  colorCtl('colorHigh', 'Crest', updateColors),
+  colorCtl('colorLow', 'Trough', updateColors),
+  slider('lowMix', 'Trough mix', 0, 1, 0.02, null, updateColors),
+  toggle('bgAuto', 'Auto background', updateColors),
+  colorCtl('bgColor', 'Background', updateColors),
+]);
+group('Light', [
+  slider('exposure', 'Exposure', 0.2, 3, 0.05, null, () => { updatePost(); updateColors(); }),
+  slider('ambientI', 'Ambient', 0, 3, 0.02, null, updateLights),
+  slider('keyI', 'Key', 0, 10, 0.1, null, updateLights),
+  slider('fillI', 'Fill', 0, 5, 0.05, null, updateLights),
+  slider('keyAngle', 'Key angle', -180, 180, 1, deg, updateLights),
+  slider('keyElev', 'Key elevation', 5, 85, 1, deg, updateLights),
+  toggle('shadows', 'Shadows', updateLights),
+], false);
+group('Camera', [
+  slider('camDist', 'Distance', 6, 40, 0.1, null),
+  slider('fov', 'Field of view', 20, 80, 1, deg),
+  slider('pitch', 'Pitch', 0, 70, 1, deg),
+  slider('orbit', 'Orbit', -180, 180, 1, deg),
+  slider('parallax', 'Cursor parallax', 0, 3, 0.05),
+], false);
+group('Post', [
+  slider('rgbShift', 'RGB shift', 0, 0.02, 0.0005, v => (+v).toFixed(4), updatePost),
+  slider('vigRadius', 'Vignette radius', 0, 1, 0.01, null, updatePost),
+  slider('vigSoft', 'Vignette softness', 0.01, 1, 0.01, null, updatePost),
+  slider('vigDark', 'Vignette darken', 0, 1, 0.02, null, updatePost),
+  slider('grain', 'Grain', 0, 0.3, 0.005, null, updatePost),
+], false);
+
+/* presets */
+const presetsEl = document.getElementById('presets');
+const presetButtons = {};
+Object.keys(PRESETS).forEach(name => {
+  const b = document.createElement('button');
+  b.textContent = name;
+  b.addEventListener('click', () => applyPreset(name));
+  presetsEl.appendChild(b);
+  presetButtons[name] = b;
+});
+function clearPresetActive() { Object.values(presetButtons).forEach(b => b.classList.remove('active')); }
+function refreshUi() {
+  Object.keys(ui).forEach(k => {
+    if (!(k in S)) return;
+    const c = ui[k];
+    if (c.input.type === 'checkbox') c.input.checked = S[k];
+    else if (c.input.type !== 'modes') c.input.value = S[k];
+    c.refresh(S[k]);
+  });
+}
+function applyAll() {
+  buildGrid(); updateWave(); updateColors(); updateLights(); updatePost();
+}
+function applyPreset(name) {
+  Object.assign(S, PRESETS[name]);
+  refreshUi(); applyAll();
+  trail.length = 0; lastPoint = null;
+  clearPresetActive();
+  if (presetButtons[name]) presetButtons[name].classList.add('active');
+}
+
+/* randomise */
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+function hsl(h, s, l) { return '#' + new THREE.Color().setHSL(((h % 360) + 360) / 360, s, l).getHexString(); }
+function randomise() {
+  const dark = Math.random() < 0.6;
+  const hue = rnd(0, 360);
+  S.shape = pick(['Box', 'Box', 'Cylinder', 'Hex']);
+  S.gridSize = Math.round(rnd(20, 56)); S.cubeW = +rnd(0.45, 1).toFixed(2); S.gap = +rnd(0.01, 0.3).toFixed(2); S.cubeH = +rnd(0.8, 4).toFixed(1);
+  S.jitter = +rnd(0, 0.5).toFixed(2);
+  S.amplitude = +rnd(0.3, 1.2).toFixed(2); S.maxHeight = S.amplitude; S.speed = +rnd(4, 9).toFixed(1);
+  S.freq = +rnd(0.8, 2).toFixed(2); S.width = +rnd(2, 4.5).toFixed(1); S.fade = +rnd(1.5, 3).toFixed(1);
+  S.lift = +pick([1, 1, 0.5, 0.2]).toFixed(2); S.tilt = pick([0, 0, 8, 14, 22]); S.swell = +pick([0, 0, 0.6, 1.2]).toFixed(2);
+  S.ambient = Math.random() < 0.3; S.ambAngle = Math.round(rnd(-90, 90)); S.ambAmp = +rnd(0.15, 0.4).toFixed(2);
+  S.colorBase = dark ? hsl(hue, rnd(0.05, 0.35), rnd(0.06, 0.16)) : hsl(hue, rnd(0.05, 0.3), rnd(0.85, 0.97));
+  S.colorHigh = hsl(hue + pick([0, 30, 150, 180, 210]), rnd(0.7, 1), dark ? rnd(0.5, 0.65) : rnd(0.3, 0.5));
+  S.colorLow = dark ? hsl(hue, 0.3, 0.03) : hsl(hue, 0.2, 0.7); S.lowMix = pick([0, 0.5, 1]);
+  S.bgAuto = false; S.bgColor = dark ? hsl(hue, 0.2, 0.035) : hsl(hue, 0.12, 0.8);
+  S.exposure = dark ? +rnd(0.8, 1.1).toFixed(2) : +rnd(0.9, 1.2).toFixed(2);
+  S.keyAngle = Math.round(rnd(-120, 0)); S.keyElev = Math.round(rnd(20, 55));
+  S.pitch = pick([0, 0, 12, 24, 36]); S.orbit = Math.round(rnd(-45, 45)); S.camDist = +rnd(10, 18).toFixed(1);
+  S.rgbShift = +rnd(0, 0.006).toFixed(4); S.grain = +rnd(0, 0.08).toFixed(3);
+  refreshUi(); applyAll(); clearPresetActive();
+  trail.length = 0; lastPoint = null;
+}
+
+/* panel show/hide, buttons, keys */
+const panel = document.getElementById('panel');
+document.getElementById('hideUi').addEventListener('click', () => panel.classList.add('hidden'));
+document.getElementById('toggleUi').addEventListener('click', () => panel.classList.remove('hidden'));
+document.getElementById('randomBtn').addEventListener('click', randomise);
+const toast = document.getElementById('toast');
+function showToast(msg) { toast.textContent = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1800); }
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const json = JSON.stringify(S, null, 2);
+  try { await navigator.clipboard.writeText(json); showToast('Settings copied as JSON'); }
+  catch (e) { console.log(json); showToast('Clipboard blocked — settings logged to console'); }
+});
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); addRandomPoint(1.2); }
+  else if (e.key === 'r') randomise();
+  else if (e.key === 'h') panel.classList.toggle('hidden');
+});
+
+/* ============================== boot ============================== */
+const q = new URLSearchParams(location.search);
+const startPreset = q.get('preset') && PRESETS[q.get('preset')] ? q.get('preset') : 'Arkon';
+if (IS_EMBED) S.idle = true;
+applyPreset(startPreset);
+if (IS_EMBED) { S.idle = true; S.idleEvery = Math.min(S.idleEvery, 1.2); }
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

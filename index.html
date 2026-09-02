@@ -224,7 +224,7 @@
 /* ---------- experiments index ----------
    To add an experiment: drop its folder in /e/<slug>/
    (the page must support ?embed to hide its UI),
-   and push one object to this array. Newest first.
+   and push one object to this array. Curated order (Stan decides).
    Cards render the experiment itself, live, in a scaled iframe. */
 const EXPERIMENTS = [
   {
@@ -236,12 +236,12 @@ const EXPERIMENTS = [
     tags: ['WebGL', 'Blender', 'Lighting'],
   },
   {
-    slug: 'gradient-lab',
-    num: '004',
-    title: 'Gradient Lab',
+    slug: 'dotted-planet',
+    num: '002',
+    title: 'Dotted Planet',
     date: '2026-09',
-    desc: 'Gradients that are not boring. Six GLSL types (mesh, silk, aurora, smoke, swirl, stripes), palette shuffle, cursor push, PNG export up to 4K.',
-    tags: ['WebGL', 'Shader', 'Tool'],
+    desc: 'A planet built from thousands of dots. Drag to orbit, switch presets, tune density, glow and atmosphere, copy your settings.',
+    tags: ['WebGL', 'three.js', 'Interactive'],
   },
   {
     slug: 'air-type',
@@ -252,12 +252,20 @@ const EXPERIMENTS = [
     tags: ['Canvas 2D', 'Typography', 'Interactive'],
   },
   {
-    slug: 'dotted-planet',
-    num: '002',
-    title: 'Dotted Planet',
+    slug: 'wave-grid',
+    num: '006',
+    title: 'Wave Grid',
     date: '2026-09',
-    desc: 'A planet built from thousands of dots. Drag to orbit, switch presets, tune density, glow and atmosphere, copy your settings.',
-    tags: ['WebGL', 'three.js', 'Interactive'],
+    desc: 'A field of instanced columns that ripple outward from the cursor. Waves lift, tilt and swell the blocks; tune physics, light, colour and post, copy your settings.',
+    tags: ['three.js', 'Instancing', 'Interactive'],
+  },
+  {
+    slug: 'gradient-lab',
+    num: '004',
+    title: 'Gradient Lab',
+    date: '2026-09',
+    desc: 'Gradients that are not boring. Six GLSL types (mesh, silk, aurora, smoke, swirl, stripes), palette shuffle, cursor push, PNG export up to 4K.',
+    tags: ['WebGL', 'Shader', 'Tool'],
   },
   {
     slug: 'ink-field',
