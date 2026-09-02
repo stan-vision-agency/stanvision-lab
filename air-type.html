@@ -37,8 +37,8 @@
 
   #hint{
     position:fixed; left:24px; bottom:22px; z-index:5; pointer-events:none;
-    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.06em;
-    text-transform:uppercase; color:var(--pagefg,#e6ebf2); opacity:.45;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em;
+    color:var(--pagefg,#e6ebf2); opacity:.5;
   }
 
   #panel{
@@ -120,6 +120,7 @@
     color:#0a0605; background:var(--text); border:none; border-radius:8px; padding:9px 0; cursor:pointer; transition:opacity .15s;
   }
   .footbar button:hover{opacity:.85;}
+  .footbar button.secondary{background:rgba(148,163,184,.12); color:var(--text);}
 
   #toggleUi{
     position:fixed; top:24px; right:16px; z-index:7; width:34px; height:34px; border-radius:9px; border:1px solid var(--line);
@@ -155,7 +156,7 @@
   <a class="lab-back" href="/"><span class="idx">003</span><span class="lbl">Air Type</span></a>
   <p>StanVision Lab — Canvas 2D</p>
 </header>
-<div id="hint">Move the cursor through the word</div>
+<div id="hint">move the cursor · space = gust · r = random · h = hide panel</div>
 
 <aside id="panel">
   <div class="head">
@@ -168,6 +169,7 @@
   </div>
   <div class="footbar">
     <button id="copyBtn">COPY SETTINGS</button>
+    <button id="randomBtn" class="secondary">RANDOMISE</button>
   </div>
 </aside>
 <button id="toggleUi" title="Show controls" aria-label="Show controls">☰</button>
@@ -433,10 +435,54 @@ Object.keys(PRESETS).forEach(name => {
   presetsEl.appendChild(b);
 });
 
+/* randomise + gust */
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+function hsl(h, s, l) {
+  h = ((h % 360) + 360) / 360;
+  const f = n => { const k = (n + h * 12) % 12; const c = l - s * Math.min(l, 1 - l) * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(c * 255).toString(16).padStart(2, '0'); };
+  return '#' + f(0) + f(8) + f(4);
+}
+function refreshUi() {
+  for (const k in ui) {
+    const u = ui[k]; if (!u) continue;
+    if (u.input) { if (u.input.type === 'checkbox') u.input.checked = S[k]; else u.input.value = S[k]; }
+    u.refresh(S[k]);
+  }
+}
+function randomise() {
+  const light = Math.random() < 0.3;
+  const hue = rnd(0, 360);
+  S.weight = pick([500, 600, 700, 800, 800, 900]); S.tracking = +pick([-0.08, -0.04, -0.04, 0, 0.04, 0.1]).toFixed(2);
+  S.caps = Math.random() < 0.3; S.width = +rnd(0.6, 0.95).toFixed(2);
+  S.cols = Math.round(rnd(90, 320) / 2) * 2; S.fill = +rnd(0.5, 1).toFixed(2);
+  S.shape = pick(['square', 'square', 'dot', 'diamond']); S.threshold = Math.round(rnd(60, 180) / 5) * 5;
+  S.reach = +rnd(0.15, 0.6).toFixed(2); S.push = +rnd(0.01, 0.12).toFixed(3); S.lift = +rnd(0, 0.05).toFixed(3);
+  S.drift = +rnd(0, 0.06).toFixed(3); S.shrink = +rnd(0, 1).toFixed(2);
+  S.ease = +rnd(0.03, 0.2).toFixed(3); S.follow = +rnd(0.05, 0.3).toFixed(2);
+  if (light) { S.bgColor = hsl(hue, rnd(0.05, 0.25), rnd(0.88, 0.96)); S.inkColor = hsl(hue + pick([0, 180, 210]), rnd(0.3, 0.9), rnd(0.1, 0.35)); }
+  else { S.bgColor = hsl(hue, rnd(0.15, 0.6), rnd(0.03, 0.14)); S.inkColor = pick(['#ffffff', hsl(hue + pick([0, 30, 150, 180]), rnd(0.7, 1), rnd(0.55, 0.8))]); }
+  refreshUi(); applyColors(); buildGrid(); clearPresetActive();
+}
+function gust() {
+  const LW = GW * cell;
+  for (const c of cells) {
+    const a = Math.random() * 6.283185, m = LW * rnd(0.02, 0.07);
+    c.dx += Math.cos(a) * m; c.dy += Math.sin(a) * m - LW * 0.02;
+  }
+}
+
 /* panel chrome */
 const panel = document.getElementById('panel');
 document.getElementById('hideUi').addEventListener('click', () => { panel.classList.add('hidden'); layout(); });
 document.getElementById('toggleUi').addEventListener('click', () => { panel.classList.remove('hidden'); layout(); });
+document.getElementById('randomBtn').addEventListener('click', randomise);
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { if (e.target.tagName === 'BUTTON') return; e.preventDefault(); gust(); }
+  else if (e.key === 'r') randomise();
+  else if (e.key === 'h') { panel.classList.toggle('hidden'); layout(); }
+});
 const toast = document.getElementById('toast');
 document.getElementById('copyBtn').addEventListener('click', async () => {
   const out = { preset: activePreset, ...S };

@@ -215,6 +215,13 @@
   .seg button.active{color:var(--text); background:rgba(148,163,184,.14);}
   .footbar button.secondary{background:rgba(148,163,184,.12); color:var(--text); border:1px solid var(--line);}
   html.embed #gl{cursor:default;}
+  #hint{
+    position:fixed; left:24px; bottom:22px; z-index:5; pointer-events:none;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em;
+    color:var(--pagefg,#e6ebf2); opacity:.5;
+  }
+  html.embed #hint{display:none !important;}
+  @media (max-width:720px){ #hint{display:none;} }
 </style>
 </head>
 <body>
@@ -225,6 +232,7 @@
   <a class="lab-back" href="/"><span class="idx">004</span><span class="lbl">Gradient Lab</span></a>
   <p>StanVision Lab — WebGL / GLSL</p>
 </header>
+<div id="hint">move the cursor · space = new seed · r = random · s = shuffle colours · h = hide panel</div>
 
 <aside id="panel">
   <div class="head">
@@ -596,6 +604,10 @@ function randomize() {
   S.detail = 2 + Math.floor(Math.random() * 4);
   S.blend = +(0.4 + Math.random() * 0.6).toFixed(2);
   S.angle = +((Math.random() - 0.5) * 1.2).toFixed(2);
+  S.speed = +(0.15 + Math.random() * 0.5).toFixed(2);
+  S.contrast = +(0.9 + Math.random() * 0.35).toFixed(2);
+  S.grain = +(Math.random() * 0.45).toFixed(2);
+  S.vignette = +(Math.random() * 0.45).toFixed(2);
   seed = Math.random() * 100;
   shuffleColors(); setModeActive();
 }
@@ -646,7 +658,7 @@ group('Export', [
     });
     row.append(lab, seg); return row;
   })(),
-  buttons([['SURPRISE ME', randomize]]),
+  buttons([['RANDOMISE', randomize]]),
 ], false);
 
 function syncUi() {
@@ -719,12 +731,13 @@ document.getElementById('pngBtn').addEventListener('click', () => {
   }, 'image/png');
 });
 
-/* keyboard: space = random, s = shuffle colours, h = hide panel */
+/* keyboard: space = new seed, r = random, s = shuffle colours, h = hide panel */
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
-  if (e.code === 'Space') { e.preventDefault(); randomize(); }
-  if (e.key === 's') shuffleColors();
-  if (e.key === 'h') panel.classList.toggle('hidden');
+  if (e.code === 'Space') { if (e.target.tagName === 'BUTTON') return; e.preventDefault(); reseed(); }
+  else if (e.key === 'r') randomize();
+  else if (e.key === 's') shuffleColors();
+  else if (e.key === 'h') panel.classList.toggle('hidden');
 });
 </script>
 </body>

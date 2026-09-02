@@ -42,8 +42,8 @@
 
   #hint{
     position:fixed; left:24px; bottom:22px; z-index:5; pointer-events:none;
-    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.06em;
-    text-transform:uppercase; color:var(--pagefg,#e6ebf2); opacity:.45;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em;
+    color:var(--pagefg,#e6ebf2); opacity:.5;
   }
 
   #panel{
@@ -155,7 +155,7 @@
   <a class="lab-back" href="/"><span class="idx">005</span><span class="lbl">Glass Plus</span></a>
   <p>StanVision Lab — Blender render + WebGL lighting</p>
 </header>
-<div id="hint">Move the cursor · light the glass</div>
+<div id="hint">move the cursor · space = flash · r = random · h = hide panel</div>
 
 <aside id="panel">
   <div class="head">
@@ -168,6 +168,7 @@
   </div>
   <div class="footbar">
     <button id="loadBtn" class="secondary">LOAD PNG</button>
+    <button id="randomBtn" class="secondary">RANDOMISE</button>
     <button id="copyBtn">COPY SETTINGS</button>
   </div>
 </aside>
@@ -417,7 +418,7 @@ function applyColors() {
 function hex3(hex) { const c = hex.replace('#', ''); return [0, 2, 4].map(i => parseInt(c.slice(i, i + 2), 16) / 255); }
 
 /* ============================== cursor ============================== */
-let tx = 0, ty = 0, cx = 0, cy = 0, lx = 0.5, ly = 0.5, hx = 0.5, hy = 0.5, lastMove = -1e9, hasPointer = false;
+let tx = 0, ty = 0, cx = 0, cy = 0, lx = 0.5, ly = 0.5, hx = 0.5, hy = 0.5, lastMove = -1e9, hasPointer = false, flash = 0;
 addEventListener('pointermove', e => {
   const r = cv.getBoundingClientRect(); if (!r.width) return;
   tx = ((e.clientX - r.left) / r.width) * 2 - 1;
@@ -456,15 +457,16 @@ function loop() {
   gl.uniform1f(U.uDisp, S.dispersion);
   gl.uniform1f(U.uThick, S.thickness);
   gl.uniform1f(U.uAbsorb, S.absorb);
+  flash *= 0.93;
   gl.uniform1f(U.uGain, S.gain);
-  gl.uniform1f(U.uSpec, S.spec);
+  gl.uniform1f(U.uSpec, S.spec * (1 + flash));
   gl.uniform1f(U.uRim, S.rim);
   gl.uniform2f(U.uLight, lx, ly);
   gl.uniform1f(U.uLightRad, S.lightRad);
   gl.uniform1f(U.uLightSoft, S.lightSoft);
   gl.uniform2f(U.uHot, hx, hy);
-  gl.uniform1f(U.uHotAmt, S.hotAmt);
-  gl.uniform1f(U.uHotRad, S.hotRad);
+  gl.uniform1f(U.uHotAmt, S.hotAmt + flash * 2.5);
+  gl.uniform1f(U.uHotRad, S.hotRad * (1 + flash * 0.8));
   const hc = hex3(S.hotColor); gl.uniform3f(U.uHotColor, hc[0], hc[1], hc[2]);
   gl.uniform1f(U.uTime, t);
   const ac = hex3(S.accentColor); gl.uniform3f(U.uAccent, ac[0], ac[1], ac[2]);
@@ -585,9 +587,41 @@ document.getElementById('copyBtn').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(JSON.stringify(out, null, 2)); say('Copied to clipboard'); }
   catch (e) { say('Clipboard blocked — see console'); console.log(JSON.stringify(out, null, 2)); }
 });
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+function hsl(h, s, l) {
+  h = ((h % 360) + 360) / 360;
+  const f = n => { const k = (n + h * 12) % 12; const c = l - s * Math.min(l, 1 - l) * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(c * 255).toString(16).padStart(2, '0'); };
+  return '#' + f(0) + f(8) + f(4);
+}
+function refreshUi() {
+  for (const k in ui) {
+    const u = ui[k]; if (!u) continue;
+    if (u.input) { if (u.input.type === 'checkbox') u.input.checked = S[k]; else u.input.value = S[k]; }
+    u.refresh(S[k]);
+  }
+}
+function randomise() {
+  const hue = rnd(0, 360), light = Math.random() < 0.2;
+  S.softness = Math.round(rnd(6, 70)); S.facets = +rnd(0.1, 1.6).toFixed(2);
+  S.gain = +rnd(0.7, 1.5).toFixed(2); S.spec = +rnd(0.3, 1.6).toFixed(2);
+  S.lightRad = +rnd(0.2, 1.2).toFixed(2); S.lightSoft = +rnd(0, 0.6).toFixed(2);
+  S.hotAmt = +rnd(0.2, 2).toFixed(2); S.hotRad = +rnd(0.08, 0.6).toFixed(3);
+  S.hotColor = pick(['#d8ff43', '#ff3d1f', hsl(hue, rnd(0.8, 1), rnd(0.5, 0.65)), hsl(hue, rnd(0.8, 1), rnd(0.5, 0.65))]);
+  S.rim = +pick([0, 0, 0.2, 0.5, 0.9]).toFixed(2); S.accentColor = pick(['#d8ff43', S.hotColor, hsl(hue + 180, 0.9, 0.6)]);
+  S.parallax = Math.round(rnd(0, 70)); S.tilt = +rnd(0.2, 2).toFixed(2);
+  S.follow = +rnd(0.03, 0.2).toFixed(3); S.lightFollow = +rnd(0.04, 0.3).toFixed(3);
+  S.breathe = +rnd(0, 0.03).toFixed(3); S.idleSpeed = +rnd(0.1, 0.7).toFixed(2);
+  S.plusScale = +rnd(0.6, 1.5).toFixed(2);
+  S.bgColor = light ? hsl(hue, rnd(0.03, 0.15), rnd(0.85, 0.95)) : hsl(hue, rnd(0.1, 0.6), rnd(0.02, 0.1));
+  refreshUi(); applyColors(); buildNormals(); clearPresetActive();
+}
+document.getElementById('randomBtn').addEventListener('click', randomise);
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
-  if (e.key === 'h') { panel.classList.toggle('hidden'); layout(); }
+  if (e.code === 'Space') { if (e.target.tagName === 'BUTTON') return; e.preventDefault(); flash = 1; }
+  else if (e.key === 'r') randomise();
+  else if (e.key === 'h') { panel.classList.toggle('hidden'); layout(); }
 });
 
 /* load / drop a replacement PNG */

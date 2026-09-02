@@ -77,10 +77,11 @@
   .btn.primary:hover{background:#fff}
 
   .hint{
-    position:fixed; left:24px; bottom:24px; z-index:10; color:var(--dim); letter-spacing:.04em;
-    transition:opacity 1s ease;
+    position:fixed; left:24px; bottom:22px; z-index:10; color:var(--ink); opacity:.5; letter-spacing:.04em; font-size:11px;
+    pointer-events:none;
   }
   .panel.min .row,.panel.min .actions{display:none}
+  .panel.hidden{display:none}
   @media (max-width:640px){
     .panel{left:16px; right:16px; bottom:16px; width:auto}
     .hint{display:none}
@@ -98,7 +99,7 @@
   <a class="brand" href="https://stan.vision" target="_blank" rel="noopener">StanVision Lab</a>
 </header>
 
-<p class="hint" id="hint">Move your cursor to stir the ink</p>
+<p class="hint" id="hint">move the cursor · space = stir · r = random · h = hide panel</p>
 
 <div class="panel" id="panel">
   <h2>Controls <button id="minBtn" aria-label="Collapse panel">—</button></h2>
@@ -118,7 +119,7 @@
     <input type="range" id="detail" min="2" max="8" step="1" value="5">
   </div>
   <div class="actions">
-    <button class="btn" id="randomBtn">Shuffle</button>
+    <button class="btn" id="randomBtn">Randomise</button>
     <button class="btn primary" id="saveBtn">Save PNG</button>
   </div>
 </div>
@@ -254,10 +255,26 @@ bind('speed','speed','speedOut', v=>v.toFixed(2).replace(/0$/,''));
 bind('warp','warp','warpOut', v=>v.toFixed(2).replace(/0$/,''));
 bind('detail','detail','detailOut', v=>v.toFixed(0));
 
-document.getElementById('randomBtn').onclick = ()=>{
+function setCtl(id, key, v){
+  state[key] = v;
+  const el = document.getElementById(id); el.value = v;
+  el.dispatchEvent(new Event('input'));
+}
+function randomise(){
   state.seed = Math.random()*100;
   setPalette(Math.floor(Math.random()*PALETTES.length));
-};
+  setCtl('speed','speed', +(0.2+Math.random()*2.2).toFixed(2));
+  setCtl('warp','warp', +(0.3+Math.random()*2.5).toFixed(2));
+  setCtl('detail','detail', 2+Math.floor(Math.random()*7));
+  stir = 1;
+}
+document.getElementById('randomBtn').onclick = randomise;
+addEventListener('keydown', e=>{
+  if(e.target.tagName==='INPUT') return;
+  if(e.code==='Space'){ if(e.target.tagName==='BUTTON') return; e.preventDefault(); stir = 1; }
+  else if(e.key==='r') randomise();
+  else if(e.key==='h') panel.classList.toggle('hidden');
+});
 document.getElementById('saveBtn').onclick = ()=>{
   draw(performance.now());
   const a = document.createElement('a');
@@ -278,8 +295,6 @@ function onMove(x,y){
   mouse = [x*devicePixelRatio, (innerHeight-y)*devicePixelRatio];
   stir = Math.min(1, stir + .08);
   lastMove = performance.now();
-  const h = document.getElementById('hint');
-  if(h){ h.style.opacity = 0; setTimeout(()=>h.remove(), 1100); }
 }
 addEventListener('pointermove', e=>onMove(e.clientX, e.clientY), {passive:true});
 addEventListener('touchmove', e=>{ const t=e.touches[0]; onMove(t.clientX, t.clientY); }, {passive:true});
