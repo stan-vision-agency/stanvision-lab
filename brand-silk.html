@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>008 · Brand Silk — StanVision Lab</title>
+<meta name="description" content="The StanVision brand pattern as a live shader. Silk folds made of thousands of short streaks, lit by your cursor, coloured with tone ramps measured from the original brand artwork. Four brand colours, seed shuffle, PNG export up to 8K. A StanVision Lab experiment.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ink:#0a0a0b;
+    --panel:rgba(13,17,23,.86);
+    --line:rgba(148,163,184,.16);
+    --text:#e6ebf2;
+    --mute:#8a94a3;
+    --accent:#d8ff43;
+  }
+  html,body{height:100%;}
+  body{margin:0; background:var(--ink); color:var(--text); font-family:"Archivo",system-ui,-apple-system,sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased;}
+  #stage{position:fixed; inset:0;}
+  #stage canvas{display:block; width:100%; height:100%; cursor:crosshair;}
+
+  header{position:fixed; top:20px; left:24px; z-index:5; pointer-events:none; color:var(--text); text-shadow:0 1px 2px rgba(0,0,0,.6), 0 0 12px rgba(0,0,0,.5);}
+  header a.lab-back{
+    pointer-events:auto; color:var(--text); text-decoration:none; display:flex; align-items:center; gap:10px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; letter-spacing:.04em;
+  }
+  header a.lab-back .idx{color:var(--accent);}
+  header a.lab-back:hover .lbl{text-decoration:underline; text-underline-offset:3px;}
+  header p{margin:4px 0 0; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em; opacity:.55;}
+  #hint{
+    position:fixed; left:24px; bottom:22px; z-index:5; pointer-events:none;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em; color:var(--text); opacity:.7; text-shadow:0 1px 2px rgba(0,0,0,.6), 0 0 12px rgba(0,0,0,.5);
+  }
+
+  #panel{
+    position:fixed; top:16px; right:16px; bottom:16px; width:288px; z-index:6;
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    display:flex; flex-direction:column; overflow:hidden;
+    transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s;
+  }
+  #panel.hidden{transform:translateX(calc(100% + 24px)); opacity:0; pointer-events:none;}
+  #panel .head{display:flex; align-items:center; justify-content:space-between; padding:14px 16px 12px; border-bottom:1px solid var(--line);}
+  #panel .head span{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--mute);}
+  #panel .body{overflow-y:auto; padding:6px 16px 16px; flex:1; scrollbar-width:thin; scrollbar-color:rgba(148,163,184,.3) transparent;}
+  #panel .body::-webkit-scrollbar{width:6px;}
+  #panel .body::-webkit-scrollbar-thumb{background:rgba(148,163,184,.25); border-radius:3px;}
+  .hidebtn{background:none; border:none; color:var(--mute); font-size:15px; cursor:pointer; padding:2px 4px; line-height:1;}
+  .hidebtn:hover{color:var(--text);}
+
+  .presets{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:14px 0 4px;}
+  .presets button{
+    position:relative; height:44px; border-radius:8px; border:1px solid var(--line); cursor:pointer; background:var(--c);
+    transition:transform .15s, box-shadow .15s;
+  }
+  .presets button:hover{transform:translateY(-1px);}
+  .presets button.active{box-shadow:0 0 0 2px var(--ink), 0 0 0 3.5px var(--accent);}
+  .ramp{height:8px; border-radius:4px; margin:10px 0 2px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);}
+
+  details{border-bottom:1px solid var(--line); padding:2px 0;}
+  details:last-of-type{border-bottom:none;}
+  summary{list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding:12px 2px; font-size:12px; font-weight:600; letter-spacing:.02em; user-select:none;}
+  summary::-webkit-details-marker{display:none;}
+  summary::after{content:""; width:7px; height:7px; border-right:1.4px solid var(--mute); border-bottom:1.4px solid var(--mute); transform:rotate(45deg); transition:transform .2s; margin-right:4px;}
+  details:not([open]) summary::after{transform:rotate(-45deg);}
+  .grp{display:flex; flex-direction:column; gap:11px; padding:2px 2px 14px;}
+
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:22px;}
+  .row label{font-size:12px; color:var(--mute); flex:0 0 auto;}
+  .slider-row{display:flex; flex-direction:column; gap:6px;}
+  .slider-row .top{display:flex; justify-content:space-between; align-items:baseline;}
+  .slider-row .top label{font-size:12px; color:var(--mute);}
+  .slider-row .top .val{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--text); font-variant-numeric:tabular-nums;}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer; margin:0;}
+  input[type=range]::-webkit-slider-runnable-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:12px; height:12px; border-radius:50%; background:var(--text); margin-top:-5px; border:none; transition:transform .12s; box-shadow:0 0 0 3px rgba(5,7,11,.6);}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+  input[type=range]::-moz-range-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-moz-range-thumb{width:12px; height:12px; border-radius:50%; background:var(--text); border:none;}
+  input[type=color]{-webkit-appearance:none; appearance:none; width:44px; height:22px; border:1px solid var(--line); border-radius:6px; background:none; padding:0; cursor:pointer;}
+  input[type=color]::-webkit-color-swatch-wrapper{padding:2px;}
+  input[type=color]::-webkit-color-swatch{border:none; border-radius:4px;}
+  input[type=color]::-moz-color-swatch{border:none; border-radius:4px;}
+  input[type=text], input[type=number]{
+    box-sizing:border-box; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line); border-radius:8px; padding:7px 9px; outline:none; width:100%;
+  }
+  input:focus{border-color:rgba(148,163,184,.45);}
+  .wh{display:grid; grid-template-columns:1fr 14px 1fr; gap:6px; align-items:center;}
+  .wh span{text-align:center; color:var(--mute); font-size:12px;}
+  .switch{position:relative; width:32px; height:18px; flex:0 0 auto;}
+  .switch input{position:absolute; opacity:0; inset:0; margin:0; cursor:pointer;}
+  .switch i{position:absolute; inset:0; border-radius:9px; background:rgba(148,163,184,.25); transition:background .18s; pointer-events:none;}
+  .switch i::after{content:""; position:absolute; left:2px; top:2px; width:14px; height:14px; border-radius:50%; background:var(--text); transition:transform .18s, background .18s;}
+  .switch input:checked + i{background:var(--accent);}
+  .switch input:checked + i::after{transform:translateX(14px); background:#0f1409;}
+  .modes{display:grid; grid-template-columns:repeat(3,1fr); gap:6px;}
+  .modes button{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; letter-spacing:.01em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line); border-radius:8px; padding:7px 2px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .modes button:hover{border-color:rgba(148,163,184,.45);}
+  .modes button.active{border-color:var(--accent); background:rgba(216,255,67,.14);}
+  .btnrow{display:flex; gap:8px;}
+  .btnrow button{flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em; color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line); border-radius:8px; padding:8px 6px; cursor:pointer; transition:border-color .15s;}
+  .btnrow button:hover{border-color:rgba(148,163,184,.45);}
+  .note{margin:0; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; line-height:1.5; color:var(--mute);}
+
+  .footbar{border-top:1px solid var(--line); padding:12px 16px; display:flex; gap:8px;}
+  .footbar button{flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em; color:#0a0605; background:var(--text); border:none; border-radius:8px; padding:9px 0; cursor:pointer; transition:opacity .15s; white-space:nowrap;}
+  .footbar button:hover{opacity:.85;}
+  .footbar button.secondary{background:rgba(148,163,184,.14); color:var(--text);}
+  .footbar button[disabled]{opacity:.5; cursor:progress;}
+
+  #toggleUi{
+    position:fixed; top:24px; right:16px; z-index:7; width:34px; height:34px; border-radius:9px; border:1px solid var(--line);
+    background:var(--panel); backdrop-filter:blur(14px); color:var(--mute); cursor:pointer; font-size:15px; line-height:1;
+    display:none; align-items:center; justify-content:center;
+  }
+  #panel.hidden ~ #toggleUi{display:flex;}
+  #toast{
+    position:fixed; left:50%; bottom:28px; transform:translate(-50%,12px); z-index:9; background:var(--text); color:#0a0605;
+    font-size:12px; font-weight:500; padding:8px 14px; border-radius:8px; opacity:0; transition:opacity .2s, transform .2s; pointer-events:none;
+  }
+  #toast.show{opacity:1; transform:translate(-50%,0);}
+  #nogl{position:fixed; inset:0; display:none; align-items:center; justify-content:center; text-align:center; padding:40px; color:var(--mute); font-size:14px;}
+
+  html.embed header, html.embed #panel, html.embed #toggleUi, html.embed #toast, html.embed #hint{display:none !important;}
+  @media (max-width:720px){
+    #panel{top:auto; left:12px; right:12px; bottom:12px; width:auto; max-height:46vh;}
+    #panel.hidden{transform:translateY(calc(100% + 20px));}
+    header{left:16px; top:16px;}
+    #toggleUi{top:auto; bottom:20px;}
+    #hint{display:none;}
+  }
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
+</style>
+</head>
+<body>
+<script>if(location.search.indexOf('embed')>-1)document.documentElement.classList.add('embed');</script>
+<div id="stage"><canvas id="gl"></canvas></div>
+<div id="nogl">WebGL 2 is not available in this browser, so Brand Silk can't render here.</div>
+
+<header>
+  <a class="lab-back" href="/"><span class="idx">008</span><span class="lbl">Brand Silk</span></a>
+  <p>StanVision Lab — WebGL / brand pattern generator</p>
+</header>
+<div id="hint">move the cursor = light · space = pause · r = random · h = hide panel</div>
+
+<aside id="panel">
+  <div class="head">
+    <span>Controls</span>
+    <button class="hidebtn" id="hideUi" title="Hide panel" aria-label="Hide panel">&times;</button>
+  </div>
+  <div class="body">
+    <div class="presets" id="presets"></div>
+    <div class="ramp" id="ramp" title="Tone ramp measured from the original brand pattern"></div>
+    <div id="groups"></div>
+  </div>
+  <div class="footbar">
+    <button id="randomBtn" class="secondary">RANDOMISE</button>
+    <button id="exportBtn">EXPORT PNG</button>
+  </div>
+</aside>
+<button id="toggleUi" title="Show controls" aria-label="Show controls">☰</button>
+<div id="toast"></div>
+
+<script>
+/* ============================== data ============================== */
+// Tone ramps measured from the original brand patterns: luminance percentile → colour.
+const STOPS = [0.002,0.02,0.06,0.15,0.3,0.5,0.7,0.85,0.94,0.98,0.996,0.9995];
+const PRESETS = [
+  {name:'Brand Purple', hex:'#903DFF', look:{angle:18, rows:520, dash:8, gap:0.45, scale:1.1, warp:0.9, contrast:0.7, spark:0.7},
+    ramp:['#06003F','#150258','#220B66','#351D79','#533796','#7458B2','#957CC9','#B49CDB','#CFBAEB','#E7D6F5','#F9F2FC','#FDFBFE']},
+  {name:'Green', hex:'#02D170', look:{angle:4, rows:520, dash:9, gap:0.5, scale:0.9, warp:0.8, contrast:0.7, spark:0.5},
+    ramp:['#02130C','#062118','#0A2B1E','#0F3628','#184633','#296048','#418164','#59A381','#70BE96','#88D5A7','#B0EEC6','#CFF8DD']},
+  {name:'Blue', hex:'#7DDEFF', look:{angle:20, rows:520, dash:7, gap:0.45, scale:1.3, warp:0.85, contrast:0.7, spark:0.75},
+    ramp:['#011920','#032834','#053341','#084356','#0E5B76','#1C7BA3','#38A0C5','#58BCD8','#77D0E6','#92E1F2','#C7F6FC','#E6FCFE']},
+  {name:'Orange', hex:'#FF5D00', look:{angle:18, rows:520, dash:8, gap:0.45, scale:1.0, warp:0.9, contrast:0.7, spark:0.65},
+    ramp:['#1F1004','#351907','#482108','#652E0B','#8F3F0F','#BE5315','#E06B29','#EC874F','#F2A47A','#F6BE9E','#FBDDCB','#FDEDE4']},
+];
+const SIZES = [['1920×1080',1920,1080],['3840×2160',3840,2160],['2048²',2048,2048],['1080×1350',1080,1350],['1080×1920',1080,1920],['Screen ×2',0,0]];
+const S = {color:'#903DFF', colorName:'Brand Purple', seed:1, scale:1.1, warp:0.9, angle:18, rows:520, dash:8, gap:0.45,
+           contrast:0.7, exposure:0, spark:0.7, grain:0.15, motion:true, followCursor:true, w:1920, h:1080};
+S.seed = Math.floor(Math.random()*9000)+1;
+const IS_EMBED = document.documentElement.classList.contains('embed');
+
+/* ============================== shader ============================== */
+const VS = `#version 300 es
+in vec2 a; void main(){ gl_Position = vec4(a,0.,1.); }`;
+const FS = `#version 300 es
+precision highp float;
+out vec4 O;
+uniform vec2 uRes; uniform float uSeed, uTime, uScale, uWarp, uAngle, uRows, uDash, uGap, uContrast, uSpark, uGrain;
+uniform vec2 uLightDir; uniform int uMode; uniform sampler2D uLUT;
+
+float h21(vec2 p){ p = fract(p*vec2(123.34,456.21)); p += dot(p,p+45.32); return fract(p.x*p.y); }
+float vnoise(vec2 p){
+  vec2 i=floor(p), f=fract(p); vec2 u=f*f*f*(f*(f*6.-15.)+10.);
+  return mix(mix(h21(i),h21(i+vec2(1,0)),u.x), mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),u.x), u.y);
+}
+float fbm3(vec2 p){ float v=0., a=.5; mat2 m=mat2(1.6,1.2,-1.2,1.6); for(int k=0;k<3;k++){ v+=a*vnoise(p); p=m*p+vec2(3.1,1.7); a*=.5; } return v; }
+mat2 rot(float a){ float c=cos(a), s=sin(a); return mat2(c,-s,s,c); }
+
+// Silk displacement: rows are pushed up/down by an amount that changes quickly along x but slowly along y,
+// so they bend into folds while keeping an even thickness. uTime drifts the folds.
+vec2 frame(vec2 p){
+  vec2 q = rot(uAngle)*p;
+  vec2 s = vec2(uSeed*0.173 + uTime*0.03, uSeed*0.311 + uTime*0.012);
+  float wy = fbm3(vec2(q.x*0.6, q.y*0.3)*uScale + s) - 0.5;
+  float wx = fbm3(vec2(q.x*0.7, q.y*0.9)*uScale + s + vec2(11.3,7.9)) - 0.5;
+  return q + vec2(wx*0.2, wy*0.55)*uWarp;
+}
+float height(vec2 q){
+  float f = fbm3(vec2(q.x*0.42, q.y*1.6)*uScale + vec2(uSeed*0.071 + uTime*0.02, 4.2));
+  float g = vnoise(vec2(q.x*1.4, q.y*3.2)*uScale + vec2(2.0, uSeed*0.053));
+  return f + g*0.07;
+}
+vec3 hueShift(vec3 c, float t){
+  const vec3 k = vec3(0.57735); float cs=cos(t), sn=sin(t);
+  return c*cs + cross(k,c)*sn + k*dot(k,c)*(1.-cs);
+}
+
+void main(){
+  vec2 uv = gl_FragCoord.xy/uRes;
+  float asp = uRes.x/uRes.y;
+  vec2 p = (uv-0.5)*vec2(asp,1.0);
+  float e = 1.6/uRes.y;
+
+  vec2 q  = frame(p);
+  float h  = height(q);
+  float hx = height(frame(p+vec2(e,0.)));
+  float hy = height(frame(p+vec2(0.,e)));
+  float amp = (0.25 + 1.1*uContrast) * 0.55/e;
+  vec3 n = normalize(vec3(-(hx-h)*amp, -(hy-h)*amp, 1.0));
+
+  vec3 L = normalize(vec3(uLightDir*0.9, 1.0));
+  float t = clamp(dot(n,L)/L.z, 0.0, 1.8);
+  float dif = smoothstep(-0.15, 1.0, mix(1.0, t, 0.35+0.65*uContrast));
+  float lift = smoothstep(0.95, 1.55, t);
+  vec3 H = normalize(L+vec3(0,0,1));
+  float spec = pow(max(dot(n,H),0.), 40.0);
+  float sheen = pow(max(dot(n,H),0.), 9.0);
+
+  // streak rows
+  float ry = q.y*uRows;
+  float ri = floor(ry);
+  float rf = fract(ry);
+  float aaR = fwidth(ry);
+  float rHash = h21(vec2(ri, 3.7));
+  float xr = q.x*uRows + rHash*173.0;
+  float len = uDash*(0.55 + 0.9*h21(vec2(ri, 9.1)));
+  float ci = floor(xr/len);
+  float cf = fract(xr/len);
+  float aaX = fwidth(xr)/len;
+  vec2 cid = vec2(ci, ri);
+  float cHash = h21(cid);
+  float fill = 1.0 - uGap*(0.35 + 0.9*h21(cid+vec2(5.5,1.1)));
+  float dash = smoothstep(0.0, aaX, cf) * smoothstep(fill+aaX, fill, cf);
+  float rowIn = smoothstep(0.0, aaR*0.8, rf) * smoothstep(1.0, 1.0-aaR*0.8, rf);
+  float rowShade = 0.8 + 0.2*sin(rf*3.14159);
+  dash *= rowIn;
+
+  // tone: one luminance-like scalar, mapped to colour through the measured ramp
+  float bright = 0.45 + 0.9*cHash;
+  float thread = mix(0.05, 0.62, dif) * bright * rowShade;
+  thread = mix(thread, 0.95, lift*(0.15+0.85*cHash*cHash));
+  thread = mix(thread, 0.9, sheen*0.35*cHash);
+  float sparkGate = step(1.0 - 0.22*uSpark, h21(cid+vec2(7.7,3.3)));
+  thread += sparkGate * (spec*1.8 + sheen*0.5 + lift*0.4) * uSpark;
+  float glint = step(1.0 - 0.035*uSpark, h21(vec2(floor(xr), ri) + 0.31)) * (0.5 + 0.8*lift + spec);
+  thread += glint;
+  float gap = mix(0.02, 0.32, dif) * (0.7+0.3*rHash);
+  gap = mix(gap, 0.6, lift*0.5);
+  float tone = mix(gap, thread, dash);
+  tone = clamp(tone*(0.9 + 0.25*dif + 0.15*lift), 0.0, 1.0);
+
+  if (uMode == 0) { O = vec4(vec3(tone), 1.0); return; }
+
+  vec3 col = texture(uLUT, vec2(tone*0.998+0.001, 0.5)).rgb;
+  col = hueShift(col, (h21(cid+vec2(2.2,8.8))-0.5)*0.12*dash);
+  float gr = (h21(gl_FragCoord.xy + uSeed) - 0.5) * uGrain * 0.12;
+  O = vec4(max(col + gr, 0.0), 1.0);
+}`;
+
+function makeRenderer(canvas){
+  const gl = canvas.getContext('webgl2', {preserveDrawingBuffer:true, antialias:false, premultipliedAlpha:false});
+  if (!gl) return null;
+  const mk = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(s)); return null; } return s; };
+  const vs = mk(gl.VERTEX_SHADER, VS), fs = mk(gl.FRAGMENT_SHADER, FS);
+  if (!vs || !fs) return null;
+  const prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(prog)); return null; }
+  gl.useProgram(prog);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const U = {}; ['uRes','uSeed','uTime','uScale','uWarp','uAngle','uRows','uDash','uGap','uContrast','uSpark','uGrain','uLightDir','uMode','uLUT']
+    .forEach(n => U[n] = gl.getUniformLocation(prog, n));
+  const lut = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, lut);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.uniform1i(U.uLUT, 0);
+  return {
+    gl,
+    setLUT(rgb){ gl.bindTexture(gl.TEXTURE_2D, lut); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 256, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, rgb); },
+    draw(w, h, s, mode, time, light){
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+      gl.viewport(0, 0, w, h);
+      gl.uniform2f(U.uRes, w, h);
+      gl.uniform1f(U.uSeed, s.seed); gl.uniform1f(U.uTime, time);
+      gl.uniform1f(U.uScale, s.scale); gl.uniform1f(U.uWarp, s.warp);
+      gl.uniform1f(U.uAngle, s.angle*Math.PI/180);
+      gl.uniform1f(U.uRows, s.rows); gl.uniform1f(U.uDash, s.dash); gl.uniform1f(U.uGap, s.gap);
+      gl.uniform1f(U.uContrast, s.contrast); gl.uniform1f(U.uSpark, s.spark); gl.uniform1f(U.uGrain, s.grain);
+      gl.uniform2f(U.uLightDir, light[0], light[1]);
+      gl.uniform1i(U.uMode, mode);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    },
+    readTone(w, h){
+      const px = new Uint8Array(w*h*4); gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      const hist = new Float64Array(256); for (let i = 0; i < px.length; i += 4) hist[px[i]]++;
+      return hist;
+    }
+  };
+}
+
+/* ============================== colour ramps ============================== */
+const hexToRgb = hex => { const n = parseInt(hex.replace('#',''), 16); return [(n>>16)&255, (n>>8)&255, n&255]; };
+const rgbToHex = c => '#' + c.map(v => Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('').toUpperCase();
+function rgbToHsv([r,g,b]){ r/=255; g/=255; b/=255; const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn; let h=0;
+  if (d) { h = mx===r ? ((g-b)/d)%6 : mx===g ? (b-r)/d+2 : (r-g)/d+4; h = (h*60+360)%360; } return [h, mx?d/mx:0, mx]; }
+function hsvToRgb(h,s,v){ const f = n => { const k=(n+h/60)%6; return v - v*s*Math.max(0, Math.min(k, 4-k, 1)); }; return [f(5)*255, f(3)*255, f(1)*255]; }
+const GEN_V = [0.07,0.13,0.18,0.26,0.38,0.53,0.70,0.83,0.91,0.96,0.99,1.0];
+const GEN_S = [1.0,1.0,0.98,0.95,0.9,0.82,0.68,0.52,0.38,0.24,0.11,0.03];
+function presetFor(hex){ return PRESETS.find(p => p.hex.toLowerCase() === hex.toLowerCase()); }
+function rampFor(hex){
+  const preset = presetFor(hex);
+  if (preset) return preset.ramp.map(hexToRgb);
+  const [h, s0] = rgbToHsv(hexToRgb(hex)); const s = Math.max(0.6, s0);
+  return GEN_V.map((v, i) => hsvToRgb(h, s*GEN_S[i], v));
+}
+function sampleRamp(ramp, u){
+  if (u <= STOPS[0]) return ramp[0];
+  for (let i = 1; i < STOPS.length; i++) if (u <= STOPS[i]) {
+    const f = (u - STOPS[i-1]) / (STOPS[i] - STOPS[i-1]); const a = ramp[i-1], b = ramp[i];
+    return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f];
+  }
+  return ramp[ramp.length-1];
+}
+// Histogram-match: tone → percentile → ramp colour. Exposure shifts the percentile.
+function buildLUT(hist, ramp, exposure){
+  const total = hist.reduce((a,b) => a+b, 0) || 1;
+  const out = new Uint8Array(256*3); let acc = 0;
+  for (let i = 0; i < 256; i++) {
+    const mid = (acc + hist[i]*0.5) / total; acc += hist[i];
+    let u = mid;
+    if (exposure) u = Math.pow(u, Math.pow(2, -exposure*1.6));
+    const c = sampleRamp(ramp, Math.min(1, Math.max(0, u)));
+    out[i*3] = Math.round(c[0]); out[i*3+1] = Math.round(c[1]); out[i*3+2] = Math.round(c[2]);
+  }
+  return out;
+}
+
+/* ============================== renderers ============================== */
+const canvas = document.getElementById('gl');
+const R = makeRenderer(canvas);
+if (!R) { document.getElementById('nogl').style.display = 'flex'; }
+const workCanvas = document.createElement('canvas');
+const W = R ? makeRenderer(workCanvas) : null;
+
+let time = 0, lastT = performance.now(), idle = 10;
+let light = [-0.7, 0.7], lightTarget = [-0.7, 0.7];
+let lutDirty = true, currentLUT = null;
+
+function computeLUT(w, h){
+  // Analyse tone at a resolution where a streak row is at least a pixel tall.
+  const ar = w / h;
+  const ah = Math.min(h, Math.max(540, Math.round(S.rows*1.2))); const aw = Math.round(ah*ar);
+  W.draw(aw, ah, S, 0, time, light);
+  currentLUT = buildLUT(W.readTone(aw, ah), rampFor(S.color), S.exposure);
+  R.setLUT(currentLUT); W.setLUT(currentLUT);
+  lutDirty = false;
+}
+function resize(){
+  const dpr = Math.min(devicePixelRatio || 1, 1.5);
+  const w = Math.round(canvas.clientWidth*dpr), h = Math.round(canvas.clientHeight*dpr);
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; lutDirty = true; }
+}
+addEventListener('resize', resize);
+
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let paused = reduced;
+function frame(now){
+  if (!R) return;
+  const dt = Math.min(0.1, (now - lastT)/1000); lastT = now;
+  if (S.motion && !paused) time += dt;
+  // light: follow the cursor, or orbit slowly when idle / embedded
+  if (IS_EMBED || !S.followCursor || idle > 3) { const a = now*0.00012; lightTarget = [Math.cos(a)*0.8, Math.sin(a)*0.5 + 0.35]; }
+  light[0] += (lightTarget[0]-light[0])*0.06; light[1] += (lightTarget[1]-light[1])*0.06;
+  idle += dt;
+  resize();
+  if (lutDirty) computeLUT(canvas.width, canvas.height);
+  R.draw(canvas.width, canvas.height, S, 1, time, light);
+  requestAnimationFrame(frame);
+}
+addEventListener('pointermove', e => {
+  const r = canvas.getBoundingClientRect();
+  const x = (e.clientX - r.left)/r.width*2 - 1, y = -((e.clientY - r.top)/r.height*2 - 1);
+  lightTarget = [x*1.1, y*1.1]; idle = 0;
+}, {passive:true});
+
+/* ============================== UI ============================== */
+const panel = document.getElementById('panel');
+const groupsEl = document.getElementById('groups');
+const ui = {};
+function markDirty(){ lutDirty = true; }
+function slider(key, label, min, max, step, fmt){
+  const wrap = document.createElement('div'); wrap.className = 'slider-row';
+  const top = document.createElement('div'); top.className = 'top';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const val = document.createElement('span'); val.className = 'val';
+  top.append(lab, val);
+  const input = document.createElement('input'); input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = S[key];
+  const refresh = () => { input.value = S[key]; val.textContent = fmt(S[key]); };
+  refresh();
+  input.addEventListener('input', () => { S[key] = +input.value; refresh(); markDirty(); });
+  wrap.append(top, input); ui[key] = {refresh};
+  return wrap;
+}
+function toggle(key, label, onChange){
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const sw = document.createElement('span'); sw.className = 'switch';
+  const input = document.createElement('input'); input.type = 'checkbox'; input.checked = S[key];
+  const i = document.createElement('i'); sw.append(input, i);
+  input.addEventListener('change', () => { S[key] = input.checked; onChange && onChange(); });
+  row.append(lab, sw); ui[key] = {refresh: () => input.checked = S[key]};
+  return row;
+}
+function colorRow(){
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = 'Custom colour';
+  const wrap = document.createElement('div'); wrap.style.cssText = 'display:flex;gap:6px;align-items:center;';
+  const pick = document.createElement('input'); pick.type = 'color'; pick.value = S.color;
+  const hex = document.createElement('input'); hex.type = 'text'; hex.value = S.color; hex.maxLength = 7; hex.style.width = '84px'; hex.spellcheck = false;
+  const apply = v => { if (!/^#[0-9a-f]{6}$/i.test(v)) return; const p = presetFor(v); if (p) applyPreset(p); else { S.color = v.toUpperCase(); S.colorName = 'Custom'; syncPresets(); markDirty(); } };
+  pick.addEventListener('input', () => apply(pick.value));
+  hex.addEventListener('change', () => { let v = hex.value.trim(); if (v[0] !== '#') v = '#'+v; apply(v); hex.value = S.color; });
+  wrap.append(pick, hex); row.append(lab, wrap);
+  ui.color = {refresh: () => { pick.value = S.color; hex.value = S.color; }};
+  return row;
+}
+function sizeModes(){
+  const wrap = document.createElement('div'); wrap.className = 'modes';
+  SIZES.forEach(([label, w, h]) => {
+    const b = document.createElement('button'); b.textContent = label; b.dataset.w = w; b.dataset.h = h;
+    b.addEventListener('click', () => { S.w = w; S.h = h; syncSizes(); });
+    wrap.appendChild(b);
+  });
+  ui.sizes = wrap; return wrap;
+}
+function syncSizes(){ ui.sizes.querySelectorAll('button').forEach(b => b.classList.toggle('active', +b.dataset.w === S.w && +b.dataset.h === S.h)); }
+function note(text){ const p = document.createElement('p'); p.className = 'note'; p.textContent = text; return p; }
+function group(title, items, open = true){
+  const det = document.createElement('details'); det.open = open;
+  const sum = document.createElement('summary'); sum.textContent = title;
+  const grp = document.createElement('div'); grp.className = 'grp';
+  items.forEach(i => grp.appendChild(i)); det.append(sum, grp); groupsEl.appendChild(det);
+}
+
+const presetsEl = document.getElementById('presets');
+PRESETS.forEach(p => {
+  const b = document.createElement('button'); b.style.setProperty('--c', p.hex); b.title = `${p.name} ${p.hex}`; b.setAttribute('aria-label', b.title);
+  b.dataset.hex = p.hex; b.addEventListener('click', () => applyPreset(p)); presetsEl.appendChild(b);
+});
+function syncPresets(){
+  presetsEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.hex.toLowerCase() === S.color.toLowerCase()));
+  const ramp = rampFor(S.color);
+  document.getElementById('ramp').style.background = `linear-gradient(90deg, ${ramp.map((c,i) => rgbToHex(c) + ' ' + (STOPS[i]*100).toFixed(1) + '%').join(',')})`;
+  ui.color && ui.color.refresh();
+}
+function applyPreset(p){
+  S.color = p.hex; S.colorName = p.name; Object.assign(S, p.look); S.exposure = 0;
+  Object.values(ui).forEach(u => u.refresh && u.refresh()); syncPresets(); markDirty();
+}
+
+group('Colour', [colorRow(), slider('exposure', 'Exposure', -0.6, 0.6, 0.01, v => (v>0?'+':'')+v.toFixed(2)+' ev'),
+  note('Brand presets use tone ramps measured from the original patterns, so shadows, mids and highlights land on the same colours.')]);
+group('Waves', [slider('scale','Fold size',0.4,2.6,0.01, v => v.toFixed(2)+'×'), slider('warp','Drama',0,1.6,0.01, v => Math.round(v*100)+'%'),
+  slider('angle','Angle',-45,45,1, v => v+'°'), toggle('motion','Drift')]);
+group('Streaks', [slider('rows','Density',120,900,5, v => v+' rows'), slider('dash','Dash length',4,80,1, v => v+' u'), slider('gap','Breakup',0,0.7,0.01, v => Math.round(v*100)+'%')], false);
+group('Light', [slider('contrast','Shadow depth',0,1,0.01, v => Math.round(v*100)+'%'), slider('spark','Sparkle',0,1,0.01, v => Math.round(v*100)+'%'),
+  slider('grain','Grain',0,1,0.01, v => Math.round(v*100)+'%'), toggle('followCursor','Light follows cursor')], false);
+group('Export', [sizeModes(), note('Renders the current frame at the chosen size. Rows are counted per image height, so the streak scale matches the preview.')], false);
+syncPresets(); syncSizes();
+
+/* ============================== export ============================== */
+const toast = document.getElementById('toast');
+function showToast(msg){ toast.textContent = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2200); }
+const exportBtn = document.getElementById('exportBtn');
+exportBtn.addEventListener('click', async () => {
+  if (!W) return;
+  let w = S.w, h = S.h;
+  if (!w) { w = canvas.width*2; h = canvas.height*2; }
+  const maxTex = W.gl.getParameter(W.gl.MAX_TEXTURE_SIZE);
+  if (w > maxTex || h > maxTex) { showToast(`This GPU caps exports at ${maxTex} px`); return; }
+  exportBtn.disabled = true; showToast(`Rendering ${w} × ${h}…`);
+  await new Promise(r => setTimeout(r, 30));
+  try {
+    computeLUT(w, h);
+    W.draw(w, h, S, 1, time, light); W.gl.finish();
+    const blob = await new Promise((res, rej) => workCanvas.toBlob(b => b ? res(b) : rej(new Error('encode')), 'image/png'));
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `stanvision-silk-${S.colorName.toLowerCase().replace(/\s+/g,'-')}-${w}x${h}-s${S.seed}.png`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    showToast('PNG saved');
+  } catch (e) { showToast('Export failed'); }
+  finally { exportBtn.disabled = false; lutDirty = true; }
+});
+
+/* ============================== panel, keys, boot ============================== */
+function randomise(){ S.seed = Math.floor(Math.random()*99999)+1; markDirty(); }
+document.getElementById('randomBtn').addEventListener('click', randomise);
+document.getElementById('hideUi').addEventListener('click', () => panel.classList.add('hidden'));
+document.getElementById('toggleUi').addEventListener('click', () => panel.classList.remove('hidden'));
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { if (e.target.tagName === 'BUTTON') return; e.preventDefault(); paused = !paused; }
+  else if (e.key === 'r') randomise();
+  else if (e.key === 'h') panel.classList.toggle('hidden');
+});
+const q = new URLSearchParams(location.search);
+const startPreset = PRESETS.find(p => p.name.toLowerCase().replace(/\s+/g,'-') === (q.get('preset')||'').toLowerCase());
+if (startPreset) applyPreset(startPreset);
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
