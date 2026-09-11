@@ -376,10 +376,10 @@ let light = [-0.7, 0.7], lightTarget = [-0.7, 0.7];
 let lutDirty = true, currentLUT = null;
 
 function computeLUT(w, h){
-  // Analyse tone at a resolution where a streak row is at least a pixel tall.
-  const ar = w / h;
-  const ah = Math.min(h, Math.max(540, Math.round(S.rows*1.2))); const aw = Math.round(ah*ar);
-  W.draw(aw, ah, S, 0, time, light);
+  // Analyse tone at a capped resolution, scaling the row count so pixels-per-row match the real render:
+  // the tone histogram depends on how crisp the streaks are, so the analysis has to see the same weave.
+  const ah = Math.min(h, 1080); const aw = Math.round(ah*w/h);
+  W.draw(aw, ah, Object.assign({}, S, {rows: S.rows*ah/h}), 0, time, light);
   currentLUT = buildLUT(W.readTone(aw, ah), rampFor(S.color), S.exposure);
   R.setLUT(currentLUT); W.setLUT(currentLUT);
   lutDirty = false;
