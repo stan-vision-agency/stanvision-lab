@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>010 · Medusa Plus — StanVision Lab</title>
+<meta name="description" content="The StanVision + as a soft-body jellyfish. A verlet membrane that breathes, pulses and swims after your cursor, trailing luminous tentacles. three.js, no textures. A StanVision Lab experiment.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ink:#0a0605;
+    --panel:rgba(13,17,23,.86);
+    --line:rgba(148,163,184,.16);
+    --text:#e6ebf2;
+    --mute:#8a94a3;
+    --accent:#d8ff43;
+    --radius:10px;
+  }
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--ink); color:var(--text);
+    font-family:"Archivo",system-ui,-apple-system,sans-serif;
+    overflow:hidden; -webkit-font-smoothing:antialiased;
+  }
+  #stage{position:fixed; inset:0;}
+  #glow{position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    pointer-events:none; border-radius:50%; filter:blur(2px);}
+  canvas{display:block; cursor:grab;}
+  canvas.dragging{cursor:grabbing;}
+
+  header{
+    position:fixed; top:20px; left:24px; z-index:5; pointer-events:none;
+  }
+  header h1{
+    margin:0; font-size:14px; font-weight:600; letter-spacing:.02em;
+  }
+  header p{
+    margin:4px 0 0; font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:11px; letter-spacing:.04em;
+  }
+  header{color:var(--pagefg,#e6ebf2);}
+  header p{opacity:.55;}
+
+  #panel{
+    position:fixed; top:16px; right:16px; bottom:16px; width:288px; z-index:6;
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    display:flex; flex-direction:column; overflow:hidden;
+    transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s;
+  }
+  #panel.hidden{transform:translateX(calc(100% + 24px)); opacity:0; pointer-events:none;}
+  #panel .head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px 12px; border-bottom:1px solid var(--line);
+  }
+  #panel .head span{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--mute);
+  }
+  #panel .body{overflow-y:auto; padding:6px 16px 16px; flex:1; scrollbar-width:thin; scrollbar-color:rgba(148,163,184,.3) transparent;}
+  #panel .body::-webkit-scrollbar{width:6px;}
+  #panel .body::-webkit-scrollbar-thumb{background:rgba(148,163,184,.25); border-radius:3px;}
+
+  .presets{display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:14px 0 4px;}
+  .presets button{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:8px 6px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .presets button:hover{border-color:rgba(148,163,184,.45);}
+  .presets button.active{border-color:var(--accent); background:rgba(216,255,67,.14);}
+
+  details{border-bottom:1px solid var(--line); padding:2px 0;}
+  details:last-of-type{border-bottom:none;}
+  summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+    padding:12px 2px; font-size:12px; font-weight:600; letter-spacing:.02em; user-select:none;
+  }
+  summary::-webkit-details-marker{display:none;}
+  summary::after{content:""; width:7px; height:7px; border-right:1.4px solid var(--mute);
+    border-bottom:1.4px solid var(--mute); transform:rotate(45deg); transition:transform .18s; margin-right:3px;}
+  details[open] summary::after{transform:rotate(-135deg); margin-top:4px;}
+  .grp{padding:0 2px 14px; display:flex; flex-direction:column; gap:11px;}
+
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:22px;}
+  .row label{font-size:12px; color:var(--mute); flex:0 0 auto;}
+  .row .val{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--text);
+    min-width:38px; text-align:right; font-variant-numeric:tabular-nums;
+  }
+  .slider-row{display:flex; flex-direction:column; gap:6px;}
+  .slider-row .top{display:flex; justify-content:space-between; align-items:baseline;}
+  .slider-row .top label{font-size:12px; color:var(--mute);}
+  .slider-row .top .val{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--text);
+    font-variant-numeric:tabular-nums;
+  }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer; margin:0;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
+    background:var(--text); margin-top:-5px; border:none;
+    transition:transform .12s; box-shadow:0 0 0 3px rgba(5,7,11,.6);
+  }
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+  input[type=range]::-moz-range-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-moz-range-thumb{width:12px; height:12px; border-radius:50%; background:var(--text); border:none;}
+
+  input[type=color]{
+    -webkit-appearance:none; appearance:none; width:44px; height:22px; border:1px solid var(--line);
+    border-radius:6px; background:none; padding:0; cursor:pointer;
+  }
+  input[type=color]::-webkit-color-swatch-wrapper{padding:2px;}
+  input[type=color]::-webkit-color-swatch{border:none; border-radius:4px;}
+  input[type=color]::-moz-color-swatch{border:none; border-radius:4px;}
+
+  .switch{position:relative; width:32px; height:18px; flex:0 0 auto;}
+  .switch input{position:absolute; opacity:0; inset:0; margin:0; cursor:pointer;}
+  .switch i{
+    position:absolute; inset:0; border-radius:9px; background:rgba(148,163,184,.25);
+    transition:background .18s; pointer-events:none;
+  }
+  .switch i::after{
+    content:""; position:absolute; left:2px; top:2px; width:14px; height:14px; border-radius:50%;
+    background:var(--text); transition:transform .18s, background .18s;
+  }
+  .switch input:checked + i{background:var(--accent);}
+  .switch input:checked + i::after{transform:translateX(14px); background:#0f1409;}
+
+  .footbar{
+    border-top:1px solid var(--line); padding:12px 16px; display:flex; gap:8px;
+  }
+  .footbar button{
+    flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em;
+    color:#0a0605; background:var(--text); border:none; border-radius:8px; padding:9px 0; cursor:pointer;
+    transition:opacity .15s;
+  }
+  .footbar button:hover{opacity:.85;}
+
+  #toggleUi{
+    position:fixed; top:24px; right:16px; z-index:7; width:34px; height:34px;
+    border-radius:9px; border:1px solid var(--line); background:var(--panel);
+    backdrop-filter:blur(14px); color:var(--mute); cursor:pointer; font-size:15px; line-height:1;
+    display:none; align-items:center; justify-content:center;
+  }
+  #panel.hidden ~ #toggleUi{display:flex;}
+
+  #toast{
+    position:fixed; left:50%; bottom:28px; transform:translate(-50%,12px); z-index:9;
+    background:var(--text); color:#0a0605; font-size:12px; font-weight:500;
+    padding:8px 14px; border-radius:8px; opacity:0; transition:opacity .2s, transform .2s;
+    pointer-events:none;
+  }
+  #toast.show{opacity:1; transform:translate(-50%,0);}
+
+  .hidebtn{background:none; border:none; color:var(--mute); font-size:15px; cursor:pointer; padding:2px 4px; line-height:1;}
+  .hidebtn:hover{color:var(--text);}
+
+  @media (max-width:720px){
+    #panel{top:auto; left:12px; right:12px; bottom:12px; width:auto; max-height:46vh;}
+    #panel.hidden{transform:translateY(calc(100% + 20px));}
+    header{left:16px; top:16px;}
+    #toggleUi{top:auto; bottom:20px;}
+  }
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
+
+  /* lab header conventions */
+  header{pointer-events:none;}
+  header a.lab-back{
+    pointer-events:auto; color:var(--text); text-decoration:none;
+    display:flex; align-items:center; gap:10px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; letter-spacing:.04em;
+  }
+  header a.lab-back .idx{color:#d8ff43;}
+  header a.lab-back:hover .lbl{text-decoration:underline; text-underline-offset:3px;}
+  html.embed header, html.embed #panel, html.embed #toggleUi, html.embed #toast{display:none !important;}
+  /* medusa plus additions */
+  :root{ --ink:#07080a; }
+  canvas{cursor:default;}
+  #stage{width:100vw !important; height:100vh !important;}
+  #vignette{
+    position:fixed; inset:0; pointer-events:none; z-index:2;
+    background:radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 45%, rgba(0,0,0,.55) 100%);
+  }
+  .sect{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--mute); padding:14px 2px 0;
+  }
+  .footbar button.secondary{background:rgba(148,163,184,.12); color:var(--text);}
+  #hint{
+    position:fixed; left:24px; bottom:22px; z-index:5; pointer-events:none;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em;
+    color:var(--pagefg,#e6ebf2); opacity:.5;
+  }
+  html.embed #hint{display:none !important;}
+  @media (max-width:720px){ #hint{display:none;} }
+</style>
+</head>
+<body>
+<script>if(location.search.indexOf('embed')>-1)document.documentElement.classList.add('embed');</script>
+<canvas id="stage"></canvas>
+<div id="vignette"></div>
+
+<header>
+  <a class="lab-back" href="/"><span class="idx">010</span><span class="lbl">Medusa Plus</span></a>
+  <p>StanVision Lab — WebGL / three.js / soft body</p>
+</header>
+<div id="hint">move the cursor · space = pulse · r = random · h = hide panel</div>
+
+<aside id="panel">
+  <div class="head">
+    <span>Controls</span>
+    <button class="hidebtn" id="hideUi" title="Hide panel" aria-label="Hide panel">&times;</button>
+  </div>
+  <div class="body">
+    <div class="presets" id="presets"></div>
+    <div id="groups"></div>
+  </div>
+  <div class="footbar">
+    <button id="randomBtn" class="secondary">RANDOMISE</button>
+    <button id="copyBtn">COPY SETTINGS</button>
+  </div>
+</aside>
+<button id="toggleUi" title="Show controls" aria-label="Show controls">☰</button>
+
+<div id="toast">Copied to clipboard</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+const IS_EMBED = document.documentElement.classList.contains('embed');
+
+/* ============================== settings ============================== */
+const S = {
+  // body
+  res: 24, hole: 0.75, dome: 0.55, size: 1, stiff: 0.09, damp: 0.955, shear: 0.35,
+  // pulse
+  autoPulse: true, pulseRate: 0.38, pulseAmt: 0.15, pulseSharp: 0.34, lift: 0.5, jet: 0.3,
+  // tentacles
+  tentacles: 22, tentLen: 2.4, tentSegs: 24, fromHole: true, gravity: 0.6, sway: 0.6, tentDamp: 0.97, tentStiff: 0.5,
+  // cursor
+  follow: 0.01, reach: 0.45, pushRad: 0.7, pushAmt: 0.6, idle: true, idleRange: 0.6,
+  // colour
+  colorA: '#d8ff43', colorB: '#ffffff', bg: '#07080a', lineAlpha: 0.6, skinAlpha: 0.2, glow: 1, nodeSize: 1, aura: 0.35, tentAlpha: 0.85,
+  // camera
+  camDist: 9.6, fov: 38, tilt: 16, orbit: -12, parallax: 0.6, wobble: 0.35,
+};
+const PRESETS = {
+  Medusa: { ...S },
+  Deep: { ...S, colorA: '#5ec8ff', colorB: '#dff6ff', bg: '#02060f', dome: 0.85, pulseRate: 0.3, pulseAmt: 0.2, tentacles: 30, tentLen: 3.6, gravity: 0.35, sway: 0.8, res: 30, lineAlpha: 0.5, skinAlpha: 0.2, tilt: 24, orbit: 18 },
+  Ember: { ...S, colorA: '#ff4d00', colorB: '#ffd166', bg: '#0a0605', pulseRate: 0.6, pulseAmt: 0.22, pulseSharp: 0.22, jet: 0.8, tentacles: 16, tentLen: 2.2, sway: 1, glow: 1.4, aura: 0.5 },
+  Ghost: { ...S, colorA: '#ffffff', colorB: '#d8ff43', bg: '#0b0d10', res: 36, lineAlpha: 0.3, skinAlpha: 0.22, nodeSize: 0.6, glow: 0.7, aura: 0.15, fromHole: false, tentacles: 12, tentLen: 3.2, tentDamp: 0.985, pulseAmt: 0.1, pulseRate: 0.28, dome: 0.4 },
+};
+
+/* ============================== three setup ============================== */
+const canvas = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(S.fov, 1, 0.1, 100);
+const group = new THREE.Group();
+scene.add(group);
+
+function glowTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const r = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.25, 'rgba(255,255,255,.55)');
+  r.addColorStop(0.6, 'rgba(255,255,255,.12)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = r; g.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c); return t;
+}
+const spriteTex = glowTexture();
+
+/* ============================== body lattice ============================== */
+let P = [];          // body particles {x,y,z, px,py,pz, rx,ry,rz, r, root}
+let edges = [];      // structural [a,b,len]
+let shears = [];     // shear [a,b,len]
+let tris = [];       // skin indices
+let roots = [];      // candidate tentacle roots (particle index, group)
+let T = [];          // tentacles [{root, pts:[{x,y,z,px,py,pz}]}]
+let bodyLines, bodyNodes, skin, tentLines, tentNodes, aura;
+let cellLen = 0.125;
+
+const cA = new THREE.Color(), cB = new THREE.Color();
+function buildBody() {
+  const n = Math.max(12, Math.round(S.res / 3) * 3);
+  const cell = 3 / n; cellLen = cell;
+  const hh = Math.min(0.5 - cell, Math.max(cell, Math.round(S.hole * 0.5 / cell) * cell)) - 1e-6; // snapped half hole, never the full arm
+  const eps = 1e-6;
+  const inside = (x, y) => (Math.abs(x) <= 0.5 + eps || Math.abs(y) <= 0.5 + eps) && !(Math.abs(x) < hh && Math.abs(y) < hh);
+  const idx = new Int32Array((n + 1) * (n + 1)).fill(-1);
+  P = []; edges = []; shears = []; tris = []; roots = [];
+  for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) {
+    const x = -1.5 + i * cell, y = -1.5 + j * cell;
+    if (!inside(x, y)) continue;
+    const r = Math.hypot(x, y);
+    idx[j * (n + 1) + i] = P.length;
+    P.push({ x, y, z: 0, px: x, py: y, pz: 0, rx: x, ry: y, rz: 0, r, ox: x, oy: y });
+  }
+  const at = (i, j) => (i < 0 || j < 0 || i > n || j > n) ? -1 : idx[j * (n + 1) + i];
+  for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) {
+    const a = at(i, j); if (a < 0) continue;
+    const rgt = at(i + 1, j), up = at(i, j + 1), dia = at(i + 1, j + 1), dib = at(i - 1, j + 1);
+    if (rgt >= 0) edges.push([a, rgt, cell]);
+    if (up >= 0) edges.push([a, up, cell]);
+    if (dia >= 0 && rgt >= 0 && up >= 0) { shears.push([a, dia, cell * Math.SQRT2]); tris.push(a, rgt, dia, a, dia, up); }
+    if (dib >= 0 && up >= 0 && at(i - 1, j) >= 0) shears.push([a, dib, cell * Math.SQRT2]);
+    // tentacle roots: an inside point whose lower neighbour is outside (bottom-facing edges + top edge of the hole)
+    if (at(i, j - 1) < 0 && j > 0) {
+      const y = P[a].oy;
+      const grp = Math.abs(y - hh) < cell * 0.5 ? 'hole' : (y < -1.4 ? 'bottom' : 'arm');
+      roots.push({ p: a, grp, x: P[a].ox });
+    }
+  }
+  roots.sort((u, v) => (u.grp === v.grp ? u.x - v.x : (u.grp < v.grp ? -1 : 1)));
+  updateRest();
+  buildTentacles();
+  buildMeshes();
+}
+
+function updateRest() {
+  // dome profile — rest z rises toward the centre like a bell
+  for (const p of P) {
+    const k = Math.min(1, p.r / 1.62);
+    p.rz = S.dome * (1 - k * k);
+  }
+}
+
+function buildTentacles() {
+  T = [];
+  const pool = roots.filter(r => S.fromHole || r.grp !== 'hole');
+  if (!pool.length || S.tentacles < 1) return;
+  const want = Math.min(S.tentacles, pool.length);
+  for (let k = 0; k < want; k++) {
+    const r = pool[Math.round((k + 0.5) / want * pool.length - 0.5)];
+    const base = P[r.p];
+    const seg = S.tentLen / S.tentSegs;
+    const pts = [];
+    for (let s = 0; s <= S.tentSegs; s++) {
+      const y = base.y - s * seg;
+      pts.push({ x: base.x, y, z: base.z, px: base.x, py: y, pz: base.z });
+    }
+    T.push({ root: r.p, pts, seg, phase: Math.random() * Math.PI * 2, len: S.tentSegs });
+  }
+}
+
+/* ============================== meshes ============================== */
+const skinMat = new THREE.ShaderMaterial({
+  uniforms: { uA: { value: new THREE.Color() }, uB: { value: new THREE.Color() }, uAlpha: { value: 0.12 }, uPulse: { value: 0 } },
+  vertexShader: `
+    varying vec3 vN; varying vec3 vV;
+    void main(){
+      vec4 mv = modelViewMatrix * vec4(position,1.0);
+      vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz);
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: `
+    uniform vec3 uA, uB; uniform float uAlpha, uPulse;
+    varying vec3 vN; varying vec3 vV;
+    void main(){
+      float f = 1.0 - abs(dot(normalize(vN), normalize(vV)));
+      f = pow(f, 1.6);
+      vec3 c = mix(uA, uB, f * 0.8);
+      float a = uAlpha * (0.35 + 1.3 * f) * (1.0 + 0.8 * uPulse);
+      gl_FragColor = vec4(c, a);
+    }`,
+  transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+});
+
+function disposeMeshes() {
+  [bodyLines, bodyNodes, skin, tentLines, tentNodes, aura].forEach(m => { if (m) { group.remove(m); m.geometry && m.geometry.dispose(); if (m.material && m !== skin) m.material.dispose(); } });
+}
+function buildMeshes() {
+  disposeMeshes();
+  // membrane lines (structural edges)
+  let g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(edges.length * 6), 3));
+  g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(edges.length * 6), 3));
+  bodyLines = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  // nodes
+  g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(P.length * 3), 3));
+  g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(P.length * 3), 3));
+  bodyNodes = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.12, map: spriteTex, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true }));
+  // skin
+  g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(P.length * 3), 3));
+  g.setIndex(tris);
+  skin = new THREE.Mesh(g, skinMat);
+  // tentacles
+  const segs = T.reduce((n, t) => n + t.len, 0);
+  g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(Math.max(1, segs) * 6), 3));
+  g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(Math.max(1, segs) * 6), 3));
+  tentLines = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  const tp = T.reduce((n, t) => n + t.pts.length, 0);
+  g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(Math.max(1, tp) * 3), 3));
+  g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(Math.max(1, tp) * 3), 3));
+  tentNodes = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.05, map: spriteTex, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  // aura behind the body
+  aura = new THREE.Sprite(new THREE.SpriteMaterial({ map: spriteTex, color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.3 }));
+  aura.position.z = -0.6;
+  group.add(aura, skin, bodyLines, bodyNodes, tentLines, tentNodes);
+  updateColors();
+}
+
+function updateColors() {
+  cA.set(S.colorA); cB.set(S.colorB);
+  skinMat.uniforms.uA.value.copy(cA); skinMat.uniforms.uB.value.copy(cB);
+  skinMat.uniforms.uAlpha.value = S.skinAlpha;
+  aura.material.color.copy(cA); aura.material.opacity = S.aura;
+  bodyNodes.material.size = 0.11 * S.nodeSize * S.glow;
+  tentNodes.material.size = 0.05 * S.nodeSize * S.glow;
+  document.body.style.background = S.bg;
+  renderer.setClearColor(new THREE.Color(S.bg), 1);
+}
+
+/* ============================== simulation ============================== */
+let time = 0, phase = 0, pulse = 0, pulseVel = 0, burst = 0;
+const body = { x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0 };
+const pointer = { x: 0, y: 0, active: false, last: -1e9, sx: 0, sy: 0 };
+const DT = 1 / 60;
+
+function pulseShape(u) { // u in [0,1): quick contraction, slow release
+  const c = Math.max(0.08, S.pulseSharp);
+  if (u < c) return Math.sin(u / c * Math.PI * 0.5);
+  const v = (u - c) / (1 - c);
+  return 0.5 + 0.5 * Math.cos(v * Math.PI);
+}
+
+function step(dt) {
+  time += dt;
+  // pulse
+  let prevPulse = pulse;
+  if (S.autoPulse || burst > 0) {
+    phase += dt * S.pulseRate * (1 + burst * 1.2);
+    if (phase >= 1) { phase -= 1; if (!S.autoPulse) { phase = 0; burst = 0; } }
+    pulse = pulseShape(phase) * (1 + burst);
+  } else pulse *= 0.96;
+  burst *= 0.995;
+  const dp = (pulse - prevPulse) / dt;
+  const scale = 1 - S.pulseAmt * pulse;
+  const zLift = 1 + S.lift * Math.min(1.2, pulse);
+
+  // body drift: swim toward target, jet upward on contraction
+  const idleOn = S.idle && (IS_EMBED || time - pointer.last > 2.5);
+  if (idleOn) { body.tx = Math.sin(time * 0.23) * 1.3 * S.idleRange; body.ty = Math.sin(time * 0.46) * 0.55 * S.idleRange; }
+  else {
+    const lim = 1.8 * S.reach;
+    body.tx = Math.max(-lim, Math.min(lim, pointer.x * S.reach));
+    body.ty = Math.max(-lim * 0.6, Math.min(lim * 0.6, pointer.y * S.reach));
+  }
+  body.vx += (body.tx - body.x) * S.follow * 0.5; body.vy += (body.ty - body.y) * S.follow * 0.5;
+  if (dp > 0) body.vy += dp * S.jet * 0.0008;
+  body.vy -= 0.00012; // slow sink between pulses
+  body.vx *= 0.94; body.vy *= 0.94;
+  body.x += body.vx; body.y += body.vy;
+  body.x = Math.max(-2.2, Math.min(2.2, body.x)); body.y = Math.max(-1.6, Math.min(1.6, body.y));
+
+  const pr2 = S.pushRad * S.pushRad;
+  const doPush = pointer.active && !IS_EMBED;
+  // membrane particles
+  for (const p of P) {
+    const tx = body.x + p.rx * scale, ty = body.y + p.ry * scale, tz = p.rz * zLift;
+    let ax = (tx - p.x) * S.stiff, ay = (ty - p.y) * S.stiff, az = (tz - p.z) * S.stiff * 1.4;
+    if (doPush) {
+      const dx = p.x - pointer.x, dy = p.y - pointer.y, d2 = dx * dx + dy * dy;
+      if (d2 < pr2) { const d = Math.sqrt(d2) + 1e-4, f = (1 - d / S.pushRad) * S.pushAmt * 0.02; ax += dx / d * f; ay += dy / d * f; az += f * 1.5; }
+    }
+    const vx = (p.x - p.px) * S.damp, vy = (p.y - p.py) * S.damp, vz = (p.z - p.pz) * S.damp;
+    p.px = p.x; p.py = p.y; p.pz = p.z;
+    p.x += vx + ax; p.y += vy + ay; p.z += vz + az;
+  }
+  // constraints
+  for (let it = 0; it < 2; it++) {
+    relax(edges, scale, 0.5);
+    relax(shears, scale, S.shear);
+  }
+  // tentacles
+  const g = S.gravity * 0.004, sw = S.sway * 0.00045;
+  for (const t of T) {
+    const root = P[t.root], pts = t.pts;
+    pts[0].x = root.x; pts[0].y = root.y; pts[0].z = root.z;
+    for (let i = 1; i < pts.length; i++) {
+      const q = pts[i], k = i / pts.length;
+      let ax = Math.sin(time * 1.1 + t.phase + q.y * 1.7) * sw * (0.3 + k) + Math.sin(time * 0.37 + i * 0.3) * sw * 0.4;
+      let az = Math.cos(time * 0.9 + t.phase * 1.3 + q.y * 1.3) * sw * (0.3 + k);
+      let ay = -g * (0.4 + 0.6 * k);
+      // the contraction flicks tentacles outward and down a touch
+      ay -= Math.max(0, dp) * 0.00035 * k; ax += Math.max(0, dp) * 0.0003 * (q.x - body.x) * k;
+      if (doPush) {
+        const dx = q.x - pointer.x, dy = q.y - pointer.y, d2 = dx * dx + dy * dy;
+        if (d2 < pr2) { const d = Math.sqrt(d2) + 1e-4, f = (1 - d / S.pushRad) * S.pushAmt * 0.012; ax += dx / d * f; ay += dy / d * f; }
+      }
+      const vx = (q.x - q.px) * S.tentDamp, vy = (q.y - q.py) * S.tentDamp, vz = (q.z - q.pz) * S.tentDamp;
+      q.px = q.x; q.py = q.y; q.pz = q.z;
+      q.x += vx + ax; q.y += vy + ay; q.z += vz + az;
+    }
+    for (let it = 0; it < 3; it++) {
+      for (let i = 1; i < pts.length; i++) {
+        const a = pts[i - 1], b = pts[i];
+        let dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz) + 1e-6;
+        const corr = (d - t.seg) / d;
+        if (i === 1) { b.x -= dx * corr; b.y -= dy * corr; b.z -= dz * corr; }
+        else { const h = corr * 0.5; a.x += dx * h; a.y += dy * h; a.z += dz * h; b.x -= dx * h; b.y -= dy * h; b.z -= dz * h; }
+      }
+      // bending: keep i-2 → i near 2·seg so the chain stays silky
+      const bend = S.tentStiff * 0.35;
+      for (let i = 2; i < pts.length; i++) {
+        const a = pts[i - 2], b = pts[i];
+        let dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz) + 1e-6;
+        const corr = (d - t.seg * 1.96) / d * bend;
+        if (i === 2) { b.x -= dx * corr; b.y -= dy * corr; b.z -= dz * corr; }
+        else { const h = corr * 0.5; a.x += dx * h; a.y += dy * h; a.z += dz * h; b.x -= dx * h; b.y -= dy * h; b.z -= dz * h; }
+      }
+      pts[0].x = root.x; pts[0].y = root.y; pts[0].z = root.z;
+    }
+  }
+}
+function relax(list, scale, k) {
+  for (let e = 0; e < list.length; e++) {
+    const [ia, ib, len] = list[e];
+    const a = P[ia], b = P[ib];
+    const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+    const d = Math.sqrt(dx * dx + dy * dy + dz * dz) + 1e-6;
+    const h = (d - len * scale) / d * 0.5 * k;
+    a.x += dx * h; a.y += dy * h; a.z += dz * h;
+    b.x -= dx * h; b.y -= dy * h; b.z -= dz * h;
+  }
+}
+
+/* ============================== upload to GPU ============================== */
+const tmp = new THREE.Color();
+function upload() {
+  const bright = S.lineAlpha * (1 + 0.6 * pulse);
+  // body lines
+  let pos = bodyLines.geometry.attributes.position.array, col = bodyLines.geometry.attributes.color.array;
+  for (let e = 0, o = 0; e < edges.length; e++, o += 6) {
+    const a = P[edges[e][0]], b = P[edges[e][1]];
+    pos[o] = a.x; pos[o + 1] = a.y; pos[o + 2] = a.z; pos[o + 3] = b.x; pos[o + 4] = b.y; pos[o + 5] = b.z;
+    vcol(a, bright, col, o); vcol(b, bright, col, o + 3);
+  }
+  bodyLines.geometry.attributes.position.needsUpdate = true; bodyLines.geometry.attributes.color.needsUpdate = true;
+  // nodes + skin
+  pos = bodyNodes.geometry.attributes.position.array; col = bodyNodes.geometry.attributes.color.array;
+  const sp = skin.geometry.attributes.position.array;
+  for (let i = 0, o = 0; i < P.length; i++, o += 3) {
+    const p = P[i];
+    pos[o] = sp[o] = p.x; pos[o + 1] = sp[o + 1] = p.y; pos[o + 2] = sp[o + 2] = p.z;
+    vcol(p, S.glow * 0.9 * (1 + 0.8 * pulse), col, o);
+  }
+  bodyNodes.geometry.attributes.position.needsUpdate = true; bodyNodes.geometry.attributes.color.needsUpdate = true;
+  skin.geometry.attributes.position.needsUpdate = true; skin.geometry.computeVertexNormals();
+  skinMat.uniforms.uPulse.value = pulse;
+  // tentacles
+  pos = tentLines.geometry.attributes.position.array; col = tentLines.geometry.attributes.color.array;
+  const npos = tentNodes.geometry.attributes.position.array, ncol = tentNodes.geometry.attributes.color.array;
+  let o = 0, q = 0;
+  for (const t of T) {
+    const pts = t.pts, n = pts.length;
+    for (let i = 0; i < n; i++) {
+      const k = 1 - i / (n - 1), w = S.tentAlpha * (0.2 + 0.8 * k) * (1 + 0.4 * pulse);
+      tmp.copy(cA).lerp(cB, (1 - k) * 0.35).multiplyScalar(w);
+      npos[q] = pts[i].x; npos[q + 1] = pts[i].y; npos[q + 2] = pts[i].z;
+      ncol[q] = tmp.r * 0.8; ncol[q + 1] = tmp.g * 0.8; ncol[q + 2] = tmp.b * 0.8; q += 3;
+      if (i < n - 1) {
+        const b = pts[i + 1];
+        pos[o] = pts[i].x; pos[o + 1] = pts[i].y; pos[o + 2] = pts[i].z; pos[o + 3] = b.x; pos[o + 4] = b.y; pos[o + 5] = b.z;
+        col[o] = tmp.r; col[o + 1] = tmp.g; col[o + 2] = tmp.b;
+        const k2 = 1 - (i + 1) / (n - 1), w2 = S.tentAlpha * (0.2 + 0.8 * k2) * (1 + 0.4 * pulse);
+        tmp.copy(cA).lerp(cB, (1 - k2) * 0.35).multiplyScalar(w2);
+        col[o + 3] = tmp.r; col[o + 4] = tmp.g; col[o + 5] = tmp.b; o += 6;
+      }
+    }
+  }
+  tentLines.geometry.attributes.position.needsUpdate = true; tentLines.geometry.attributes.color.needsUpdate = true;
+  tentNodes.geometry.attributes.position.needsUpdate = true; tentNodes.geometry.attributes.color.needsUpdate = true;
+  // aura
+  const as = (3.6 + 0.6 * pulse) * (1 - S.pulseAmt * pulse * 0.6);
+  aura.scale.set(as, as, 1); aura.position.set(body.x, body.y, -0.6);
+  aura.material.opacity = S.aura * (0.8 + 0.5 * pulse);
+}
+function vcol(p, w, arr, o) {
+  const rim = 0.45 + 0.55 * Math.min(1, p.r / 1.5);
+  tmp.copy(cA).lerp(cB, 0.25 * (1 - rim)).multiplyScalar(w * rim);
+  arr[o] = tmp.r; arr[o + 1] = tmp.g; arr[o + 2] = tmp.b;
+}
+
+/* ============================== camera / layout / pointer ============================== */
+let W = 1, H = 1, shiftX = 0;
+const panel = document.getElementById('panel');
+function layout() {
+  const open = !panel.classList.contains('hidden') && !IS_EMBED && innerWidth > 720;
+  const visW = 2 * S.camDist * Math.tan(THREE.MathUtils.degToRad(S.fov) / 2) * (W / H);
+  shiftX = open ? -visW * (160 / W) : 0;
+}
+function resize() {
+  W = innerWidth; H = innerHeight;
+  renderer.setSize(W, H, true);
+  camera.aspect = W / H; camera.updateProjectionMatrix();
+  layout();
+}
+addEventListener('resize', resize);
+const ray = new THREE.Raycaster(), plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), hit = new THREE.Vector3(), ndc = new THREE.Vector2();
+function onMove(cx, cy) {
+  pointer.sx = cx / W * 2 - 1; pointer.sy = -(cy / H) * 2 + 1;
+  pointer.active = true; pointer.last = time;
+}
+addEventListener('pointermove', e => onMove(e.clientX, e.clientY), { passive: true });
+addEventListener('pointerdown', e => { onMove(e.clientX, e.clientY); });
+document.addEventListener('mouseleave', () => { pointer.active = false; });
+function projectPointer() {
+  if (!pointer.active) return;
+  ndc.set(pointer.sx, pointer.sy);
+  ray.setFromCamera(ndc, camera);
+  // plane in world space through the group's origin, facing the group's z
+  const n = new THREE.Vector3(0, 0, 1).applyQuaternion(group.quaternion);
+  plane.setFromNormalAndCoplanarPoint(n, group.position);
+  if (ray.ray.intersectPlane(plane, hit)) { group.worldToLocal(hit); pointer.x = hit.x; pointer.y = hit.y; }
+}
+
+/* ============================== frame ============================== */
+let last = performance.now(), acc = 0, smx = 0, smy = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  // camera
+  camera.fov = S.fov; camera.updateProjectionMatrix();
+  camera.position.set(shiftX * -1, 0, S.camDist); camera.lookAt(shiftX * -1, 0, 0);
+  const par = (pointer.active && !IS_EMBED) ? S.parallax : 0;
+  smx += (pointer.sx * par - smx) * 0.04; smy += (pointer.sy * par - smy) * 0.04;
+  const wob = S.wobble;
+  group.rotation.x = THREE.MathUtils.degToRad(-S.tilt) + Math.sin(time * 0.31) * 0.06 * wob - smy * 0.18;
+  group.rotation.y = THREE.MathUtils.degToRad(S.orbit) + Math.sin(time * 0.19) * 0.09 * wob + smx * 0.25;
+  group.rotation.z = Math.sin(time * 0.13) * 0.04 * wob;
+  group.scale.setScalar(S.size);
+  group.updateMatrixWorld();
+  projectPointer();
+  acc += dt;
+  let steps = 0;
+  while (acc >= DT && steps < 3) { step(DT); acc -= DT; steps++; }
+  if (steps === 3) acc = 0;
+  upload();
+  renderer.render(scene, camera);
+}
+function firePulse() { burst = Math.min(2, burst + 0.9); phase = 0; }
+
+/* ============================== control panel ============================== */
+const ui = {};
+const groupsEl = document.getElementById('groups');
+
+function slider(key, label, min, max, step, fmt, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'slider-row';
+  const top = document.createElement('div'); top.className = 'top';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const val = document.createElement('span'); val.className = 'val';
+  top.append(lab, val);
+  const input = document.createElement('input');
+  input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = S[key];
+  const refresh = v => { val.textContent = fmt ? fmt(v) : (+v).toFixed(step < 1 ? (step < 0.1 ? (step < 0.01 ? 3 : 2) : 1) : 0); };
+  refresh(S[key]);
+  input.addEventListener('input', () => {
+    S[key] = +input.value; refresh(S[key]); onChange && onChange(S[key]); clearPresetActive();
+  });
+  wrap.append(top, input);
+  ui[key] = { input, refresh };
+  return wrap;
+}
+function colorCtl(key, label, onChange) {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const input = document.createElement('input'); input.type = 'color'; input.value = S[key];
+  input.addEventListener('input', () => { S[key] = input.value; onChange && onChange(S[key]); clearPresetActive(); });
+  row.append(lab, input);
+  ui[key] = { input, refresh: () => {} };
+  return row;
+}
+function toggle(key, label, onChange) {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const sw = document.createElement('span'); sw.className = 'switch';
+  const input = document.createElement('input'); input.type = 'checkbox'; input.checked = S[key];
+  const i = document.createElement('i');
+  sw.append(input, i);
+  input.addEventListener('change', () => { S[key] = input.checked; onChange && onChange(S[key]); clearPresetActive(); });
+  row.append(lab, sw);
+  ui[key] = { input, refresh: () => {} };
+  return row;
+}
+function sect(title) { const d = document.createElement('div'); d.className = 'sect'; d.textContent = title; return d; }
+function group_(title, items, open = true) {
+  const det = document.createElement('details'); det.open = open;
+  const sum = document.createElement('summary'); sum.textContent = title;
+  const grp = document.createElement('div'); grp.className = 'grp';
+  items.forEach(i => grp.appendChild(i));
+  det.append(sum, grp);
+  groupsEl.appendChild(det);
+}
+
+const deg = v => v + '°';
+const rebuildBody = () => buildBody();
+const rebuildTent = () => { buildTentacles(); buildMeshes(); };
+group_('Body', [
+  slider('res', 'Resolution', 12, 48, 3, v => v + ' cells', rebuildBody),
+  slider('hole', 'Hole', 0.3, 0.9, 0.01, null, rebuildBody),
+  slider('dome', 'Dome', 0, 1.4, 0.01, null, updateRest),
+  slider('size', 'Size', 0.5, 1.6, 0.01),
+  slider('stiff', 'Stiffness', 0.02, 0.25, 0.005, null),
+  slider('damp', 'Damping', 0.9, 0.99, 0.001, v => (+v).toFixed(3)),
+  slider('shear', 'Shear', 0, 1, 0.01),
+]);
+group_('Pulse', [
+  toggle('autoPulse', 'Breathe'),
+  slider('pulseRate', 'Rate', 0.1, 1.2, 0.01, v => (+v).toFixed(2) + ' Hz'),
+  slider('pulseAmt', 'Contraction', 0, 0.4, 0.01),
+  slider('pulseSharp', 'Attack', 0.1, 0.6, 0.01),
+  slider('lift', 'Bell lift', 0, 2, 0.02),
+  slider('jet', 'Jet', 0, 2, 0.02),
+]);
+group_('Tentacles', [
+  slider('tentacles', 'Count', 0, 48, 1, null, rebuildTent),
+  slider('tentLen', 'Length', 0.5, 6, 0.1, null, rebuildTent),
+  slider('tentSegs', 'Segments', 6, 48, 1, null, rebuildTent),
+  toggle('fromHole', 'From the hole', rebuildTent),
+  slider('gravity', 'Gravity', 0, 2, 0.02),
+  slider('sway', 'Sway', 0, 2, 0.02),
+  slider('tentDamp', 'Damping', 0.9, 0.995, 0.001, v => (+v).toFixed(3)),
+  slider('tentStiff', 'Stiffness', 0, 1, 0.01),
+], false);
+group_('Cursor', [
+  slider('follow', 'Swim after cursor', 0, 0.05, 0.001, v => (+v).toFixed(3)),
+  slider('reach', 'Swim range', 0, 1, 0.01),
+  slider('pushRad', 'Push radius', 0, 2, 0.02),
+  slider('pushAmt', 'Push strength', 0, 3, 0.02),
+  toggle('idle', 'Idle drift'),
+  slider('idleRange', 'Drift range', 0, 2, 0.02),
+], false);
+group_('Colour', [
+  colorCtl('colorA', 'Primary', updateColors),
+  colorCtl('colorB', 'Rim', updateColors),
+  colorCtl('bg', 'Background', updateColors),
+  slider('lineAlpha', 'Membrane', 0, 1.5, 0.01),
+  slider('skinAlpha', 'Skin', 0, 0.5, 0.005, null, updateColors),
+  slider('tentAlpha', 'Tentacles', 0, 1.5, 0.01),
+  slider('glow', 'Glow', 0, 2.5, 0.02, null, updateColors),
+  slider('nodeSize', 'Node size', 0, 2, 0.02, null, updateColors),
+  slider('aura', 'Aura', 0, 1, 0.01, null, updateColors),
+]);
+group_('Camera', [
+  slider('camDist', 'Distance', 4, 14, 0.1, null, layout),
+  slider('fov', 'Field of view', 20, 70, 1, deg, layout),
+  slider('tilt', 'Tilt', -45, 45, 1, deg),
+  slider('orbit', 'Orbit', -60, 60, 1, deg),
+  slider('parallax', 'Cursor parallax', 0, 3, 0.05),
+  slider('wobble', 'Wobble', 0, 2, 0.02),
+], false);
+
+/* presets */
+const presetsEl = document.getElementById('presets');
+const presetButtons = {};
+Object.keys(PRESETS).forEach(name => {
+  const b = document.createElement('button');
+  b.textContent = name;
+  b.addEventListener('click', () => applyPreset(name));
+  presetsEl.appendChild(b);
+  presetButtons[name] = b;
+});
+function clearPresetActive() { Object.values(presetButtons).forEach(b => b.classList.remove('active')); }
+function refreshUi() {
+  Object.keys(ui).forEach(k => {
+    if (!(k in S)) return;
+    const c = ui[k];
+    if (c.input.type === 'checkbox') c.input.checked = S[k];
+    else c.input.value = S[k];
+    c.refresh(S[k]);
+  });
+}
+function applyAll() { buildBody(); layout(); }
+function applyPreset(name) {
+  Object.assign(S, PRESETS[name]);
+  refreshUi(); applyAll();
+  clearPresetActive();
+  if (presetButtons[name]) presetButtons[name].classList.add('active');
+}
+
+/* randomise */
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+function hsl(h, s, l) { return '#' + new THREE.Color().setHSL(((h % 360) + 360) / 360, s, l).getHexString(); }
+function randomise() {
+  const hue = rnd(0, 360);
+  const brandish = Math.random() < 0.35;
+  S.colorA = brandish ? pick(['#d8ff43', '#ff4d00', '#ffffff']) : hsl(hue, rnd(0.7, 1), rnd(0.55, 0.7));
+  S.colorB = Math.random() < 0.5 ? '#ffffff' : hsl(hue + pick([30, 60, 180]), rnd(0.4, 0.9), rnd(0.75, 0.9));
+  S.bg = hsl(hue + pick([0, 180, 210]), rnd(0.15, 0.45), rnd(0.02, 0.05));
+  S.res = pick([18, 24, 24, 30, 36]); S.hole = +rnd(0.5, 0.8).toFixed(2); S.dome = +rnd(0.2, 1.1).toFixed(2);
+  S.stiff = +rnd(0.05, 0.16).toFixed(3); S.damp = +rnd(0.93, 0.975).toFixed(3); S.shear = +rnd(0.15, 0.6).toFixed(2);
+  S.autoPulse = true; S.pulseRate = +rnd(0.25, 0.75).toFixed(2); S.pulseAmt = +rnd(0.08, 0.26).toFixed(2);
+  S.pulseSharp = +rnd(0.18, 0.45).toFixed(2); S.lift = +rnd(0.2, 1).toFixed(2); S.jet = +rnd(0.1, 0.6).toFixed(2);
+  S.tentacles = Math.round(rnd(8, 36)); S.tentLen = +rnd(1.5, 4.5).toFixed(1); S.tentSegs = Math.round(rnd(14, 36));
+  S.fromHole = Math.random() < 0.65; S.gravity = +rnd(0.2, 1).toFixed(2); S.sway = +rnd(0.2, 1.3).toFixed(2);
+  S.tentDamp = +rnd(0.955, 0.985).toFixed(3); S.tentStiff = +rnd(0.2, 0.8).toFixed(2);
+  S.lineAlpha = +rnd(0.3, 0.9).toFixed(2); S.skinAlpha = +rnd(0.05, 0.25).toFixed(3); S.tentAlpha = +rnd(0.3, 0.9).toFixed(2);
+  S.glow = +rnd(0.6, 1.6).toFixed(2); S.nodeSize = +rnd(0.4, 1.4).toFixed(2); S.aura = +rnd(0.1, 0.55).toFixed(2);
+  S.camDist = +rnd(8, 11.5).toFixed(1); S.reach = +rnd(0.2, 0.6).toFixed(2); S.follow = +rnd(0.005, 0.02).toFixed(3); S.fov = Math.round(rnd(30, 50)); S.tilt = Math.round(rnd(-10, 30)); S.orbit = Math.round(rnd(-30, 30));
+  S.wobble = +rnd(0.15, 0.6).toFixed(2); S.parallax = +rnd(0.3, 0.9).toFixed(2);
+  refreshUi(); applyAll(); clearPresetActive();
+}
+
+/* panel show/hide, buttons, keys */
+document.getElementById('hideUi').addEventListener('click', () => { panel.classList.add('hidden'); layout(); });
+document.getElementById('toggleUi').addEventListener('click', () => { panel.classList.remove('hidden'); layout(); });
+document.getElementById('randomBtn').addEventListener('click', randomise);
+const toast = document.getElementById('toast');
+function showToast(msg) { toast.textContent = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1800); }
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const json = JSON.stringify(S, null, 2);
+  try { await navigator.clipboard.writeText(json); showToast('Settings copied as JSON'); }
+  catch (e) { console.log(json); showToast('Clipboard blocked — settings logged to console'); }
+});
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { if (e.target.tagName === 'BUTTON') return; e.preventDefault(); firePulse(); }
+  else if (e.key === 'r') randomise();
+  else if (e.key === 'h') { panel.classList.toggle('hidden'); layout(); }
+});
+
+/* ============================== boot ============================== */
+const q = new URLSearchParams(location.search);
+const startPreset = q.get('preset') && PRESETS[q.get('preset')] ? q.get('preset') : 'Medusa';
+applyPreset(startPreset);
+if (IS_EMBED) { S.idle = true; S.autoPulse = true; }
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
