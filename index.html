@@ -7,218 +7,379 @@
 <meta name="description" content="A playground from the StanVision agency. WebGL shaders, generative toys and interface experiments — each one small, fast and touchable.">
 <meta property="og:title" content="StanVision Lab">
 <meta property="og:description" content="Interactive experiments in motion, light and interface.">
+<script>try{if(localStorage.getItem('sv-lab-theme')==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
+  /* ---------- tokens (mirrors stan.vision 6.0 variables) ---------- */
   :root{
-    --bg:#080809;
-    --ink:#eef0ec;
-    --dim:#8a8d86;
-    --faint:#4a4c47;
-    --line:rgba(238,240,236,.11);
-    --accent:#d8ff43;          /* StanVision lime */
-    --accent-dim:rgba(216,255,67,.14);
-    --card:#0d0e0d;
+    --gray-50:#fafafa; --gray-100:#f5f5f5; --gray-200:#e5e5e5; --gray-300:#d4d4d4; --gray-400:#a3a3a3;
+    --gray-500:#737373; --gray-600:#525252; --gray-700:#262626; --gray-800:#141414; --gray-900:#0f0f0f; --gray-950:#0a0a0a;
+    --lime:#d8ff43;
+
+    /* dark mode (site default) */
+    --bg:var(--gray-900);
+    --tint:var(--gray-800);
+    --line:var(--gray-700);
+    --mark:var(--gray-500);
+    --text-primary:var(--gray-50);
+    --text-secondary:var(--gray-300);
+    --text-tertiary:var(--gray-400);
+    --btn-bg:var(--gray-700);
+    --btn-bg-hover:var(--gray-600);
+    --btn-text:var(--gray-50);
+    --badge-bg:var(--gray-700);
+    --badge-text:var(--gray-400);
+    --badge-outline:var(--gray-600);
+    --badge-outline-text:var(--gray-200);
+    --dot:var(--gray-600);
+    --accent:var(--lime);
+
+    /* typography */
+    --font:'Inter',Arial,sans-serif;
+    --h1-size:4.1875rem; --h1-lh:4.75rem; --h1-ls:-1.25px;
+    --h5-size:1.5rem; --h5-lh:1.875rem;
+    --lead-size:1.125rem; --lead-lh:1.75rem;
+    --body-size:1rem; --body-lh:1.5rem;
+    --small-size:.875rem; --small-lh:1.25rem;
+
+    /* grid */
+    --grid-margin:16px;
+    --grid-max:1680px;
+    --cell-pad:16px;
+    --head-pad-top:120px;
+    --head-pad-bottom:40px;
+    --nav-h:74px;
+    --ease:cubic-bezier(.77,0,.175,1);
   }
+  :root[data-theme="light"]{
+    --bg:var(--gray-50);
+    --tint:var(--gray-100);
+    --line:var(--gray-200);
+    --mark:var(--gray-400);
+    --text-primary:var(--gray-900);
+    --text-secondary:var(--gray-600);
+    --text-tertiary:var(--gray-500);
+    --btn-bg:var(--gray-200);
+    --btn-bg-hover:var(--gray-300);
+    --btn-text:var(--gray-900);
+    --badge-bg:var(--gray-200);
+    --badge-text:var(--gray-500);
+    --badge-outline:var(--gray-300);
+    --badge-outline-text:var(--gray-700);
+    --dot:var(--gray-300);
+  }
+
+  html{font-size:16px}
+  @media (min-width:1279px) and (max-width:1560px){ html{font-size:1.02564vw} }
+  @media (max-width:991px){
+    :root{
+      --h1-size:2.5rem; --h1-lh:3.125rem; --h1-ls:-.5px;
+      --head-pad-top:80px;
+    }
+  }
+  @media (max-width:767px){
+    :root{ --head-pad-top:56px; --head-pad-bottom:32px; --nav-h:64px; }
+  }
+
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
+  html,body{overflow-x:clip}
   body{
-    background:var(--bg); color:var(--ink);
-    font-family:'Inter',system-ui,sans-serif; font-size:16px; line-height:1.55;
-    font-weight:400; -webkit-font-smoothing:antialiased;
+    background:var(--bg); color:var(--text-primary);
+    font-family:var(--font); font-size:var(--body-size); line-height:1.6; font-weight:400;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    padding-top:var(--nav-h);
   }
-  ::selection{background:var(--accent);color:#080809}
-  a{color:inherit}
+  ::selection{background:var(--accent);color:var(--gray-950)}
+  a{color:inherit;text-decoration:none}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
-  /* grain overlay */
-  body::after{
-    content:""; position:fixed; inset:-50%; z-index:50; pointer-events:none; opacity:.045;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    animation:grain 7s steps(9) infinite;
+  /* ---------- buttons (split button, size S) ---------- */
+  .btn{
+    display:inline-flex; gap:2px; align-items:stretch;
+    font-size:12px; line-height:14px; font-weight:500; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--btn-text); white-space:nowrap;
   }
-  @keyframes grain{
-    0%,100%{transform:translate(0,0)} 20%{transform:translate(-3%,2%)}
-    40%{transform:translate(2%,-3%)} 60%{transform:translate(-2%,-2%)} 80%{transform:translate(3%,3%)}
+  .btn__box{
+    height:32px; padding:0 10px; display:flex; align-items:center; justify-content:center;
+    background:var(--btn-bg); border:1px solid var(--btn-bg); border-radius:2px;
+    transition:background-color .3s, border-color .3s, color .3s;
   }
+  .btn__box.is--icon{width:32px; padding:0; flex-shrink:0}
+  .btn__box svg{width:10px;height:10px;display:block}
+  .btn:hover .btn__box{background:var(--btn-bg-hover); border-color:var(--btn-bg-hover)}
+  .btn:hover .btn__box.is--icon{background:var(--accent); border-color:var(--accent); color:var(--gray-950)}
 
-  .wrap{max-width:1280px; margin:0 auto; padding:0 32px}
-
-  /* ---------- header ---------- */
-  header{
-    position:fixed; top:0; left:0; right:0; z-index:20;
-    background:linear-gradient(rgba(8,8,9,.9), rgba(8,8,9,0));
+  /* ---------- badges ---------- */
+  .badge{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12px; line-height:.875rem; font-weight:500; white-space:nowrap;
+    padding:4px 7px; border-radius:2px;
+    background:var(--badge-bg); color:var(--badge-text); border:1px solid var(--badge-bg);
   }
+  .badge.is--outline{background:transparent; border-color:var(--badge-outline); color:var(--badge-outline-text)}
+  .badge.is--dark{background:var(--gray-950); border-color:var(--gray-950); color:#fff}
+  .badge.is--lime{background:var(--accent); border-color:var(--accent); color:var(--gray-950); text-transform:uppercase; letter-spacing:.04em}
+  .badge i{width:6px;height:6px;background:var(--accent);flex-shrink:0}
+
+  /* ---------- nav ---------- */
   .nav{
+    position:fixed; top:0; left:0; right:0; z-index:20; height:var(--nav-h);
+    background:var(--bg); padding:0 24px;
     display:flex; align-items:center; justify-content:space-between;
-    padding:22px 32px; max-width:1280px; margin:0 auto;
   }
-  .wordmark{
-    text-decoration:none; display:flex; align-items:center; gap:10px; color:var(--ink);
-  }
-  .wordmark svg{display:block; height:22px; width:auto}
-  .wordmark .lab{
-    font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
-    color:#080809; background:var(--accent); border-radius:5px; padding:3px 7px 2px; line-height:1;
-  }
-  .nav a.out{
-    text-decoration:none; font-size:14px; color:var(--dim); letter-spacing:0;
-  }
-  .nav a.out:hover{color:var(--ink)}
+  .nav__logo{display:flex; align-items:center; gap:10px; color:var(--text-primary)}
+  .nav__logo svg{display:block; height:24px; width:auto}
+  .nav__btns{display:flex; gap:8px}
 
-  /* ---------- hero ---------- */
-  .hero{position:relative; min-height:92vh; display:flex; align-items:flex-end; overflow:hidden}
-  #heroGl{position:absolute; inset:0; width:100%; height:100%; display:block}
-  .hero::after{
-    content:""; position:absolute; inset:0;
-    background:
-      radial-gradient(120% 90% at 30% 110%, rgba(8,8,9,0) 30%, rgba(8,8,9,.55) 70%, rgba(8,8,9,.92) 100%),
-      linear-gradient(rgba(8,8,9,.35), rgba(8,8,9,0) 30%, rgba(8,8,9,.72) 88%, var(--bg) 100%);
+  /* ---------- sv grid system ---------- */
+  .sv-section{
+    position:relative; width:100%;
+    padding:0 var(--grid-margin);
+    border-bottom:1px solid var(--line);
   }
-  .hero-inner{position:relative; z-index:2; width:100%; padding-bottom:72px}
-  .kicker{
-    font-size:14px; letter-spacing:.01em;
-    color:var(--dim); display:flex; align-items:center; gap:12px; margin-bottom:28px;
+  .sv-container{
+    position:relative; width:100%; max-width:var(--grid-max); margin:0 auto;
+    border-left:1px solid var(--line); border-right:1px solid var(--line);
   }
-  .kicker::before{content:""; width:36px; height:1px; background:var(--accent)}
-  h1{
-    font-weight:400; letter-spacing:-.028em; line-height:1.02;
-    font-size:clamp(42px, 7vw, 96px); text-wrap:balance; max-width:15ch;
-  }
-  h1 .idx{color:var(--accent)}
-  .hero p{
-    margin-top:26px; max-width:52ch; color:var(--dim); font-size:17px; font-weight:400;
-  }
-  .hero p b{color:var(--ink); font-weight:500}
-  .scroll-cue{
-    position:absolute; right:32px; bottom:76px; z-index:2;
-    font-size:11px; font-weight:500; letter-spacing:.14em;
-    color:var(--faint); writing-mode:vertical-rl; text-transform:uppercase;
+  .sv-grid{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); width:100%}
+  .sv-grid.is--three{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .sv-cell{position:relative; min-width:0; padding:0 var(--cell-pad)}
+  .sv-cell.is--span-2{grid-column-end:span 2}
+  .sv-cell.is--span-3{grid-column-end:span 3}
+  .sv-cell.is--end{align-self:end}
+  .sv-grid.is--cells > *{position:relative}
+  .sv-grid.is--cells > *::after{
+    content:""; position:absolute; inset:0 -1px -1px 0; pointer-events:none; z-index:1;
+    border-right:1px solid var(--line); border-bottom:1px solid var(--line);
   }
 
-  /* load reveal */
-  .rev{opacity:0; transform:translateY(22px); animation:rev .9s cubic-bezier(.2,.7,.2,1) forwards}
-  .rev.d1{animation-delay:.08s}.rev.d2{animation-delay:.2s}.rev.d3{animation-delay:.34s}
-  @keyframes rev{to{opacity:1;transform:none}}
+  .sv-marks{position:absolute; top:0; left:0; width:100%; height:0; z-index:5; pointer-events:none}
+  .sv-mark{
+    --u:0px; --d:0px; --l:0px; --r:0px;
+    position:absolute; width:11px; height:11px; background:var(--mark);
+    -webkit-mask:
+      linear-gradient(#000 0 0) 5px 0 / 1px var(--u) no-repeat,
+      linear-gradient(#000 0 0) 5px 5px / 1px var(--d) no-repeat,
+      linear-gradient(#000 0 0) 0 5px / var(--l) 1px no-repeat,
+      linear-gradient(#000 0 0) 5px 5px / var(--r) 1px no-repeat;
+            mask:
+      linear-gradient(#000 0 0) 5px 0 / 1px var(--u) no-repeat,
+      linear-gradient(#000 0 0) 5px 5px / 1px var(--d) no-repeat,
+      linear-gradient(#000 0 0) 0 5px / var(--l) 1px no-repeat,
+      linear-gradient(#000 0 0) 5px 5px / var(--r) 1px no-repeat;
+  }
+  .sv-mark[data-arms*="u"]{--u:6px} .sv-mark[data-arms*="d"]{--d:6px}
+  .sv-mark[data-arms*="l"]{--l:6px} .sv-mark[data-arms*="r"]{--r:6px}
 
-  /* ---------- index ---------- */
-  .index{padding:88px 0 40px}
-  .index-head{
-    display:flex; align-items:baseline; justify-content:space-between;
-    border-bottom:1px solid var(--line); padding-bottom:18px; margin-bottom:40px;
+  /* ---------- page head (agency pattern) ---------- */
+  .head{padding:var(--head-pad-top) 0 var(--head-pad-bottom)}
+  .head .sv-grid{align-items:end}
+  .title{
+    font-weight:400; font-size:var(--h1-size); line-height:var(--h1-lh); letter-spacing:var(--h1-ls);
+    text-wrap:balance;
   }
-  .index-head h2{
-    font-weight:600; font-size:12px;
-    letter-spacing:.14em; text-transform:uppercase; color:var(--dim);
-  }
-  .index-head .count{font-size:14px; color:var(--dim)}
-  .grid{
-    display:grid; gap:28px;
-    grid-template-columns:repeat(auto-fill, minmax(min(380px,100%), 1fr));
-  }
-  .card{
-    text-decoration:none; display:block; border:1px solid var(--line); border-radius:14px;
-    overflow:hidden; background:var(--card);
-    transition:border-color .3s ease, transform .3s cubic-bezier(.2,.7,.2,1);
-  }
-  .card:hover{border-color:rgba(216,255,67,.4); transform:translateY(-3px)}
-  .thumb{position:relative; aspect-ratio:16/10; overflow:hidden; background:#0b0c0b}
-  .thumb iframe{
+  .lead{font-size:var(--lead-size); line-height:var(--lead-lh); color:var(--text-secondary); max-width:36rem}
+  .lead b{color:var(--text-primary); font-weight:500}
+
+  /* ---------- index bar ---------- */
+  .bar .sv-cell{min-height:56px; display:flex; align-items:center; gap:12px; padding-top:12px; padding-bottom:12px}
+  .bar .sv-cell.is--span-2{justify-content:space-between}
+  .label{font-size:var(--lead-size); line-height:var(--lead-lh); color:var(--text-tertiary)}
+  .count{font-size:var(--body-size); line-height:var(--body-lh); color:var(--text-primary)}
+  .count span{color:var(--text-tertiary)}
+
+  /* ---------- experiment cells ---------- */
+  .exp{display:flex; flex-direction:column; padding:var(--cell-pad) var(--cell-pad) 24px; color:var(--text-primary)}
+  .exp__thumb{position:relative; aspect-ratio:16/10; overflow:hidden; background:var(--tint)}
+  .exp__thumb iframe{
     position:absolute; top:0; left:0; width:1280px; height:800px; border:0;
     transform-origin:0 0; pointer-events:none; display:block;
-    transition:transform .8s cubic-bezier(.2,.7,.2,1);
   }
-  .thumb .live{
-    position:absolute; top:14px; left:14px;
-    font-size:10px; font-weight:600; letter-spacing:.11em; text-transform:uppercase; color:var(--ink);
-    background:rgba(8,8,9,.6); border:1px solid var(--line); border-radius:99px;
-    padding:5px 10px; backdrop-filter:blur(8px); display:flex; align-items:center; gap:7px;
+  .exp__live{position:absolute; top:8px; right:8px; z-index:2}
+  .exp__meta{
+    display:flex; align-items:center; gap:8px; margin-top:16px;
+    font-size:var(--body-size); line-height:var(--body-lh); color:var(--text-tertiary); white-space:nowrap;
   }
-  .thumb .live i{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-  .card-body{padding:20px 22px 22px; display:flex; flex-direction:column; gap:10px}
-  .card-top{display:flex; align-items:baseline; justify-content:space-between}
-  .card-top .num{font-size:13px; font-weight:600; letter-spacing:.04em; color:var(--accent)}
-  .card-top .date{font-size:13px; color:var(--faint)}
-  .card h3{
-    font-weight:500; font-size:23px; letter-spacing:-.015em; display:flex; align-items:center; gap:10px;
+  .exp__num{color:var(--text-primary); font-weight:500}
+  .exp__dot{width:8px; height:8px; background:var(--dot); flex-shrink:0}
+  .exp__title{margin-top:8px; font-weight:400; font-size:var(--h5-size); line-height:var(--h5-lh)}
+  .exp__desc{margin-top:8px; font-size:var(--body-size); line-height:var(--body-lh); color:var(--text-tertiary)}
+  .exp__foot{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-top:24px; flex-grow:1}
+  .exp__tags{display:flex; flex-wrap:wrap; gap:4px}
+  .exp .btn__box.is--icon{background:var(--btn-bg); border-color:var(--btn-bg); color:var(--btn-text)}
+  .exp:hover .btn__box.is--icon{background:var(--accent); border-color:var(--accent); color:var(--gray-950)}
+
+  .sv-cell.is--filler{
+    background-color:var(--line);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='22' viewBox='0 0 44 22'%3E%3Cpath d='M16 11h1v5h5v1h-5v5h-1v-5h-5v-1h5z M38 11h1v5h5v1h-5v5h-1v-5h-5v-1h5z'/%3E%3C/svg%3E") 0 0 / 44px 22px repeat;
+            mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='22' viewBox='0 0 44 22'%3E%3Cpath d='M16 11h1v5h5v1h-5v5h-1v-5h-5v-1h5z M38 11h1v5h5v1h-5v5h-1v-5h-5v-1h5z'/%3E%3C/svg%3E") 0 0 / 44px 22px repeat;
   }
-  .card h3 .arr{
-    color:var(--faint); font-weight:400; transition:transform .3s ease, color .3s ease;
-  }
-  .card:hover h3 .arr{transform:translate(4px,-4px); color:var(--accent)}
-  .card .desc{color:var(--dim); font-size:14.5px; max-width:44ch}
-  .tags{display:flex; gap:8px; margin-top:6px; flex-wrap:wrap}
-  .tag{
-    font-size:12px; letter-spacing:.01em;
-    color:var(--dim); border:1px solid var(--line); border-radius:99px; padding:4px 11px;
-  }
-  .index-note{
-    margin-top:44px; font-size:14px; color:var(--faint);
-    letter-spacing:0;
-  }
+  .sv-cell.is--filler::after{display:none}
+
+  .note{padding:20px var(--cell-pad); font-size:var(--small-size); line-height:var(--small-lh); color:var(--text-tertiary)}
 
   /* ---------- footer ---------- */
-  footer{margin-top:96px; border-top:1px solid var(--line)}
-  .foot{
-    display:flex; flex-wrap:wrap; gap:18px; align-items:baseline; justify-content:space-between;
-    padding:34px 32px 44px; max-width:1280px; margin:0 auto;
+  .foot-cell{min-height:372px; padding:var(--cell-pad); display:flex; flex-direction:column; align-items:flex-start; gap:8px}
+  .foot-cell .label{margin-bottom:0}
+  .foot-link{font-size:16px; line-height:24px; color:var(--text-primary);
+    background:linear-gradient(currentColor,currentColor) no-repeat 100% 100% / 0% 1px;
+    transition:background-size .5s var(--ease)}
+  .foot-link:hover{background-size:100% 1px; background-position:0 100%}
+  .foot-cell.is--about{justify-content:space-between}
+  .foot-cell.is--about p{font-size:var(--lead-size); line-height:var(--lead-lh); color:var(--text-secondary); max-width:28rem}
+  .foot-logo{padding:var(--cell-pad) var(--cell-pad) 8px; display:flex; flex-direction:column; gap:24px}
+  .foot-logo svg{display:block; width:100%; height:auto; color:var(--text-primary)}
+  .foot-bottom{
+    position:relative; min-height:40px; display:flex; flex-wrap:wrap; gap:16px;
+    align-items:center; justify-content:space-between;
+    font-size:var(--small-size); line-height:var(--small-lh); color:var(--text-tertiary);
   }
-  .foot p{color:var(--dim); font-size:14px}
-  .foot a{color:var(--ink); text-decoration:none; border-bottom:1px solid var(--faint)}
-  .foot a:hover{border-color:var(--accent)}
-  .foot .mono{font-size:13px; color:var(--faint); letter-spacing:0}
+  .theme{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); display:flex; gap:2px}
+  .theme button{
+    width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+    border-radius:2px; border:1px solid var(--line); background:transparent; color:var(--text-tertiary);
+    cursor:pointer; transition:background-color .3s, color .3s, border-color .3s;
+  }
+  .theme button svg{width:14px; height:14px; display:block}
+  .theme button[aria-selected="true"]{background:var(--btn-bg); border-color:var(--btn-bg); color:var(--text-primary)}
+  .theme button:hover{color:var(--text-primary)}
 
-  @media (max-width:640px){
-    .wrap{padding:0 20px}
-    .nav{padding:18px 20px}
-    .hero-inner{padding-bottom:56px}
-    .scroll-cue{display:none}
-    .foot{padding:30px 20px 40px}
+  /* ---------- responsive ---------- */
+  @media (max-width:991px){
+    .sv-grid, .sv-grid.is--three{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .sv-cell.is--span-2, .sv-cell.is--span-3{grid-column-end:span 2}
+    .head .sv-cell.is--end{margin-top:24px}
+    .bar .sv-cell.is--span-3{display:none}
+    .foot-cell{min-height:0; padding-bottom:40px}
+  }
+  @media (max-width:767px){
+    .nav{padding:0 16px}
+    .nav__btns .is--wide, .nav__btns .btn__box:not(.is--icon){display:none}
+    .nav__logo svg{height:20px}
+    .sv-grid, .sv-grid.is--three{grid-template-columns:minmax(0,1fr)}
+    .sv-cell.is--span-2, .sv-cell.is--span-3{grid-column-end:span 1}
+    .theme{position:static; transform:none}
   }
   @media (prefers-reduced-motion:reduce){
-    .rev{animation:none; opacity:1; transform:none}
-    body::after{animation:none}
+    *{transition:none !important}
   }
 </style>
 </head>
 <body>
 
-<header>
-  <nav class="nav">
-    <a class="wordmark" href="/" aria-label="StanVision Lab">
-      <svg viewBox="0 0 178.4 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="StanVision"><g transform="translate(0,0)"><path d="M60.6305 4.65784C64.9329 4.65784 67.7643 7.56284 67.7643 12.2329V23.522H64.5651V12.4168C64.5651 9.43822 62.8368 7.70993 60.0054 7.70993C56.8062 7.70993 54.6734 9.65885 54.6734 13.7773V23.522H51.4742V5.13588H54.6734V7.78347C55.9604 5.68746 57.9462 4.65784 60.6305 4.65784Z" fill="currentColor"/><path d="M44.0664 5.13584V8.29825C42.4852 5.87129 40.1686 4.65781 37.1165 4.65781C34.5424 4.65781 32.3361 5.61388 30.5343 7.48926C28.7324 9.36464 27.8131 11.6445 27.8131 14.3289C27.8131 17.0133 28.7324 19.3299 30.5343 21.2053C32.3361 23.0807 34.5424 24 37.1165 24C40.1686 24 42.4852 22.7865 44.0664 20.3595V23.5219H47.2656V15.8733H43.9223V15.8138C43.6718 17.0408 43.0947 18.1055 42.1911 19.0357C40.9408 20.286 39.3964 20.9111 37.521 20.9111C35.6824 20.9111 34.138 20.286 32.8877 19.0357C31.6374 17.7487 31.0123 16.2043 31.0123 14.3289C31.0123 12.4535 31.6374 10.9091 32.8877 9.65882C34.138 8.37179 35.6824 7.74667 37.521 7.74667C39.3964 7.74667 40.9408 8.37179 42.1911 9.65882C43.0947 10.5625 43.6718 11.6198 43.9223 12.8447V12.809H47.2656V5.13584H44.0664Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M26.6273 8.23697V5.14811H21.7366V0L18.5374 5.00424e-06V5.14811H14.897V8.23697H18.5374V18.2022C18.5374 22.762 21.0379 24.2696 26.6273 23.5342V20.666C26.4686 20.6731 26.3138 20.6804 26.1629 20.6875C23.2015 20.8273 21.7366 20.8964 21.7366 18.2022V8.23697H26.6273ZM18.5393 5.14808L21.7366 5.14811L21.7364 8.23797H18.5393V5.14808Z" fill="currentColor"/><path d="M3.89785 10.1001C3.89785 11.5342 5.51583 12.3064 7.5383 12.858C10.4065 13.4832 14.2308 14.5495 14.1941 18.4842C14.1941 20.1389 13.5322 21.4995 12.2451 22.4923C10.9581 23.4852 9.34013 24 7.31766 24C3.75076 24 1.06639 22.3085 0 19.6977L2.75791 18.1165C3.34627 19.8815 5.07456 20.9847 7.31766 20.9847C9.41368 20.9847 10.9581 20.2125 10.9581 18.4842C10.9581 17.0501 9.34013 16.2411 7.31766 15.763C4.41266 14.9908 0.661899 14.0347 0.661899 10.1369C0.661899 8.55569 1.28703 7.23189 2.50051 6.20227C3.75076 5.17265 5.29519 4.65784 7.17057 4.65784C10.1491 4.65784 12.6129 6.09195 13.7896 8.48214L11.1052 9.9898C10.4433 8.4086 9.1195 7.63638 7.17057 7.63638C5.36874 7.63638 3.89785 8.51892 3.89785 10.1001Z" fill="currentColor"/></g><g transform="translate(69.7,5)"><path d="M10.9396 0.148083V7.80895H7.87522V0.148083H10.9396Z" fill="currentColor"/><path d="M7.87522 10.8733H0.214355V7.80895H7.87522V10.8733Z" fill="currentColor"/><path d="M10.9396 10.8733V18.5342H7.87522V10.8733H10.9396Z" fill="currentColor"/><path d="M10.9396 10.8733H18.6004V7.80895H10.9396V10.8733Z" fill="currentColor"/></g><g transform="translate(88.4,4)"><path d="M82.5001 0.657837C86.8025 0.657837 89.6339 3.56284 89.6339 8.2329V19.522H86.4348V8.41677C86.4348 5.43822 84.7065 3.70993 81.875 3.70993C78.6758 3.70993 76.543 5.65885 76.543 9.77733V19.522H73.3439V1.13588H76.543V3.78347C77.8301 1.68746 79.8158 0.657837 82.5001 0.657837Z" fill="currentColor"/><path d="M67.3794 17.2053C65.504 19.0807 63.1874 20 60.503 20C57.8186 20 55.502 19.0807 53.6266 17.2053C51.7512 15.3299 50.8319 13.0501 50.8319 10.3289C50.8319 7.60778 51.7512 5.3279 53.6266 3.45252C55.502 1.57714 57.8186 0.657837 60.503 0.657837C63.1874 0.657837 65.504 1.57714 67.3794 3.45252C69.2548 5.3279 70.2108 7.60778 70.2108 10.3289C70.2108 13.0501 69.2548 15.3299 67.3794 17.2053ZM60.503 16.8744C62.3416 16.8744 63.886 16.2492 65.1363 14.999C66.3865 13.7487 67.0117 12.2043 67.0117 10.3289C67.0117 8.45354 66.3865 6.90911 65.1363 5.65885C63.886 4.4086 62.3416 3.78347 60.503 3.78347C58.7011 3.78347 57.1567 4.4086 55.9065 5.65885C54.6562 6.90911 54.0311 8.45354 54.0311 10.3289C54.0311 12.2043 54.6562 13.7487 55.9065 14.999C57.1567 16.2492 58.7011 16.8744 60.503 16.8744Z" fill="currentColor"/><path d="M44.4201 19.5219H47.6193V11.8733H44.4201V19.5219Z" fill="currentColor"/><path d="M44.4201 8.80895V1.13582H47.6193V8.80895H44.4201Z" fill="currentColor"/><path d="M31.154 6.10012C31.154 7.53423 32.772 8.30645 34.7945 8.85803C37.6627 9.48316 41.487 10.5495 41.4502 14.4842C41.4502 16.1389 40.7883 17.4995 39.5013 18.4923C38.2143 19.4852 36.5963 20 34.5738 20C31.0069 20 28.3226 18.3085 27.2562 15.6977L30.0141 14.1165C30.6024 15.8815 32.3307 16.9847 34.5738 16.9847C36.6699 16.9847 38.2143 16.2125 38.2143 14.4842C38.2143 13.0501 36.5963 12.2411 34.5738 11.763C31.6688 10.9908 27.9181 10.0347 27.9181 6.13689C27.9181 4.55569 28.5432 3.23189 29.7567 2.20227C31.0069 1.17265 32.5514 0.657837 34.4268 0.657837C37.4053 0.657837 39.869 2.09195 41.0457 4.48214L38.3614 5.9898C37.6995 4.4086 36.3757 3.63638 34.4268 3.63638C32.6249 3.63638 31.154 4.51892 31.154 6.10012Z" fill="currentColor"/><path d="M20.9906 19.5219H24.1898V11.8733H20.9906V19.5219Z" fill="currentColor"/><path d="M20.9906 8.80895V1.13582H24.1898V8.80895H20.9906Z" fill="currentColor"/><path d="M9.69355 16.1021L15.4668 1.13586H18.9234L11.5689 19.5219H7.81817L0.463745 1.13586H3.92032L9.69355 16.1021Z" fill="currentColor"/></g></svg>
-      <span class="lab">Lab</span>
+<header class="nav">
+  <a class="nav__logo" href="/" aria-label="StanVision Lab home">
+    <svg viewBox="0 0 178.4 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="StanVision"><g><path d="M60.6305 4.65784C64.9329 4.65784 67.7643 7.56284 67.7643 12.2329V23.522H64.5651V12.4168C64.5651 9.43822 62.8368 7.70993 60.0054 7.70993C56.8062 7.70993 54.6734 9.65885 54.6734 13.7773V23.522H51.4742V5.13588H54.6734V7.78347C55.9604 5.68746 57.9462 4.65784 60.6305 4.65784Z" fill="currentColor"/><path d="M44.0664 5.13584V8.29825C42.4852 5.87129 40.1686 4.65781 37.1165 4.65781C34.5424 4.65781 32.3361 5.61388 30.5343 7.48926C28.7324 9.36464 27.8131 11.6445 27.8131 14.3289C27.8131 17.0133 28.7324 19.3299 30.5343 21.2053C32.3361 23.0807 34.5424 24 37.1165 24C40.1686 24 42.4852 22.7865 44.0664 20.3595V23.5219H47.2656V15.8733H43.9223V15.8138C43.6718 17.0408 43.0947 18.1055 42.1911 19.0357C40.9408 20.286 39.3964 20.9111 37.521 20.9111C35.6824 20.9111 34.138 20.286 32.8877 19.0357C31.6374 17.7487 31.0123 16.2043 31.0123 14.3289C31.0123 12.4535 31.6374 10.9091 32.8877 9.65882C34.138 8.37179 35.6824 7.74667 37.521 7.74667C39.3964 7.74667 40.9408 8.37179 42.1911 9.65882C43.0947 10.5625 43.6718 11.6198 43.9223 12.8447V12.809H47.2656V5.13584H44.0664Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M26.6273 8.23697V5.14811H21.7366V0L18.5374 5.00424e-06V5.14811H14.897V8.23697H18.5374V18.2022C18.5374 22.762 21.0379 24.2696 26.6273 23.5342V20.666C26.4686 20.6731 26.3138 20.6804 26.1629 20.6875C23.2015 20.8273 21.7366 20.8964 21.7366 18.2022V8.23697H26.6273ZM18.5393 5.14808L21.7366 5.14811L21.7364 8.23797H18.5393V5.14808Z" fill="currentColor"/><path d="M3.89785 10.1001C3.89785 11.5342 5.51583 12.3064 7.5383 12.858C10.4065 13.4832 14.2308 14.5495 14.1941 18.4842C14.1941 20.1389 13.5322 21.4995 12.2451 22.4923C10.9581 23.4852 9.34013 24 7.31766 24C3.75076 24 1.06639 22.3085 0 19.6977L2.75791 18.1165C3.34627 19.8815 5.07456 20.9847 7.31766 20.9847C9.41368 20.9847 10.9581 20.2125 10.9581 18.4842C10.9581 17.0501 9.34013 16.2411 7.31766 15.763C4.41266 14.9908 0.661899 14.0347 0.661899 10.1369C0.661899 8.55569 1.28703 7.23189 2.50051 6.20227C3.75076 5.17265 5.29519 4.65784 7.17057 4.65784C10.1491 4.65784 12.6129 6.09195 13.7896 8.48214L11.1052 9.9898C10.4433 8.4086 9.1195 7.63638 7.17057 7.63638C5.36874 7.63638 3.89785 8.51892 3.89785 10.1001Z" fill="currentColor"/></g><g transform="translate(69.7,5)"><path d="M10.9396 0.148083V7.80895H7.87522V0.148083H10.9396Z" fill="currentColor"/><path d="M7.87522 10.8733H0.214355V7.80895H7.87522V10.8733Z" fill="currentColor"/><path d="M10.9396 10.8733V18.5342H7.87522V10.8733H10.9396Z" fill="currentColor"/><path d="M10.9396 10.8733H18.6004V7.80895H10.9396V10.8733Z" fill="currentColor"/></g><g transform="translate(88.4,4)"><path d="M82.5001 0.657837C86.8025 0.657837 89.6339 3.56284 89.6339 8.2329V19.522H86.4348V8.41677C86.4348 5.43822 84.7065 3.70993 81.875 3.70993C78.6758 3.70993 76.543 5.65885 76.543 9.77733V19.522H73.3439V1.13588H76.543V3.78347C77.8301 1.68746 79.8158 0.657837 82.5001 0.657837Z" fill="currentColor"/><path d="M67.3794 17.2053C65.504 19.0807 63.1874 20 60.503 20C57.8186 20 55.502 19.0807 53.6266 17.2053C51.7512 15.3299 50.8319 13.0501 50.8319 10.3289C50.8319 7.60778 51.7512 5.3279 53.6266 3.45252C55.502 1.57714 57.8186 0.657837 60.503 0.657837C63.1874 0.657837 65.504 1.57714 67.3794 3.45252C69.2548 5.3279 70.2108 7.60778 70.2108 10.3289C70.2108 13.0501 69.2548 15.3299 67.3794 17.2053ZM60.503 16.8744C62.3416 16.8744 63.886 16.2492 65.1363 14.999C66.3865 13.7487 67.0117 12.2043 67.0117 10.3289C67.0117 8.45354 66.3865 6.90911 65.1363 5.65885C63.886 4.4086 62.3416 3.78347 60.503 3.78347C58.7011 3.78347 57.1567 4.4086 55.9065 5.65885C54.6562 6.90911 54.0311 8.45354 54.0311 10.3289C54.0311 12.2043 54.6562 13.7487 55.9065 14.999C57.1567 16.2492 58.7011 16.8744 60.503 16.8744Z" fill="currentColor"/><path d="M44.4201 19.5219H47.6193V11.8733H44.4201V19.5219Z" fill="currentColor"/><path d="M44.4201 8.80895V1.13582H47.6193V8.80895H44.4201Z" fill="currentColor"/><path d="M31.154 6.10012C31.154 7.53423 32.772 8.30645 34.7945 8.85803C37.6627 9.48316 41.487 10.5495 41.4502 14.4842C41.4502 16.1389 40.7883 17.4995 39.5013 18.4923C38.2143 19.4852 36.5963 20 34.5738 20C31.0069 20 28.3226 18.3085 27.2562 15.6977L30.0141 14.1165C30.6024 15.8815 32.3307 16.9847 34.5738 16.9847C36.6699 16.9847 38.2143 16.2125 38.2143 14.4842C38.2143 13.0501 36.5963 12.2411 34.5738 11.763C31.6688 10.9908 27.9181 10.0347 27.9181 6.13689C27.9181 4.55569 28.5432 3.23189 29.7567 2.20227C31.0069 1.17265 32.5514 0.657837 34.4268 0.657837C37.4053 0.657837 39.869 2.09195 41.0457 4.48214L38.3614 5.9898C37.6995 4.4086 36.3757 3.63638 34.4268 3.63638C32.6249 3.63638 31.154 4.51892 31.154 6.10012Z" fill="currentColor"/><path d="M20.9906 19.5219H24.1898V11.8733H20.9906V19.5219Z" fill="currentColor"/><path d="M20.9906 8.80895V1.13582H24.1898V8.80895H20.9906Z" fill="currentColor"/><path d="M9.69355 16.1021L15.4668 1.13586H18.9234L11.5689 19.5219H7.81817L0.463745 1.13586H3.92032L9.69355 16.1021Z" fill="currentColor"/></g></svg>
+    <span class="badge is--lime">Lab</span>
+  </a>
+  <div class="nav__btns">
+    <a class="btn is--wide" href="https://www.stan.vision" target="_blank" rel="noopener"><span class="btn__box">stan.vision</span></a>
+    <a class="btn" href="https://www.stan.vision/contact" target="_blank" rel="noopener" aria-label="Start a project">
+      <span class="btn__box">Start a project</span>
+      <span class="btn__box is--icon"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M3 2h5v5" stroke="currentColor" stroke-width="1.2"/></svg></span>
     </a>
-    <a class="out" href="https://stan.vision" target="_blank" rel="noopener">stan.vision ↗</a>
-  </nav>
+  </div>
 </header>
 
-<section class="hero">
-  <canvas id="heroGl" aria-hidden="true"></canvas>
-  <div class="wrap hero-inner">
-    <p class="kicker rev d1">lab.stan.vision — interactive experiments</p>
-    <h1 class="rev d2">A playground for motion, light and interface<span class="idx">.</span></h1>
-    <p class="rev d3">Small experiments from the <b>StanVision</b> agency — WebGL shaders, generative toys and interface ideas, each one fast and touchable. No briefs, no tickets, just craft.</p>
-  </div>
-  <span class="scroll-cue">Scroll — Index</span>
-</section>
+<main>
+  <!-- head -->
+  <section class="sv-section">
+    <div class="sv-container">
+      <div class="head">
+        <div class="sv-grid">
+          <div class="sv-cell is--span-3">
+            <h1 class="title">A playground for motion, light and interface.</h1>
+          </div>
+          <div class="sv-cell is--span-2 is--end">
+            <p class="lead">Small experiments from the <b>StanVision</b> agency. WebGL shaders, generative toys and interface ideas, each one fast and touchable. No briefs, no tickets, just craft.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<main class="wrap index">
-  <div class="index-head">
-    <h2>Index</h2>
-    <span class="count" id="count"></span>
-  </div>
-  <div class="grid" id="grid"></div>
-  <p class="index-note">New experiments ship irregularly. Every preview above is the real experiment running live.</p>
+  <!-- index bar -->
+  <section class="sv-section bar">
+    <div class="sv-container">
+      <div class="sv-grid is--cells">
+        <div class="sv-cell is--span-3"><span class="label">Index</span></div>
+        <div class="sv-cell is--span-2">
+          <span class="count" id="count"></span>
+          <span class="badge is--dark"><i></i>All previews live</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- experiments -->
+  <section class="sv-section">
+    <div class="sv-container">
+      <div class="sv-grid is--cells is--three" id="grid"></div>
+    </div>
+  </section>
+
+  <section class="sv-section">
+    <div class="sv-container">
+      <p class="note">New experiments ship irregularly. Every preview above is the real experiment running live.</p>
+    </div>
+  </section>
 </main>
 
 <footer>
-  <div class="foot">
-    <p>Made by <a href="https://stan.vision" target="_blank" rel="noopener">StanVision</a> — a UI/UX &amp; Webflow design agency for B2B SaaS.</p>
-    <p class="mono">© 2026 StanVision</p>
-  </div>
+  <section class="sv-section">
+    <div class="sv-container">
+      <nav class="sv-grid is--cells" aria-label="Footer">
+        <div class="sv-cell foot-cell">
+          <p class="label">Lab</p>
+          <a class="foot-link" href="/">Index</a>
+          <a class="foot-link" href="https://www.stan.vision/journal" target="_blank" rel="noopener">Blog</a>
+          <a class="foot-link" href="https://www.stan.vision/contact" target="_blank" rel="noopener">Let’s talk</a>
+        </div>
+        <div class="sv-cell foot-cell">
+          <p class="label">Company</p>
+          <a class="foot-link" href="https://www.stan.vision/work" target="_blank" rel="noopener">Work</a>
+          <a class="foot-link" href="https://www.stan.vision/clients" target="_blank" rel="noopener">Clients</a>
+          <a class="foot-link" href="https://www.stan.vision/services" target="_blank" rel="noopener">Services</a>
+          <a class="foot-link" href="https://www.stan.vision/agency" target="_blank" rel="noopener">Agency</a>
+          <a class="foot-link" href="https://www.stan.vision/reviews" target="_blank" rel="noopener">Reviews</a>
+        </div>
+        <div class="sv-cell foot-cell">
+          <p class="label">Follow</p>
+          <a class="foot-link" href="https://www.linkedin.com/company/stanvision" target="_blank" rel="noopener">LinkedIn</a>
+          <a class="foot-link" href="https://www.instagram.com/stan.vision/" target="_blank" rel="noopener">Instagram</a>
+          <a class="foot-link" href="https://twitter.com/stan_vision" target="_blank" rel="noopener">X</a>
+          <a class="foot-link" href="https://dribbble.com/stanvision" target="_blank" rel="noopener">Dribbble</a>
+          <a class="foot-link" href="https://www.behance.net/profile/stan-vision" target="_blank" rel="noopener">Behance</a>
+          <a class="foot-link" href="https://webflow.com/@stan-vision" target="_blank" rel="noopener">Webflow</a>
+        </div>
+        <div class="sv-cell foot-cell is--about is--span-2">
+          <p>Made by StanVision, a UI/UX and Webflow design agency for B2B SaaS.</p>
+          <a class="btn" href="https://www.stan.vision" target="_blank" rel="noopener">
+            <span class="btn__box">Visit stan.vision</span>
+            <span class="btn__box is--icon"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M3 2h5v5" stroke="currentColor" stroke-width="1.2"/></svg></span>
+          </a>
+        </div>
+      </nav>
+    </div>
+  </section>
+  <section class="sv-section">
+    <div class="sv-container foot-logo">
+      <svg viewBox="0 0 178.4 24" fill="none" aria-hidden="true"></svg>
+      <div class="foot-bottom">
+        <p>© 2018-<span id="year">2026</span> StanVision Ltd. All rights reserved.</p>
+        <div class="theme" role="tablist" aria-label="Color theme">
+          <button type="button" role="tab" data-theme-value="dark" aria-label="Dark mode"><svg viewBox="0 0 16 16" fill="none"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z" stroke="currentColor" stroke-width="1.2"/></svg></button>
+          <button type="button" role="tab" data-theme-value="light" aria-label="Light mode"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3" stroke="currentColor" stroke-width="1.2"/></svg></button>
+        </div>
+        <a class="foot-link" href="https://www.stan.vision/legal/privacy-policy" target="_blank" rel="noopener">Privacy policy</a>
+      </div>
+    </div>
+  </section>
 </footer>
+
+<div class="sv-marks" id="marks" aria-hidden="true"></div>
 
 <script>
 /* ---------- experiments index ----------
@@ -227,183 +388,151 @@
    Numbers are assigned automatically below — never hardcode them.
    Cards render the experiment itself, live, in a scaled iframe. */
 const EXPERIMENTS = [
-  {
-    slug: 'medusa-plus',
-    title: 'Medusa Plus',
-    date: '2026-10',
-    desc: 'The StanVision + as a soft-body jellyfish. A verlet membrane that breathes, pulses and swims after your cursor, trailing luminous tentacles through the hole. Four presets, randomise, copy settings.',
-    tags: ['WebGL', 'three.js', 'Soft body'],
-  },
-  {
-    slug: 'glass-type',
-    title: 'Glass Type',
-    date: '2026-09',
-    desc: 'Two lines of type behind a wall of vertical glass panes. Each pane refracts, smears and shifts the letters, a gradient glows behind the glass, and the panes drift apart as your cursor moves. Any text, five presets, PNG export.',
-    tags: ['WebGL', 'Type', 'Refraction'],
-  },
-  {
-    slug: 'brand-silk',
-    title: 'Brand Silk',
-    date: '2026-09',
-    desc: 'The StanVision brand pattern as a live shader. Silk folds woven from thousands of short streaks, lit by your cursor, coloured with tone ramps measured from the original artwork. Four brand colours, seed shuffle, PNG export up to 8K.',
-    tags: ['WebGL', 'Brand', 'Generator'],
-  },
-  {
-    slug: 'block-grid',
-    title: 'Block Grid',
-    date: '2026-09',
-    desc: 'A square pattern generator. Noise, shapes, the StanVision +, type or your own image, quantised into blocks that recombine. Tonal ramps or full-colour mosaic, cursor reveal, PNG export.',
-    tags: ['WebGL', 'Generator', 'Tool'],
-  },
-  {
-    slug: 'glass-plus',
-    title: 'Glass Plus',
-    date: '2026-09',
-    desc: 'The StanVision + as a glass object you light with the cursor. Blender render, runtime normal map, studio sheen and a lime lamp that follows the pointer. One WebGL fragment shader.',
-    tags: ['WebGL', 'Blender', 'Lighting'],
-  },
-  {
-    slug: 'dotted-planet',
-    title: 'Dotted Planet',
-    date: '2026-09',
-    desc: 'A planet built from thousands of dots. Drag to orbit, switch presets, tune density, glow and atmosphere, copy your settings.',
-    tags: ['WebGL', 'three.js', 'Interactive'],
-  },
-  {
-    slug: 'air-type',
-    title: 'Air Type',
-    date: '2026-09',
-    desc: 'A wordmark rasterised into a grid of squares that disperse like air around the cursor. Type your own word, tune the physics, copy your settings.',
-    tags: ['Canvas 2D', 'Typography', 'Interactive'],
-  },
-  {
-    slug: 'wave-grid',
-    title: 'Wave Grid',
-    date: '2026-09',
-    desc: 'A field of instanced columns that ripple outward from the cursor. Waves lift, tilt and swell the blocks; tune physics, light, colour and post, copy your settings.',
-    tags: ['three.js', 'Instancing', 'Interactive'],
-  },
-  {
-    slug: 'gradient-lab',
-    title: 'Gradient Lab',
-    date: '2026-09',
-    desc: 'Gradients that are not boring. Six GLSL types (mesh, silk, aurora, smoke, swirl, stripes), palette shuffle, cursor push, PNG export up to 4K.',
-    tags: ['WebGL', 'Shader', 'Tool'],
-  },
-  {
-    slug: 'ink-field',
-    title: 'Ink Field',
-    date: '2026-09',
-    desc: 'Domain-warped noise rendered as living ink. Stir it with your cursor, tune the flow, export a frame.',
-    tags: ['WebGL', 'Shader', 'Interactive'],
-  },
+  { slug:'medusa-plus', title:'Medusa Plus', date:'2026-10',
+    desc:'The StanVision + as a soft-body jellyfish. A verlet membrane that breathes, pulses and swims after your cursor, trailing luminous tentacles through the hole. Four presets, randomise, copy settings.',
+    tags:['WebGL','three.js','Soft body'] },
+  { slug:'glass-type', title:'Glass Type', date:'2026-09',
+    desc:'Two lines of type behind a wall of vertical glass panes. Each pane refracts, smears and shifts the letters, a gradient glows behind the glass, and the panes drift apart as your cursor moves. Any text, five presets, PNG export.',
+    tags:['WebGL','Type','Refraction'] },
+  { slug:'brand-silk', title:'Brand Silk', date:'2026-09',
+    desc:'The StanVision brand pattern as a live shader. Silk folds woven from thousands of short streaks, lit by your cursor, coloured with tone ramps measured from the original artwork. Four brand colours, seed shuffle, PNG export up to 8K.',
+    tags:['WebGL','Brand','Generator'] },
+  { slug:'block-grid', title:'Block Grid', date:'2026-09',
+    desc:'A square pattern generator. Noise, shapes, the StanVision +, type or your own image, quantised into blocks that recombine. Tonal ramps or full-colour mosaic, cursor reveal, PNG export.',
+    tags:['WebGL','Generator','Tool'] },
+  { slug:'glass-plus', title:'Glass Plus', date:'2026-09',
+    desc:'The StanVision + as a glass object you light with the cursor. Blender render, runtime normal map, studio sheen and a lime lamp that follows the pointer. One WebGL fragment shader.',
+    tags:['WebGL','Blender','Lighting'] },
+  { slug:'dotted-planet', title:'Dotted Planet', date:'2026-09',
+    desc:'A planet built from thousands of dots. Drag to orbit, switch presets, tune density, glow and atmosphere, copy your settings.',
+    tags:['WebGL','three.js','Interactive'] },
+  { slug:'air-type', title:'Air Type', date:'2026-09',
+    desc:'A wordmark rasterised into a grid of squares that disperse like air around the cursor. Type your own word, tune the physics, copy your settings.',
+    tags:['Canvas 2D','Typography','Interactive'] },
+  { slug:'wave-grid', title:'Wave Grid', date:'2026-09',
+    desc:'A field of instanced columns that ripple outward from the cursor. Waves lift, tilt and swell the blocks; tune physics, light, colour and post, copy your settings.',
+    tags:['three.js','Instancing','Interactive'] },
+  { slug:'gradient-lab', title:'Gradient Lab', date:'2026-09',
+    desc:'Gradients that are not boring. Six GLSL types (mesh, silk, aurora, smoke, swirl, stripes), palette shuffle, cursor push, PNG export up to 4K.',
+    tags:['WebGL','Shader','Tool'] },
+  { slug:'ink-field', title:'Ink Field', date:'2026-09',
+    desc:'Domain-warped noise rendered as living ink. Stir it with your cursor, tune the flow, export a frame.',
+    tags:['WebGL','Shader','Interactive'] },
 ];
 
+const ARROW = '<svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M3 2h5v5" stroke="currentColor" stroke-width="1.2"/></svg>';
 const grid = document.getElementById('grid');
-document.getElementById('count').textContent =
-  String(EXPERIMENTS.length).padStart(3,'0') + (EXPERIMENTS.length === 1 ? ' experiment' : ' experiments');
+const n = EXPERIMENTS.length;
+document.getElementById('count').innerHTML =
+  String(n).padStart(3,'0') + ' <span>' + (n === 1 ? 'experiment' : 'experiments') + '</span>';
+document.getElementById('year').textContent = new Date().getFullYear();
 
 EXPERIMENTS.forEach((e, i) => {
-  const num = String(EXPERIMENTS.length - i).padStart(3, '0');
   const a = document.createElement('a');
-  a.className = 'card';
+  a.className = 'sv-cell exp';
   a.href = `/${e.slug}`;
   a.innerHTML = `
-    <div class="thumb">
+    <div class="exp__thumb">
       <iframe src="/${e.slug}?embed" title="${e.title} live preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
-      <span class="live"><i></i>Live</span>
+      <span class="badge is--dark exp__live"><i></i>Live</span>
     </div>
-    <div class="card-body">
-      <div class="card-top"><span class="num">${num}</span><span class="date">${e.date}</span></div>
-      <h3>${e.title}<span class="arr">↗</span></h3>
-      <p class="desc">${e.desc}</p>
-      <div class="tags">${e.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+    <div class="exp__meta"><span class="exp__num">${String(n - i).padStart(3,'0')}</span><span class="exp__dot"></span><span>${e.date}</span></div>
+    <h2 class="exp__title">${e.title}</h2>
+    <p class="exp__desc">${e.desc}</p>
+    <div class="exp__foot">
+      <div class="exp__tags">${e.tags.map(t => `<span class="badge is--outline">${t}</span>`).join('')}</div>
+      <span class="btn__box is--icon">${ARROW}</span>
     </div>`;
   grid.appendChild(a);
 });
 
-/* scale live previews to card width (iframes render at 1280x800) */
-function scalePreviews() {
-  document.querySelectorAll('.thumb').forEach(th => {
+/* footer wordmark: reuse the nav logo paths */
+(function(){
+  const src = document.querySelector('.nav__logo svg');
+  const dst = document.querySelector('.foot-logo svg');
+  dst.innerHTML = src.innerHTML;
+})();
+
+/* fill the last grid row with pattern cells so the lines close */
+function fillRow(){
+  grid.querySelectorAll('.is--filler').forEach(f => f.remove());
+  const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+  const rest = (cols - (n % cols)) % cols;
+  for (let k = 0; k < rest; k++){
+    const f = document.createElement('div');
+    f.className = 'sv-cell is--filler';
+    f.setAttribute('aria-hidden','true');
+    grid.appendChild(f);
+  }
+}
+
+/* scale live previews to cell width (iframes render at 1280x800) */
+function scalePreviews(){
+  grid.querySelectorAll('.exp__thumb').forEach(th => {
     const f = th.querySelector('iframe');
     if (f) f.style.transform = `scale(${th.clientWidth / 1280})`;
   });
 }
-addEventListener('resize', scalePreviews);
-scalePreviews();
 
-/* ---------- hero shader: calm monochrome variant of Ink Field, lime accent ---------- */
-const canvas = document.getElementById('heroGl');
-const gl = canvas.getContext('webgl2', {antialias:false});
-if (gl) {
-  const VERT = `#version 300 es
-  void main(){
-    vec2 p = vec2[](vec2(-1,-1),vec2(3,-1),vec2(-1,3))[gl_VertexID];
-    gl_Position = vec4(p,0,1);
-  }`;
-  const FRAG = `#version 300 es
-  precision highp float;
-  out vec4 o;
-  uniform vec2 uRes; uniform float uT; uniform vec2 uM; uniform float uStir;
-  mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
-  float hash(vec2 p){p=fract(p*vec2(234.34,435.345));p+=dot(p,p+34.23);return fract(p.x*p.y);}
-  float noise(vec2 p){
-    vec2 i=floor(p),f=fract(p); f=f*f*(3.-2.*f);
-    return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);
-  }
-  float fbm(vec2 p){
-    float v=0.,a=.55; mat2 m=rot(.62);
-    for(int i=0;i<5;i++){v+=a*noise(p); p=m*p*2.03+11.7; a*=.52;}
-    return v;
-  }
-  void main(){
-    vec2 uv=(gl_FragCoord.xy-.5*uRes)/min(uRes.x,uRes.y);
-    float t=uT*.045;
-    vec2 muv=(uM-.5*uRes)/min(uRes.x,uRes.y);
-    float stir=uStir*exp(-dot(uv-muv,uv-muv)*7.);
-    vec2 p=uv*1.5;
-    vec2 q=vec2(fbm(p+t),fbm(p+vec2(5.2,1.3)-t*.7));
-    float f=fbm(p+(1.5+stir*2.)*q);
-    float shade=smoothstep(.15,.95,f);
-    vec3 col=mix(vec3(.031,.033,.031), vec3(.15,.16,.14), shade);
-    col+=vec3(.72,.95,.20)*pow(f,7.)*(.55+stir*3.2);
-    col*=1.-.3*dot(uv,uv);
-    col+=(hash(gl_FragCoord.xy+fract(uT)*100.)-.5)*.03;
-    o=vec4(col,1.);
-  }`;
-  const compile=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh;};
-  const prog=gl.createProgram();
-  gl.attachShader(prog,compile(gl.VERTEX_SHADER,VERT));
-  gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,FRAG));
-  gl.linkProgram(prog); gl.useProgram(prog);
-  const U=n=>gl.getUniformLocation(prog,n);
-
-  let mouse=[0,0], stir=0;
-  addEventListener('pointermove',e=>{
-    const r=canvas.getBoundingClientRect();
-    mouse=[(e.clientX-r.left)*devicePixelRatio,(r.height-(e.clientY-r.top))*devicePixelRatio];
-    stir=Math.min(1,stir+.06);
-  },{passive:true});
-
-  function resize(){
-    const dpr=Math.min(devicePixelRatio,1.75);
-    canvas.width=canvas.clientWidth*dpr; canvas.height=canvas.clientHeight*dpr;
-    gl.viewport(0,0,canvas.width,canvas.height);
-  }
-  addEventListener('resize',resize); resize();
-
-  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function frame(now){
-    stir*=.97;
-    gl.uniform2f(U('uRes'),canvas.width,canvas.height);
-    gl.uniform1f(U('uT'),now*.001);
-    gl.uniform2f(U('uM'),mouse[0],mouse[1]);
-    gl.uniform1f(U('uStir'),stir);
-    gl.drawArrays(gl.TRIANGLES,0,3);
-    if(!reduced) requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
+/* crosshair marks where grid lines meet (same logic as stan.vision sv-marks) */
+const marksEl = document.getElementById('marks');
+function drawMarks(){
+  const sy = scrollY, sx = scrollX;
+  const V = [], H = [];
+  document.querySelectorAll('.sv-section').forEach(sec => {
+    const s = sec.getBoundingClientRect();
+    const c = sec.querySelector(':scope > .sv-container').getBoundingClientRect();
+    const top = s.top + sy, bot = s.bottom + sy - 1;
+    V.push({x:c.left + sx, a:top, b:bot + 1}, {x:c.right + sx - 1, a:top, b:bot + 1});
+    H.push({y:bot, a:s.left + sx, b:s.right + sx});
+  });
+  document.querySelectorAll('.sv-grid.is--cells').forEach(g => {
+    const gr = g.getBoundingClientRect();
+    [...g.children].forEach(cell => {
+      const r = cell.getBoundingClientRect();
+      const L = (Math.abs(r.left - gr.left) < 1 ? r.left - 1 : r.left) + sx;
+      const R = r.right + sx, T = r.top + sy - 1, B = r.bottom + sy;
+      V.push({x:L, a:T, b:B}, {x:R, a:T, b:B});
+      H.push({y:T, a:L, b:R}, {y:B, a:L, b:R});
+    });
+  });
+  const near = (p, q) => Math.abs(p - q) < 1.5;
+  const pts = new Map();
+  V.forEach(v => H.forEach(h => {
+    if (v.x >= h.a - 1.5 && v.x <= h.b + 1.5 && h.y >= v.a - 1.5 && h.y <= v.b + 1.5){
+      const k = Math.round(v.x) + ',' + Math.round(h.y);
+      if (!pts.has(k)) pts.set(k, {x:v.x, y:h.y});
+    }
+  }));
+  let html = '';
+  pts.forEach(p => {
+    let arms = '';
+    if (V.some(v => near(v.x, p.x) && v.a < p.y - 1.5 && v.b >= p.y - 1.5)) arms += 'u';
+    if (V.some(v => near(v.x, p.x) && v.b > p.y + 1.5 && v.a <= p.y + 1.5)) arms += 'd';
+    if (H.some(h => near(h.y, p.y) && h.a < p.x - 1.5 && h.b >= p.x - 1.5)) arms += 'l';
+    if (H.some(h => near(h.y, p.y) && h.b > p.x + 1.5 && h.a <= p.x + 1.5)) arms += 'r';
+    if (arms.length > 2) html += `<span class="sv-mark" data-arms="${arms}" style="left:${p.x - 5}px;top:${p.y - 5}px"></span>`;
+  });
+  marksEl.innerHTML = html;
 }
+
+function layout(){ fillRow(); scalePreviews(); drawMarks(); }
+let raf = 0;
+const queue = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(layout); };
+new ResizeObserver(queue).observe(document.body);
+if (document.fonts) document.fonts.ready.then(queue);
+layout();
+
+/* theme toggle (dark is default, like stan.vision) */
+const themeBtns = document.querySelectorAll('.theme button');
+function setTheme(t){
+  if (t === 'light') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  themeBtns.forEach(b => b.setAttribute('aria-selected', String(b.dataset.themeValue === t)));
+  try { localStorage.setItem('sv-lab-theme', t); } catch(e) {}
+}
+themeBtns.forEach(b => b.addEventListener('click', () => setTheme(b.dataset.themeValue)));
+setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
 </script>
 </body>
 </html>
