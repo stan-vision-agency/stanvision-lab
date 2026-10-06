@@ -1,0 +1,956 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cool Symbols — copy and paste glyphs · StanVision Lab</title>
+<meta name="description" content="5,293 cool symbols, arrows, stars, hearts, fancy letters, shapes and emoji in 40 categories. Click any glyph to copy it. A free tool from StanVision Lab.">
+<meta property="og:title" content="Cool Symbols · StanVision Lab">
+<meta property="og:description" content="Click a glyph, it is on your clipboard. 5,293 symbols in 40 categories.">
+<script>
+try{if(localStorage.getItem('sv-lab-theme')==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}
+if(location.search.indexOf('embed')>-1)document.documentElement.classList.add('embed');
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ---------- tokens (mirrors stan.vision 6.0 variables, same as lab index) ---------- */
+  :root{
+    --gray-50:#fafafa; --gray-100:#f5f5f5; --gray-200:#e5e5e5; --gray-300:#d4d4d4; --gray-400:#a3a3a3;
+    --gray-500:#737373; --gray-600:#525252; --gray-700:#262626; --gray-800:#141414; --gray-900:#0f0f0f; --gray-950:#0a0a0a;
+    --lime:#d8ff43;
+
+    --bg:var(--gray-900);
+    --tint:var(--gray-800);
+    --line:var(--gray-700);
+    --mark:var(--gray-500);
+    --text-primary:var(--gray-50);
+    --text-secondary:var(--gray-300);
+    --text-tertiary:var(--gray-400);
+    --btn-bg:var(--gray-700);
+    --btn-bg-hover:var(--gray-600);
+    --btn-text:var(--gray-50);
+    --badge-bg:var(--gray-700);
+    --badge-text:var(--gray-400);
+    --badge-outline:var(--gray-600);
+    --badge-outline-text:var(--gray-200);
+    --dot:var(--gray-600);
+    --accent:var(--lime);
+
+    --font:'Inter',Arial,sans-serif;
+    --glyph-font:'Inter','Apple Symbols','Segoe UI Symbol','Noto Sans Symbols 2','Noto Sans Symbols','Noto Sans Math','STIX Two Math','Cambria Math','Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;
+    --h1-size:4.1875rem; --h1-lh:4.75rem; --h1-ls:-1.25px;
+    --h5-size:1.5rem; --h5-lh:1.875rem;
+    --lead-size:1.125rem; --lead-lh:1.75rem;
+    --body-size:1rem; --body-lh:1.5rem;
+    --small-size:.875rem; --small-lh:1.25rem;
+
+    --grid-margin:16px;
+    --grid-max:1680px;
+    --cell-pad:16px;
+    --head-pad-top:120px;
+    --head-pad-bottom:40px;
+    --nav-h:74px;
+    --bar-h:57px;
+    --ease:cubic-bezier(.77,0,.175,1);
+
+    --tile:76px; --glyph:30px;
+  }
+  :root[data-theme="light"]{
+    --bg:var(--gray-50);
+    --tint:var(--gray-100);
+    --line:var(--gray-200);
+    --mark:var(--gray-400);
+    --text-primary:var(--gray-900);
+    --text-secondary:var(--gray-600);
+    --text-tertiary:var(--gray-500);
+    --btn-bg:var(--gray-200);
+    --btn-bg-hover:var(--gray-300);
+    --btn-text:var(--gray-900);
+    --badge-bg:var(--gray-200);
+    --badge-text:var(--gray-500);
+    --badge-outline:var(--gray-300);
+    --badge-outline-text:var(--gray-700);
+    --dot:var(--gray-300);
+  }
+  :root[data-size="s"]{ --tile:56px; --glyph:22px }
+  :root[data-size="l"]{ --tile:104px; --glyph:44px }
+
+  html{font-size:16px}
+  @media (min-width:1279px) and (max-width:1560px){ html{font-size:1.02564vw} }
+  @media (max-width:991px){
+    :root{ --h1-size:2.5rem; --h1-lh:3.125rem; --h1-ls:-.5px; --head-pad-top:80px; }
+  }
+  @media (max-width:767px){
+    :root{ --head-pad-top:56px; --head-pad-bottom:32px; --nav-h:64px; --tile:60px; --glyph:24px }
+    :root[data-size="s"]{ --tile:48px; --glyph:20px }
+    :root[data-size="l"]{ --tile:84px; --glyph:36px }
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overflow-x:clip}
+  html{scroll-padding-top:calc(var(--nav-h) + var(--bar-h))}
+  body{
+    background:var(--bg); color:var(--text-primary);
+    font-family:var(--font); font-size:var(--body-size); line-height:1.6; font-weight:400;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    padding-top:var(--nav-h);
+  }
+  ::selection{background:var(--accent);color:var(--gray-950)}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:inline-flex; gap:2px; align-items:stretch;
+    font-size:12px; line-height:14px; font-weight:500; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--btn-text); white-space:nowrap;
+  }
+  .btn__box{
+    height:32px; padding:0 10px; display:flex; align-items:center; justify-content:center;
+    background:var(--btn-bg); border:1px solid var(--btn-bg); border-radius:2px;
+    transition:background-color .3s, border-color .3s, color .3s;
+  }
+  .btn__box.is--icon{width:32px; padding:0; flex-shrink:0}
+  .btn__box svg{width:10px;height:10px;display:block}
+  .btn:hover .btn__box{background:var(--btn-bg-hover); border-color:var(--btn-bg-hover)}
+  .btn:hover .btn__box.is--icon{background:var(--accent); border-color:var(--accent); color:var(--gray-950)}
+  .btn.is--ghost .btn__box{background:transparent; border-color:var(--line); color:var(--text-tertiary)}
+  .btn.is--ghost:hover .btn__box{border-color:var(--btn-bg-hover); color:var(--text-primary)}
+
+  /* ---------- badges ---------- */
+  .badge{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12px; line-height:.875rem; font-weight:500; white-space:nowrap;
+    padding:4px 7px; border-radius:2px;
+    background:var(--badge-bg); color:var(--badge-text); border:1px solid var(--badge-bg);
+  }
+  .badge.is--outline{background:transparent; border-color:var(--badge-outline); color:var(--badge-outline-text)}
+  .badge.is--dark{background:var(--gray-950); border-color:var(--gray-950); color:#fff}
+  .badge.is--lime{background:var(--accent); border-color:var(--accent); color:var(--gray-950); text-transform:uppercase; letter-spacing:.04em}
+  .badge i{width:6px;height:6px;background:var(--accent);flex-shrink:0}
+
+  /* ---------- nav ---------- */
+  .nav{
+    position:fixed; top:0; left:0; right:0; z-index:30; height:var(--nav-h);
+    background:var(--bg); padding:0 24px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .nav__logo{display:flex; align-items:center; gap:10px; color:var(--text-primary)}
+  .nav__logo svg{display:block; height:24px; width:auto}
+  .nav__btns{display:flex; gap:8px}
+
+  /* ---------- sv grid system ---------- */
+  .sv-section{position:relative; width:100%; padding:0 var(--grid-margin); border-bottom:1px solid var(--line)}
+  .sv-container{
+    position:relative; width:100%; max-width:var(--grid-max); margin:0 auto;
+    border-left:1px solid var(--line); border-right:1px solid var(--line);
+  }
+  .sv-grid{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); width:100%}
+  .sv-cell{position:relative; min-width:0; padding:0 var(--cell-pad)}
+  .sv-cell.is--span-2{grid-column-end:span 2}
+  .sv-cell.is--span-3{grid-column-end:span 3}
+  .sv-cell.is--span-4{grid-column-end:span 4}
+  .sv-cell.is--end{align-self:end}
+  .sv-grid.is--cells > *{position:relative}
+  .sv-grid.is--cells > *::after{
+    content:""; position:absolute; inset:0 -1px -1px 0; pointer-events:none; z-index:1;
+    border-right:1px solid var(--line); border-bottom:1px solid var(--line);
+  }
+  .sv-marks{position:absolute; top:0; left:0; width:100%; height:0; z-index:5; pointer-events:none}
+  .sv-mark{
+    --u:0px; --d:0px; --l:0px; --r:0px;
+    position:absolute; width:11px; height:11px; background:var(--mark);
+    -webkit-mask:
+      linear-gradient(#000 0 0) 5px 0 / 1px var(--u) no-repeat,
+      linear-gradient(#000 0 0) 5px 5px / 1px var(--d) no-repeat,
+      linear-gradient(#000 0 0) 0 5px / var(--l) 1px no-repeat,
+      linear-gradient(#000 0 0) 5px 5px / var(--r) 1px no-repeat;
+            mask:
+      linear-gradient(#000 0 0) 5px 0 / 1px var(--u) no-repeat,
+      linear-gradient(#000 0 0) 5px 5px / 1px var(--d) no-repeat,
+      linear-gradient(#000 0 0) 0 5px / var(--l) 1px no-repeat,
+      linear-gradient(#000 0 0) 5px 5px / var(--r) 1px no-repeat;
+  }
+  .sv-mark[data-arms*="u"]{--u:6px} .sv-mark[data-arms*="d"]{--d:6px}
+  .sv-mark[data-arms*="l"]{--l:6px} .sv-mark[data-arms*="r"]{--r:6px}
+
+  /* ---------- head ---------- */
+  .head{padding:var(--head-pad-top) 0 var(--head-pad-bottom)}
+  .head .sv-grid{align-items:end}
+  .title{font-weight:400; font-size:var(--h1-size); line-height:var(--h1-lh); letter-spacing:var(--h1-ls); text-wrap:balance}
+  .title em{font-style:normal; font-family:var(--glyph-font); color:var(--accent)}
+  .lead{font-size:var(--lead-size); line-height:var(--lead-lh); color:var(--text-secondary); max-width:36rem}
+  .lead b{color:var(--text-primary); font-weight:500}
+  .meta{display:flex; align-items:center; gap:8px; margin-bottom:16px; color:var(--text-tertiary); white-space:nowrap}
+  .meta__num{color:var(--text-primary); font-weight:500}
+  .meta__dot{width:8px; height:8px; background:var(--dot); flex-shrink:0}
+
+  /* ---------- sticky tool bar ---------- */
+  .bar{position:sticky; top:var(--nav-h); z-index:20; background:var(--bg)}
+  .bar .sv-cell{min-height:56px; display:flex; align-items:center; gap:12px; padding-top:8px; padding-bottom:8px}
+  .bar .sv-cell.is--tools{justify-content:space-between}
+  .search{position:relative; flex:1; min-width:0; display:flex; align-items:center; gap:12px; height:40px}
+  .search svg{width:16px; height:16px; color:var(--text-tertiary); flex-shrink:0}
+  .search input{
+    flex:1; min-width:0; height:40px; background:transparent; border:0; outline:0;
+    font:inherit; font-size:var(--lead-size); color:var(--text-primary);
+  }
+  .search input::placeholder{color:var(--text-tertiary)}
+  .search input::-webkit-search-cancel-button{display:none}
+  .kbd{
+    display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 6px;
+    border:1px solid var(--line); border-radius:2px; font-size:12px; line-height:1; color:var(--text-tertiary);
+  }
+  .clear{color:var(--text-tertiary); font-size:12px; font-weight:500; letter-spacing:.04em; text-transform:uppercase}
+  .clear:hover{color:var(--text-primary)}
+  .count{font-size:var(--body-size); line-height:var(--body-lh); color:var(--text-primary); white-space:nowrap}
+  .count span{color:var(--text-tertiary)}
+  .seg{display:flex; gap:2px}
+  .seg button{
+    height:32px; min-width:32px; padding:0 8px; border-radius:2px; border:1px solid var(--line);
+    font-size:12px; font-weight:500; letter-spacing:.04em; color:var(--text-tertiary);
+    transition:background-color .3s, color .3s, border-color .3s;
+  }
+  .seg button:hover{color:var(--text-primary)}
+  .seg button[aria-pressed="true"]{background:var(--btn-bg); border-color:var(--btn-bg); color:var(--text-primary)}
+  .chips{display:none}
+
+  /* ---------- body: aside + glyph sections ---------- */
+  .body{align-items:start}
+  .aside{
+    position:sticky; top:calc(var(--nav-h) + var(--bar-h)); height:calc(100vh - var(--nav-h) - var(--bar-h));
+    padding:0; border-right:1px solid var(--line); display:flex; flex-direction:column;
+  }
+  .cats{flex:1; min-height:0; overflow:auto; padding:12px 0; scrollbar-width:thin}
+  .cats a{
+    display:flex; align-items:center; gap:10px; padding:4px var(--cell-pad);
+    font-size:var(--small-size); line-height:var(--small-lh); color:var(--text-tertiary);
+    transition:color .2s;
+  }
+  .cats a i{width:6px; height:6px; background:transparent; flex-shrink:0; transition:background-color .2s}
+  .cats a span{margin-left:auto; font-size:12px; color:var(--text-tertiary); opacity:.7; font-variant-numeric:tabular-nums}
+  .cats a:hover{color:var(--text-primary)}
+  .cats a.is--active{color:var(--text-primary)}
+  .cats a.is--active i{background:var(--accent)}
+  .cats a[hidden]{display:none}
+
+  .detail{border-top:1px solid var(--line); padding:var(--cell-pad); display:flex; flex-direction:column; gap:12px}
+  .detail__top{display:flex; gap:12px; align-items:stretch}
+  .detail__glyph{
+    width:88px; height:88px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:var(--tint); font-family:var(--glyph-font); font-size:48px; line-height:1; color:var(--text-primary);
+  }
+  .detail__name{font-size:var(--small-size); line-height:var(--small-lh); color:var(--text-secondary); text-transform:capitalize; overflow-wrap:anywhere; align-self:center}
+  .detail__name small{display:block; margin-top:4px; font-size:12px; color:var(--text-tertiary); text-transform:none}
+  .codes{display:grid; grid-template-columns:auto 1fr; border-top:1px solid var(--line)}
+  .codes button{display:contents; text-align:left}
+  .codes span{padding:5px 0; border-bottom:1px solid var(--line); font-size:12px; line-height:16px}
+  .codes span:first-child{text-align:left; color:var(--text-tertiary); padding-right:16px; text-transform:uppercase; letter-spacing:.04em; font-weight:500}
+  .codes span:last-child{color:var(--text-primary); text-align:right; font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .codes button:hover span:last-child{color:var(--accent)}
+  :root[data-theme="light"] .codes button:hover span:last-child{color:var(--text-primary); text-decoration:underline}
+
+  .glyphs{padding:0; overflow:hidden}
+  .cat{content-visibility:auto; contain-intrinsic-size:auto 600px}
+  .cat[hidden]{display:none}
+  .cat__head{
+    position:relative; z-index:2; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    padding:24px var(--cell-pad) 16px; background:var(--bg);
+    box-shadow:0 -1px 0 var(--line), 0 1px 0 var(--line);
+  }
+  .cat__title{font-weight:400; font-size:var(--h5-size); line-height:var(--h5-lh)}
+  .cat__count{color:var(--text-tertiary); font-size:var(--body-size)}
+  .cat__head .btn{margin-left:auto}
+  .tiles{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(var(--tile),1fr)); margin:1px -1px 0 0;
+    background-color:var(--bg);
+  }
+  .g{
+    position:relative; aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border-right:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--bg);
+    font-family:var(--glyph-font); font-size:var(--glyph); line-height:1; color:var(--text-primary);
+    transition:background-color .25s, color .25s;
+    -webkit-tap-highlight-color:transparent; overflow:hidden; white-space:nowrap;
+  }
+  .g:hover, .g.is--focus{background:var(--tint)}
+  .g:hover::before{
+    content:""; position:absolute; top:6px; left:6px; width:6px; height:6px; background:var(--accent);
+  }
+  .g[hidden]{display:none}
+  .g.is--hit{background:var(--accent); color:var(--gray-950); transition:none}
+  .g.is--picked::after{
+    content:""; position:absolute; right:5px; bottom:5px; width:6px; height:6px; border-radius:50%; background:var(--accent);
+  }
+  .g.is--pulse{animation:pulse 1.4s var(--ease)}
+  @keyframes pulse{0%{background:var(--accent);color:var(--gray-950)}100%{background:var(--bg)}}
+
+  .empty{padding:80px var(--cell-pad); color:var(--text-tertiary); font-size:var(--lead-size); line-height:var(--lead-lh)}
+  .empty b{color:var(--text-primary); font-weight:500}
+
+  /* ---------- collect tray + toast ---------- */
+  .tray{
+    position:fixed; left:50%; bottom:20px; z-index:40; transform:translate(-50%,0);
+    display:flex; align-items:center; gap:12px; max-width:calc(100vw - 32px);
+    padding:8px 8px 8px 16px; background:var(--tint); border:1px solid var(--line); border-radius:2px;
+    box-shadow:0 12px 40px rgba(0,0,0,.35);
+    transition:transform .5s var(--ease), opacity .3s;
+  }
+  .tray[hidden]{display:flex; opacity:0; pointer-events:none; transform:translate(-50%,24px)}
+  .tray__label{font-size:12px; font-weight:500; letter-spacing:.04em; text-transform:uppercase; color:var(--text-tertiary); white-space:nowrap}
+  .tray__str{
+    min-width:40px; max-width:48vw; overflow-x:auto; white-space:nowrap; scrollbar-width:none;
+    font-family:var(--glyph-font); font-size:22px; line-height:32px; color:var(--text-primary);
+  }
+  .tray__str::-webkit-scrollbar{display:none}
+  .tray .btn{flex-shrink:0}
+
+  .toast{
+    position:fixed; left:50%; bottom:84px; z-index:41; transform:translate(-50%,8px); opacity:0; pointer-events:none;
+    transition:opacity .2s, transform .4s var(--ease);
+  }
+  .toast.is--on{opacity:1; transform:translate(-50%,0)}
+  .toast .badge{font-size:13px; padding:7px 10px; gap:8px}
+  .toast b{font-family:var(--glyph-font); font-weight:400; font-size:16px; text-transform:none; letter-spacing:0}
+
+  #hint{
+    padding:10px var(--cell-pad) 12px; border-top:1px solid var(--line);
+    font-size:11px; line-height:16px; letter-spacing:.04em; color:var(--text-primary); opacity:.5; text-transform:lowercase;
+  }
+
+  /* ---------- footer (same as lab index) ---------- */
+  .label{font-size:var(--lead-size); line-height:var(--lead-lh); color:var(--text-tertiary)}
+  .foot-cell{min-height:372px; padding:var(--cell-pad); display:flex; flex-direction:column; align-items:flex-start; gap:8px}
+  .foot-cell .label{margin-bottom:0}
+  .foot-link{font-size:16px; line-height:24px; color:var(--text-primary);
+    background:linear-gradient(currentColor,currentColor) no-repeat 100% 100% / 0% 1px;
+    transition:background-size .5s var(--ease)}
+  .foot-link:hover{background-size:100% 1px; background-position:0 100%}
+  .foot-cell.is--about{justify-content:space-between}
+  .foot-cell.is--about p{font-size:var(--lead-size); line-height:var(--lead-lh); color:var(--text-secondary); max-width:28rem}
+  .foot-logo{padding:var(--cell-pad) var(--cell-pad) 8px; display:flex; flex-direction:column; gap:24px}
+  .foot-logo svg{display:block; width:100%; height:auto; color:var(--text-primary)}
+  .foot-bottom{
+    position:relative; min-height:40px; display:flex; flex-wrap:wrap; gap:16px;
+    align-items:center; justify-content:space-between;
+    font-size:var(--small-size); line-height:var(--small-lh); color:var(--text-tertiary);
+  }
+  .theme{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); display:flex; gap:2px}
+  .theme button{
+    width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+    border-radius:2px; border:1px solid var(--line); background:transparent; color:var(--text-tertiary);
+    cursor:pointer; transition:background-color .3s, color .3s, border-color .3s;
+  }
+  .theme button svg{width:14px; height:14px; display:block}
+  .theme button[aria-selected="true"]{background:var(--btn-bg); border-color:var(--btn-bg); color:var(--text-primary)}
+  .theme button:hover{color:var(--text-primary)}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:991px){
+    :root{ --bar-h:105px }
+    .sv-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .sv-cell.is--span-2, .sv-cell.is--span-3, .sv-cell.is--span-4{grid-column-end:span 2}
+    .head .sv-cell.is--end{margin-top:24px}
+    .bar .sv-cell.is--tools{display:none}
+    .bar .sv-cell.is--search .seg{display:flex}
+    .chips{
+      display:flex; gap:4px; grid-column:1 / -1; overflow-x:auto; padding:8px var(--cell-pad);
+      border-top:1px solid var(--line); scrollbar-width:none;
+    }
+    .chips::-webkit-scrollbar{display:none}
+    .chips a{
+      flex-shrink:0; height:32px; display:flex; align-items:center; padding:0 10px; border-radius:2px;
+      border:1px solid var(--line); font-size:13px; color:var(--text-tertiary); white-space:nowrap;
+    }
+    .chips a.is--active{background:var(--btn-bg); border-color:var(--btn-bg); color:var(--text-primary)}
+    .chips a[hidden]{display:none}
+    .aside{display:none}
+    .glyphs{grid-column:1 / -1}
+    .foot-cell{min-height:0; padding-bottom:40px}
+    #hint{display:none}
+  }
+  @media (min-width:992px){ .bar .sv-cell.is--search .seg{display:none} }
+  @media (max-width:767px){
+    .nav{padding:0 16px}
+    .nav__btns .is--wide, .nav__btns .btn__box:not(.is--icon){display:none}
+    .nav__logo svg{height:20px}
+    .sv-grid{grid-template-columns:minmax(0,1fr)}
+    .sv-cell.is--span-2, .sv-cell.is--span-3, .sv-cell.is--span-4{grid-column-end:span 1}
+    .theme{position:static; transform:none}
+    .search .kbd{display:none}
+    .tray{bottom:12px}
+    .tray__label{display:none}
+    .tray__str{max-width:40vw}
+  }
+
+  /* ---------- embed (lab card preview) ---------- */
+  html.embed body{padding-top:0}
+  html.embed .nav, html.embed footer, html.embed #hint, html.embed .tray, html.embed .toast, html.embed .sv-marks{display:none}
+  html.embed .bar{top:0}
+  html.embed .aside{top:var(--bar-h); height:calc(100vh - var(--bar-h))}
+  html.embed{scroll-padding-top:var(--bar-h)}
+  html.embed .head{padding-top:64px}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important; animation:none !important}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a class="nav__logo" href="/" aria-label="StanVision Lab home">
+    <svg viewBox="0 0 178.4 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="StanVision"><g><path d="M60.6305 4.65784C64.9329 4.65784 67.7643 7.56284 67.7643 12.2329V23.522H64.5651V12.4168C64.5651 9.43822 62.8368 7.70993 60.0054 7.70993C56.8062 7.70993 54.6734 9.65885 54.6734 13.7773V23.522H51.4742V5.13588H54.6734V7.78347C55.9604 5.68746 57.9462 4.65784 60.6305 4.65784Z" fill="currentColor"/><path d="M44.0664 5.13584V8.29825C42.4852 5.87129 40.1686 4.65781 37.1165 4.65781C34.5424 4.65781 32.3361 5.61388 30.5343 7.48926C28.7324 9.36464 27.8131 11.6445 27.8131 14.3289C27.8131 17.0133 28.7324 19.3299 30.5343 21.2053C32.3361 23.0807 34.5424 24 37.1165 24C40.1686 24 42.4852 22.7865 44.0664 20.3595V23.5219H47.2656V15.8733H43.9223V15.8138C43.6718 17.0408 43.0947 18.1055 42.1911 19.0357C40.9408 20.286 39.3964 20.9111 37.521 20.9111C35.6824 20.9111 34.138 20.286 32.8877 19.0357C31.6374 17.7487 31.0123 16.2043 31.0123 14.3289C31.0123 12.4535 31.6374 10.9091 32.8877 9.65882C34.138 8.37179 35.6824 7.74667 37.521 7.74667C39.3964 7.74667 40.9408 8.37179 42.1911 9.65882C43.0947 10.5625 43.6718 11.6198 43.9223 12.8447V12.809H47.2656V5.13584H44.0664Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M26.6273 8.23697V5.14811H21.7366V0L18.5374 5.00424e-06V5.14811H14.897V8.23697H18.5374V18.2022C18.5374 22.762 21.0379 24.2696 26.6273 23.5342V20.666C26.4686 20.6731 26.3138 20.6804 26.1629 20.6875C23.2015 20.8273 21.7366 20.8964 21.7366 18.2022V8.23697H26.6273ZM18.5393 5.14808L21.7366 5.14811L21.7364 8.23797H18.5393V5.14808Z" fill="currentColor"/><path d="M3.89785 10.1001C3.89785 11.5342 5.51583 12.3064 7.5383 12.858C10.4065 13.4832 14.2308 14.5495 14.1941 18.4842C14.1941 20.1389 13.5322 21.4995 12.2451 22.4923C10.9581 23.4852 9.34013 24 7.31766 24C3.75076 24 1.06639 22.3085 0 19.6977L2.75791 18.1165C3.34627 19.8815 5.07456 20.9847 7.31766 20.9847C9.41368 20.9847 10.9581 20.2125 10.9581 18.4842C10.9581 17.0501 9.34013 16.2411 7.31766 15.763C4.41266 14.9908 0.661899 14.0347 0.661899 10.1369C0.661899 8.55569 1.28703 7.23189 2.50051 6.20227C3.75076 5.17265 5.29519 4.65784 7.17057 4.65784C10.1491 4.65784 12.6129 6.09195 13.7896 8.48214L11.1052 9.9898C10.4433 8.4086 9.1195 7.63638 7.17057 7.63638C5.36874 7.63638 3.89785 8.51892 3.89785 10.1001Z" fill="currentColor"/></g><g transform="translate(69.7,5)"><path d="M10.9396 0.148083V7.80895H7.87522V0.148083H10.9396Z" fill="currentColor"/><path d="M7.87522 10.8733H0.214355V7.80895H7.87522V10.8733Z" fill="currentColor"/><path d="M10.9396 10.8733V18.5342H7.87522V10.8733H10.9396Z" fill="currentColor"/><path d="M10.9396 10.8733H18.6004V7.80895H10.9396V10.8733Z" fill="currentColor"/></g><g transform="translate(88.4,4)"><path d="M82.5001 0.657837C86.8025 0.657837 89.6339 3.56284 89.6339 8.2329V19.522H86.4348V8.41677C86.4348 5.43822 84.7065 3.70993 81.875 3.70993C78.6758 3.70993 76.543 5.65885 76.543 9.77733V19.522H73.3439V1.13588H76.543V3.78347C77.8301 1.68746 79.8158 0.657837 82.5001 0.657837Z" fill="currentColor"/><path d="M67.3794 17.2053C65.504 19.0807 63.1874 20 60.503 20C57.8186 20 55.502 19.0807 53.6266 17.2053C51.7512 15.3299 50.8319 13.0501 50.8319 10.3289C50.8319 7.60778 51.7512 5.3279 53.6266 3.45252C55.502 1.57714 57.8186 0.657837 60.503 0.657837C63.1874 0.657837 65.504 1.57714 67.3794 3.45252C69.2548 5.3279 70.2108 7.60778 70.2108 10.3289C70.2108 13.0501 69.2548 15.3299 67.3794 17.2053ZM60.503 16.8744C62.3416 16.8744 63.886 16.2492 65.1363 14.999C66.3865 13.7487 67.0117 12.2043 67.0117 10.3289C67.0117 8.45354 66.3865 6.90911 65.1363 5.65885C63.886 4.4086 62.3416 3.78347 60.503 3.78347C58.7011 3.78347 57.1567 4.4086 55.9065 5.65885C54.6562 6.90911 54.0311 8.45354 54.0311 10.3289C54.0311 12.2043 54.6562 13.7487 55.9065 14.999C57.1567 16.2492 58.7011 16.8744 60.503 16.8744Z" fill="currentColor"/><path d="M44.4201 19.5219H47.6193V11.8733H44.4201V19.5219Z" fill="currentColor"/><path d="M44.4201 8.80895V1.13582H47.6193V8.80895H44.4201Z" fill="currentColor"/><path d="M31.154 6.10012C31.154 7.53423 32.772 8.30645 34.7945 8.85803C37.6627 9.48316 41.487 10.5495 41.4502 14.4842C41.4502 16.1389 40.7883 17.4995 39.5013 18.4923C38.2143 19.4852 36.5963 20 34.5738 20C31.0069 20 28.3226 18.3085 27.2562 15.6977L30.0141 14.1165C30.6024 15.8815 32.3307 16.9847 34.5738 16.9847C36.6699 16.9847 38.2143 16.2125 38.2143 14.4842C38.2143 13.0501 36.5963 12.2411 34.5738 11.763C31.6688 10.9908 27.9181 10.0347 27.9181 6.13689C27.9181 4.55569 28.5432 3.23189 29.7567 2.20227C31.0069 1.17265 32.5514 0.657837 34.4268 0.657837C37.4053 0.657837 39.869 2.09195 41.0457 4.48214L38.3614 5.9898C37.6995 4.4086 36.3757 3.63638 34.4268 3.63638C32.6249 3.63638 31.154 4.51892 31.154 6.10012Z" fill="currentColor"/><path d="M20.9906 19.5219H24.1898V11.8733H20.9906V19.5219Z" fill="currentColor"/><path d="M20.9906 8.80895V1.13582H24.1898V8.80895H20.9906Z" fill="currentColor"/><path d="M9.69355 16.1021L15.4668 1.13586H18.9234L11.5689 19.5219H7.81817L0.463745 1.13586H3.92032L9.69355 16.1021Z" fill="currentColor"/></g></svg>
+    <span class="badge is--lime">Lab</span>
+  </a>
+  <div class="nav__btns">
+    <a class="btn is--wide" href="/"><span class="btn__box">All experiments</span></a>
+    <a class="btn" href="https://www.stan.vision/contact" target="_blank" rel="noopener" aria-label="Start a project">
+      <span class="btn__box">Start a project</span>
+      <span class="btn__box is--icon"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M3 2h5v5" stroke="currentColor" stroke-width="1.2"/></svg></span>
+    </a>
+  </div>
+</header>
+
+<main>
+  <section class="sv-section">
+    <div class="sv-container">
+      <div class="head">
+        <div class="sv-grid">
+          <div class="sv-cell is--span-3">
+            <p class="meta"><span class="meta__num">011</span><span class="meta__dot"></span><span>Tool</span><span class="meta__dot"></span><span>5,293 glyphs</span></p>
+            <h1 class="title">Cool symbols. Click once, paste anywhere <em>✦</em></h1>
+          </div>
+          <div class="sv-cell is--span-2 is--end">
+            <p class="lead">Arrows, stars, hearts, fancy letters, shapes, box lines and emoji in <b>40 categories</b>. Click a glyph to copy it. Shift-click to collect several, then copy them together.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sv-section bar" id="bar">
+    <div class="sv-container">
+      <div class="sv-grid is--cells">
+        <div class="sv-cell is--span-3 is--search">
+          <label class="search">
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="5.25" stroke="currentColor" stroke-width="1.2"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.2"/></svg>
+            <input id="q" type="search" placeholder="Search arrow, star, heart, bold a, flag…" autocomplete="off" spellcheck="false" aria-label="Search symbols">
+            <button class="clear" id="clear" type="button" hidden>Clear</button>
+            <span class="kbd" aria-hidden="true">/</span>
+          </label>
+          <div class="seg" data-seg aria-label="Glyph size"></div>
+        </div>
+        <div class="sv-cell is--span-2 is--tools">
+          <span class="count" id="count"></span>
+          <div class="seg" data-seg aria-label="Glyph size"></div>
+        </div>
+        <nav class="chips" id="chips" aria-label="Categories"></nav>
+      </div>
+    </div>
+  </section>
+
+  <section class="sv-section">
+    <div class="sv-container">
+      <div class="sv-grid body">
+        <aside class="sv-cell aside">
+          <nav class="cats" id="cats" aria-label="Categories"></nav>
+          <div class="detail" id="detail" aria-live="polite">
+            <div class="detail__top">
+              <button class="detail__glyph" id="dGlyph" type="button" aria-label="Copy glyph">✦</button>
+              <p class="detail__name" id="dName">four pointed star<small>Hover a glyph to inspect it</small></p>
+            </div>
+            <div class="codes" id="codes"></div>
+            <div class="btn is--ghost" style="width:100%"><button class="btn__box" id="dCollect" type="button" style="width:100%">Add to collection</button></div>
+          </div>
+          <div id="hint">click = copy · shift = collect · / = search · r = random</div>
+        </aside>
+        <div class="sv-cell is--span-4 glyphs" id="glyphs"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <section class="sv-section">
+    <div class="sv-container">
+      <nav class="sv-grid is--cells" aria-label="Footer">
+        <div class="sv-cell foot-cell">
+          <p class="label">Lab</p>
+          <a class="foot-link" href="/">Index</a>
+          <a class="foot-link" href="https://www.stan.vision/journal" target="_blank" rel="noopener">Blog</a>
+          <a class="foot-link" href="https://www.stan.vision/contact" target="_blank" rel="noopener">Let’s talk</a>
+        </div>
+        <div class="sv-cell foot-cell">
+          <p class="label">Company</p>
+          <a class="foot-link" href="https://www.stan.vision/work" target="_blank" rel="noopener">Work</a>
+          <a class="foot-link" href="https://www.stan.vision/clients" target="_blank" rel="noopener">Clients</a>
+          <a class="foot-link" href="https://www.stan.vision/services" target="_blank" rel="noopener">Services</a>
+          <a class="foot-link" href="https://www.stan.vision/agency" target="_blank" rel="noopener">Agency</a>
+          <a class="foot-link" href="https://www.stan.vision/reviews" target="_blank" rel="noopener">Reviews</a>
+        </div>
+        <div class="sv-cell foot-cell">
+          <p class="label">Follow</p>
+          <a class="foot-link" href="https://www.linkedin.com/company/stanvision" target="_blank" rel="noopener">LinkedIn</a>
+          <a class="foot-link" href="https://www.instagram.com/stan.vision/" target="_blank" rel="noopener">Instagram</a>
+          <a class="foot-link" href="https://twitter.com/stan_vision" target="_blank" rel="noopener">X</a>
+          <a class="foot-link" href="https://dribbble.com/stanvision" target="_blank" rel="noopener">Dribbble</a>
+          <a class="foot-link" href="https://www.behance.net/profile/stan-vision" target="_blank" rel="noopener">Behance</a>
+          <a class="foot-link" href="https://webflow.com/@stan-vision" target="_blank" rel="noopener">Webflow</a>
+        </div>
+        <div class="sv-cell foot-cell is--about is--span-2">
+          <p>Made by StanVision, a UI/UX and Webflow design agency for B2B SaaS.</p>
+          <a class="btn" href="https://www.stan.vision" target="_blank" rel="noopener">
+            <span class="btn__box">Visit stan.vision</span>
+            <span class="btn__box is--icon"><svg viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 8L8 2M3 2h5v5" stroke="currentColor" stroke-width="1.2"/></svg></span>
+          </a>
+        </div>
+      </nav>
+    </div>
+  </section>
+  <section class="sv-section">
+    <div class="sv-container foot-logo">
+      <svg viewBox="0 0 178.4 24" fill="none" aria-hidden="true"></svg>
+      <div class="foot-bottom">
+        <p>© 2018-<span id="year">2026</span> StanVision Ltd. All rights reserved.</p>
+        <div class="theme" role="tablist" aria-label="Color theme">
+          <button type="button" role="tab" data-theme-value="dark" aria-label="Dark mode"><svg viewBox="0 0 16 16" fill="none"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z" stroke="currentColor" stroke-width="1.2"/></svg></button>
+          <button type="button" role="tab" data-theme-value="light" aria-label="Light mode"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3" stroke="currentColor" stroke-width="1.2"/></svg></button>
+        </div>
+        <a class="foot-link" href="https://www.stan.vision/legal/privacy-policy" target="_blank" rel="noopener">Privacy policy</a>
+      </div>
+    </div>
+  </section>
+</footer>
+
+<div class="sv-marks" id="marks" aria-hidden="true"></div>
+
+<div class="tray" id="tray" hidden>
+  <span class="tray__label">Collected</span>
+  <div class="tray__str" id="trayStr"></div>
+  <button class="btn" id="trayCopy" type="button"><span class="btn__box">Copy</span></button>
+  <button class="btn is--ghost" id="trayClear" type="button"><span class="btn__box">Clear</span></button>
+</div>
+<div class="toast" id="toast" role="status"><span class="badge is--lime"><b id="toastGlyph"></b><span id="toastText">Copied</span></span></div>
+
+<script>
+/* ---------- data ----------
+   Generated from the Unicode 15.1 character database (names are the official Unicode names,
+   flags use ISO 3166 country names). Names are packed: VOCAB is a word list, each name is a run
+   of 2-character word codes in the alphabet AL. Glyphs are space-separated. */
+const AL = "()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+const VOCAB = (
+  "letter small capital latin with arrow circled bold symbol flag right sans-serif left black and italic square white of heavy box rightwards katakana drawings double digit sign for squared hangul light to alchemical leftwards face bracket script up down vertical fraktur negative hiragana star circle mark number double-struck horizontal triangle greek fullwidth bar parenthesized a lower downwards barb upwards card monospace harpoon x upper playing equal triangle-headed one stroke e eight r ideograph four medium m o half s i two l u three g c h d musical n z pointed or mahjong tile b v modifier j cjk unified above k not ornament f w t six five p roman numeral y north q east angle open heart hook asterisk south quadrant top long dash seven dingbat corner less-than greater-than nine turned parenthesis diamond bottom single quotation arc cross hand stop curly from full right-pointing west pointing operator dot two-headed left-pointing block tail over moon smiling fraction large index diagonal reversed vulgar dentistry teardrop-spoked ballot line tip hearts tortoise shell anticlockwise triple ten zero comma tilde arrowhead in bullet the centre eyes check mu equivalent spades diamonds clubs mouth shadowed quarter raised twenty up-pointing islands closed outlined pinwheel integral superscript eighth lozenge chess wave arrows plus equals curved twelve middle very male ring republic clockwise dashed on suit exclamation sun cloud inverted recycling subscript thirty forty down-pointing extension rest quadruple minus ribbon low florette snowflake scissors does product nor image pi but eighths digraph red metrical characters bamboos circles paired crossing short through subset superset reverse equilateral arrowheads green earth thousand n-ary neither containing circular scan crop person"
+  + " " + "stem almost slanted new female form telephone key plastics prime question multiplication division times precedes succeeds hundred fill die tu salt saint ore dotted then beside three-d black-feathered rectangle hands crescent sixteen rupee pencil no ka slash logical as normal eleven sharp nu curl wavy flattened flat combining king queen knight man united ke ya yu yo wa copper antimony fish rotated floral blue petalled flower rain wind ice mercury pluto rho pentagram dollar french book note glass pa na ma km ellipsis punctuation root union all original gamma by fifty black-letter fishhook centred pentagon floor clef notehead me sa iteration sublimate headed loop squiggle pedestal arrow-tail rising falling curving below right-shadowed u-shaped rectilinear sparkle propeller chi place banknote envelope nib blade crossed mailbox lock omega mm cm cubed mv ha overline at intersection contains summation tack subgroup semidirect between much approximate single-line thirteen fourteen fifteen seventeen eighteen nineteen ae oe alpha epsilon theta sigma upsilon phi koppa retroflex leg glottal slightly drop-shadowed isosceles pointer ellipse ceiling notation tick lenticular shorts power eye fist ottava joker ace jack grinning food hat backhand fingers rice womans shoe island de hu ki mo ni ne ro ru re si so se wi we ieung aqua iron regulus zigzag open-headed head top-lighted backslanted broken yellow purple brown david night sparkles tight trifoliate chevron umbrella snowman first last without behind water globe fire cube true hammer caduceus pound currency yen colon bengali keyboard interest print screen paper chart triangular orange pen degree ohm per kg rad mw cc cd hyphen section dagger accent character parallel contour element member multiset cap cup turnstile delta quarters"
+  + " " + "fifths dotless beta iota kappa lunate esh voiced dz tiny shade inverse underbar hexagon paragraphos piece writing balloon-spoked skull notes music natural alta bassa dragon back frowning cold sweat horns kissing stuck-out tongue palm finger covering baby woman older pot knife bottle be bo ba bi democratic do guinea ga ge gi gu states pe da za vu ku ko su ta ti te hi he ho mi ra ri wo ideographic postal kiyeok nieun tikeut rieul mieum pieup sios cieuc chieuch khieukh thieuth phieuph hieuh sulfur crocus stratum semicircle gapped directly semicircular rounded point squat notched wedge-tailed hooked bent couple stress custard asterism asterisks aligned vertically spoked dizzy blossom lotus rays comet lightning snow high rainbow waxing gibbous waning thermometer node ankh orthodox lorraine jerusalem farsi adi shakti sickle peace yin yang maltese interlaced staff om cent lira won euro indian dram money copyright sound numero location option eject pick alembic universal trend pushpin ruler notebook machine tray lowered briefcase file spiral pad computer magnifying mille mb gb pf nf mg ml fm ps ms mega pw kw am bq co gy ph pm pr sr sv interrobang leader pilcrow figure low-9 high-reversed-9 diaeresis macron breve measured proportion there empty set under relation factor geometrically approximately identical precede succeed double-line thirds sd ss mc md mr ligature eth thorn eng yogh zeta eta lamda xi omicron tau psi archaic stigma digamma sampi schwa horn ezh bilabial tc ls percussive crosshatch extremely target dark viewdata joined saltire divided parallelogram octagon line-1 line-3 line-7 line-9 forked interior binding quill halfwidth position hourglass erase benzene bell underline open-circuit-output direct current decimal page clock safety victory crossbones beamed sixteenth"
+  + " " + "tone time cut quindicesima whole rook bishop pawn spade club game tears tightly-closed winking relieved sunglasses kiss disappointed crying rolling gesture ok hugging party thumbs pushing doubled adult hair mage vampire zombie silhouette apple meat ball bowl bread potato cake cream cookie candy lollipop fork drink beer flatbread sandwich beverage helmet coat sandal spider japanese eu samoa state sint british china georgia va korea, people's part) sudan arab ve virgin islands, vi ye go zi zu ze zo di du bu pu po korean vinegar rock antimoniate trident ashes brick super bath base wall right-side left-side wide-headed drafting round-tipped bottom-lighted concave-pointed right-shaded left-shaded back-tilted front-tilted white-feathered teardrop-barbed teardrop-shanked open-outlined circling right-lighted left-lighted beating sparkling growing revolving decoration grey pink stars glowing shooting seedling tulip cherry rose hibiscus sunflower herb shamrock fleur-de-lis rosette wilted bouquet hyacinth thunderstorm thunder drops voltage cyclone foggy volcano milky way europe-africa americas asia-australia tornado fog blowing droplet aries taurus gemini cancer leo virgo libra scorpius sagittarius capricorn aquarius pisces jupiter saturn uranus neptune ascending descending conjunction opposition ophiuchus ceres pallas juno vesta chiron lilith sextile semisextile quincunx sesquiquadrate transpluto proserpina astraea hygiea pholus nessus selena arta cupido hades zeus kronos apollon admetos vulcanus poseidon wheel dharma right-handed left-handed shield aesculapius hermes menorah branches worship shinto shrine kaaba mosque synagogue church prayer beads hamsa nazar amulet euro-currency cruzeiro franc mill naira peseta sheqel dong kip tugrik drachma german penny peso guarani austral"
+  + " " + "hryvnia cedi livre tournois spesmilo tenge turkish nordic manat ruble lari bitcoin som rial armenian afghani ganda gujarati tamil thai baht khmer riel bag wings credit coin registered trade service recording care cada una account addressed subject aktieselskab facsimile scales gear atom anchor swords warning entry type-1 type-2 type-3 type-4 type-5 type-6 type-7 generic materials recycled partially-recycled permanent chains clipboard round paperclip straight bookmark tabs ledger decorative cover books memo receiver pager fax satellite antenna public address loudspeaker cheering megaphone outbox inbox package e-mail incoming postbox dividers cabinet wastebasket calendar ballpoint fountain paintbrush crayon printer desktop button mouse trackball personal floppy disk optical disc dvd ink label celsius fahrenheit scruple micro amps kb cal kcal hz khz mhz ghz thz dl kl nm kpa mpa gpa ns pv nv kv nw db hp kk kt lm ln log lx mil mol ppm wb hyphenation reference tricolon dots non-breaking en em two-em three-em swung acute grave circumflex cedilla ogonek caron tie undertie close commercial ampersand percent plus-minus minus-or-plus fourth proportional infinity spherical divides divide surface volume therefore because ratio excess geometric homothetic lazy sine wreath partial differential increment nabla an contain end proof coproduct complement exists exist assertion models forces prove force negated multimap hermitian conjugate matrix intercalate xor nand bowtie pitchfork midline alef bet gimel dalet difference approaches limit corresponds estimates equiangular definition questioned strictly late early seventh ninth tenth third fifth sixth sixths numerator planck constant bracketed wz copyleft hv ppv wc overlaid backslash human topbar hwair wynn final kai yot rams heng belt lezh"
+  + " " + "barred pharyngeal fricative stretched click crossed-tail dezh ts tesh feng lz bidental corners orthogonal bisecting squares inside solidus perpendicular superimposed anticlockwise-rotated strokes serifs righthand diameter electric house projective perspective segment sector recorder indicator watch frown smile bars cylindricity around-profile symmetry total runout dimension origin conical taper slope counterbore countersink shouldered insertion continuous discontinuous emphasis composition enter alternative helm notch northwest undo monostable hysteresis h-type l-type passive-pull-down-output passive-pull-up-output software-function separator previous next clear radical foot return triseme tetraseme pentaseme ground fuse trapezium straightness flatness ac electrical exponent alarm stopwatch timer flowing sand record on-off sleep observer tape drive airplane club-spoked paragraph caution radioactive biohazard cancellation vector common multi thirty-second sixty-fourth twenty-eighth void flag-1 flag-2 multiple score guitar trumpet saxophone drum drumsticks violin banjo accordion microphone headphone face-1 face-2 face-3 face-4 face-5 face-6 hit video joystick bowling slot jigsaw puzzle plum orchid bamboo chrysanthemum spring summer autumn winter joy halo savouring delicious heart-shaped smirking neutral expressionless unamused pensive confused confounded throwing worried angry pouting persevering look triumph anguished fearful weary sleepy tired grimacing loudly hushed screaming fear astonished flushed sleeping medical mask upside-down good zipper-mouth money-mouth nerd thinking head-bandage robot cowboy clown nauseated laughing drooling lying sneezing eyebrow lips serious symbols vomiting shocked exploding yawning tear uneven overheated freezing ninja disguised holding"
+  + " " + "pleading monocle melting saluting peeking biting lip bubbles shaking fisted waving clapping raising both celebration folded handshake pinched pinching call left-facing right-facing love you thumb viewer flexed biceps mechanical arm splayed part extended nail polish palms together interlocked child boy girl blond bearded gua mao turban headscarf police officer construction worker guardsman sleuth spy princess prince superhero supervillain fairy merperson elf genie dancer dancing bunny ears runner pedestrian standing kneeling bust busts people family mens womens restroom tomato aubergine grapes melon watermelon tangerine lemon banana pineapple pear peach cherries strawberry hamburger slice pizza bone poultry cracker cooked curry steaming spaghetti fries roasted sweet dango oden sushi fried shrimp swirl design soft shaved doughnut chocolate honey shortcake bento cooking teacup handle sake wine cocktail tropical mug clinking mugs plate popping cork popcorn croissant avocado cucumber bacon carrot baguette salad shallow pan stuffed egg milk peanuts kiwifruit pancakes dumpling fortune takeout chopsticks spoon straw coconut broccoli pie pretzel canned leafy mango bagel cheese wedge cupcake shaker garlic onion falafel waffle butter mate bubble tea blueberries pepper olive tamale fondue teapot pouring liquid beans jar ginger pea pod hot crown graduation billed military eyeglasses goggles lab vest necktie t-shirt jeans scarf gloves socks dress kimono sari one-piece swimsuit briefs bikini clothes purse handbag pouch shopping bags school satchel thong mans athletic hiking boot high-heeled ballet shoes boots lipstick folding fan jack-o-lantern ghost bat web coffin funeral urn crystal headstone candle cat imp ogre goblin drop blood nations un european pirate flags chequered afghanistan"
+  + " " + "af albania al algeria american andorra ad angola ao anguilla ai antarctica aq antigua barbuda ag argentina ar armenia aruba aw australia au austria azerbaijan az bahamas bs bahrain bh bangladesh bd barbados bb belarus belgium belize bz benin bj bermuda bm bhutan bt bolivia, plurinational bonaire, eustatius saba bosnia herzegovina botswana bw bouvet bv brazil br ocean territory io brunei darussalam bn bulgaria bg burkina faso bf burundi cabo verde cv cambodia kh cameroon canada ca cayman ky central african cf chad td chile cl cn christmas cx cocos (keeling) colombia comoros congo cg congo, cook ck costa rica cr croatia hr cuba cu curaçao cw cyprus cy czechia cz côte d'ivoire ci denmark dk djibouti dj dominica dm dominican ecuador ec egypt eg el salvador equatorial gq eritrea er estonia ee eswatini sz ethiopia et falkland (malvinas) fk faroe fo fiji fj finland fi france fr guiana gf polynesia southern territories tf gabon gambia gm germany ghana gh gibraltar greece gr greenland gl grenada gd guadeloupe gp guam guatemala gt guernsey gg gn guinea-bissau gw guyana haiti ht heard mcdonald hm holy see (vatican city state) honduras hn hong kong hk hungary iceland is india indonesia id iran, islamic ir iraq iq ireland ie isle im israel il italy it jamaica jm japan jp jersey je jordan jo kazakhstan kz kenya kiribati kp kr kuwait kyrgyzstan lao la latvia lv lebanon lb lesotho liberia lr libya ly liechtenstein li lithuania lt luxembourg lu macao madagascar malawi malaysia my maldives mali malta mt marshall mh martinique mq mauritania mauritius mayotte yt mexico mx micronesia, federated moldova, monaco mongolia mn montenegro montserrat morocco mozambique mz myanmar namibia nauru nr nepal np netherlands nl caledonia nc zealand nz nicaragua niger nigeria ng niue norfolk macedonia mk"
+  + " " + "northern mariana mp norway oman pakistan pk palau palestine, panama papua pg paraguay py peru philippines pitcairn pn poland pl portugal pt puerto rico qatar qa romania russian federation rwanda rw réunion barthélemy bl helena, ascension tristan cunha sh kitts nevis kn lucia lc martin (french mf pierre miquelon vincent grenadines vc ws san marino sm sao tome principe st saudi arabia senegal sn serbia rs seychelles sc sierra leone sl singapore sg maarten (dutch sx slovakia sk slovenia solomon sb somalia africa gs spain es sri lanka lk suriname svalbard jan mayen sj sweden switzerland ch syrian sy taiwan, province tw tajikistan tj tanzania, tz thailand th timor-leste tl togo tg tokelau tk tonga trinidad tobago tt tunisia tn turkmenistan tm turks caicos tuvalu tv türkiye tr uganda ug ukraine ua emirates kingdom us minor outlying um uruguay uy uzbekistan uz vanuatu venezuela, bolivarian viet nam vn vg u.s. wallis futuna wf western sahara eh yemen zambia zm zimbabwe zw åland ax vo katakana-hiragana prolonged ditto closing geta wood metal stock have society name special financial congratulation labor secret suitable excellent attention item copy correct medicine religion study supervise enterprise resource alliance hoka koko ideograph-624b ideograph-5b57 ideograph-53cc ideograph-4e8c ideograph-591a ideograph-89e3 ideograph-5929 ideograph-4ea4 ideograph-6620 ideograph-7121 ideograph-6599 ideograph-524d ideograph-5f8c ideograph-518d ideograph-65b0 ideograph-521d ideograph-7d42 ideograph-751f ideograph-8ca9 ideograph-58f0 ideograph-5439 ideograph-6f14 ideograph-6295 ideograph-6355 ideograph-4e00 ideograph-4e09 ideograph-904a ideograph-5de6 ideograph-4e2d ideograph-53f3 ideograph-6307 ideograph-8d70 ideograph-6253 ideograph-7981 ideograph-7a7a ideograph-5408 ideograph-6e80"
+  + " " + "ideograph-6709 ideograph-6708 ideograph-7533 ideograph-5272 ideograph-55b6 ideograph-914d advantage accept ssangkiyeok kiyeok-sios nieun-cieuc nieun-hieuh ssangtikeut rieul-kiyeok rieul-mieum rieul-pieup rieul-sios rieul-thieuth rieul-phieuph rieul-hieuh ssangpieup pieup-sios ssangsios ssangcieuc yae eo yeo wae weo yi filler ssangnieun nieun-tikeut nieun-sios nieun-pansios rieul-kiyeok-sios rieul-tikeut rieul-pieup-sios rieul-pansios rieul-yeorinhieuh mieum-pieup mieum-sios mieum-pansios kapyeounmieum pieup-kiyeok pieup-tikeut pieup-sios-kiyeok pieup-sios-tikeut pieup-cieuc pieup-thieuth kapyeounpieup kapyeounssangpieup sios-kiyeok sios-nieun sios-tikeut sios-pieup sios-cieuc pansios ssangieung yesieung yesieung-sios yesieung-pansios kapyeounphieuph ssanghieuh yeorinhieuh yo-ya yo-yae yo-i yu-yeo yu-ye yu-i araea araeae chamko jueui quintessence air aquafortis regia regia-2 vitae vitae-2 vinegar-2 vinegar-3 philosophers sublimate-2 sublimate-3 cinnabar nitre vitriol vitriol-2 salt-2 gold silver ore-2 iron-copper copper-2 verdigris tin lead antimony-2 regulus-2 regulus-3 regulus-4 alkali alkali-2 marcasite sal-ammoniac arsenic realgar realgar-2 auripigment bismuth tartar tartar-2 quick lime borax borax-2 borax-3 alum oil spirit tincture gum wax powder calx tutty caput mortuum scepter jove starred lodestone soap urine horse dung powdered amalgam stratum-2 sublimation precipitate distill dissolve dissolve-2 purify putrefaction crucible crucible-2 crucible-3 crucible-4 crucible-5 mary vapours retort hour day-night month ounce"
+).split(' ');
+const DATA = [
+["Arrows","← ↑ → ↓ ↔ ↕ ↖ ↗ ↘ ↙ ↚ ↛ ↜ ↝ ↞ ↟ ↠ ↡ ↢ ↣ ↤ ↥ ↦ ↧ ↨ ↩ ↪ ↫ ↬ ↭ ↮ ↯ ↰ ↱ ↲ ↳ ↴ ↵ ↶ ↷ ↸ ↹ ↺ ↻ ↼ ↽ ↾ ↿ ⇀ ⇁ ⇂ ⇃ ⇄ ⇅ ⇆ ⇇ ⇈ ⇉ ⇊ ⇋ ⇌ ⇍ ⇎ ⇏ ⇐ ⇑ ⇒ ⇓ ⇔ ⇕ ⇖ ⇗ ⇘ ⇙ ⇚ ⇛ ⇜ ⇝ ⇞ ⇟ ⇠ ⇡ ⇢ ⇣ ⇤ ⇥ ⇦ ⇧ ⇨ ⇩ ⇪ ⇫ ⇬ ⇭ ⇮ ⇯ ⇰ ⇱ ⇲ ⇳ ⇴ ⇵ ⇶ ⇷ ⇸ ⇹ ⇺ ⇻ ⇼ ⇽ ⇾ ⇿ ⟰ ⟱ ⟲ ⟳ ⟴ ⟵ ⟶ ⟷ ⟸ ⟹ ⟺ ⟻ ⟼ ⟽ ⟾ ⟿ ⤀ ⤁ ⤂ ⤃ ⤄ ⤅ ⤆ ⤇ ⤈ ⤉ ⤊ ⤋ ⤌ ⤍ ⤎ ⤏ ⤐ ⤑ ⤒ ⤓ ⤔ ⤕ ⤖ ⤗ ⤘ ⤙ ⤚ ⤛ ⤜ ⤝ ⤞ ⤟ ⤠ ⤡ ⤢ ⤣ ⤤ ⤥ ⤦ ⤧ ⤨ ⤩ ⤪ ⤫ ⤬ ⤭ ⤮ ⤯ ⤰ ⤱ ⤲ ⤳ ⤴ ⤵ ⤶ ⤷ ⤸ ⤹ ⤺ ⤻ ⤼ ⤽ ⤾ ⤿ ⥀ ⥁ ⥂ ⥃ ⥄ ⥅ ⥆ ⥇ ⥈ ⥉ ⥊ ⥋ ⥌ ⥍ ⥎ ⥏ ⥐ ⥑ ⥒ ⥓ ⥔ ⥕ ⥖ ⥗ ⥘ ⥙ ⥚ ⥛ ⥜ ⥝ ⥞ ⥟ ⥠ ⥡ ⥢ ⥣ ⥤ ⥥ ⥦ ⥧ ⥨ ⥩ ⥪ ⥫ ⥬ ⥭ ⥮ ⥯ ⥰ ⥱ ⥲ ⥳ ⥴ ⥵ ⥶ ⥷ ⥸ ⥹ ⥺ ⥻ ⥼ ⥽ ⥾ ⥿ ➔ ➘ ➙ ➚ ➛ ➜ ➝ ➞ ➟ ➠ ➡ ➢ ➣ ➤ ➥ ➦ ➧ ➨ ➩ ➪ ➫ ➬ ➭ ➮ ➯ ➱ ➲ ➳ ➴ ➵ ➶ ➷ ➸ ➹ ➺ ➻ ➼ ➽ ➾ ⬀ ⬁ ⬂ ⬃ ⬄ ⬅ ⬆ ⬇ ⬈ ⬉ ⬊ ⬋ ⬌ ⬍ ⬎ ⬏ ⬐ ⬑ ⬰ ⬱ ⬲ ⬳ ⬴ ⬵ ⬶ ⬷ ⬸ ⬹ ⬺ ⬻ ⬼ ⬽ ⬾ ⬿ ⭀ ⭁ ⭂ ⭃ ⭄ ⭅ ⭆ ⭇ ⭈ ⭉ ⭊ ⭋ ⭌ ⭍ ⭎ ⭏ ⭚ ⭛ ⭜ ⭝ ⭞ ⭟ ⭠ ⭡ ⭢ ⭣ ⭤ ⭥ ⭦ ⭧ ⭨ ⭩ ⭪ ⭫ ⭬ ⭭ ⭮ ⭯ ⭰ ⭱ ⭲ ⭳ ⭶ ⭷ ⭸ ⭹ ⭺ ⭻ ⭼ ⭽ ⮀ ⮁ ⮂ ⮃ ⮄ ⮅ ⮆ ⮇ ⮈ ⮉ ⮊ ⮋ ⮌ ⮍ ⮎ ⮏ ⮔ ⮕ ⮘ ⮙ ⮚ ⮛ ⮜ ⮝ ⮞ ⮟ ⮠ ⮡ ⮢ ⮣ ⮤ ⮥ ⮦ ⮧ ⮨ ⮩ ⮪ ⮫ ⮬ ⮭ ⮮ ⮯ ⮰ ⮱ ⮲ ⮳ ⮴ ⮵ ⮶ ⮷ ⮸ ⮹ ⯬ ⯭ ⯮ ⯯","(I(- (c(- (=(- (a(- (4(2(- (M(N(- )D)f(- )D)F(- )L)F(- )L)f(- (I(-(,(m (=(-(,(m (I*I(- (=*I(- (I(y,D(- (c(y,D(- (=(y,D(- (a(y,D(- (I(-(,)m (=(-(,)m (I(-)c(] (c(-)c(] (=(-)c(] (a(-)c(] (M(N(-(,2X (I(-(,)J (=(-(,)J (I(-(,,E (=(-(,,E (4(2*I(- (4(2(-(,(m (a-U(- (c(-(,){(I (c(-(,){(= (a(-(,){(I (a(-(,){(= (=(-(,)S(a (a(-(,)S(I *()N/C(- *T)N/C(- )D)f(-(G)O(] (I(-(G(])n(=(-(G(] *()H(T(- *T)H(T(- (I(f(,(b(c (I(f(,(b(a (c(f(,(b(= (c(f(,(b(I (=(f(,(b(c (=(f(,(b(a (a(f(,(b(= (a(f(,(b(I (=(-)n(I(- (c(-(I(:(a(- (I(-)n(=(- (I*x*J (c*x*J (=*x*J (a*x*J (I(f)n(=(f (=(f)n(I(f (I(@(-(,(m (4(2(@(-(,(m (=(@(-(,(m (I(@(- (c(@(- (=(@(- (a(@(- (4(2(@(- (M(N(@(- )D)f(@(- )D)F(@(- )L)F(@(- )L)f(@(- (I*)(- (=*)(- (I,F(- (=,F(- (c(-(,(@(m (a(-(,(@(m (I*U(- (c*U(- (=*U(- (a*U(- (I(-(G(] (=(-(G(] (I(9(- (c(9(- (=(9(- (a(9(- (c(9(-)c(] (c(9(-*V,G (c(9(-*V,G(,(X(] (c(9(-*V,G(,(O(] (c(9(@(- (c(9(@(-*V,G (=(9(-)c2Y )D)f(-(G)S )L)F(-(G)S (M(N(9(- (2(-(,()(T (a(-(I(:(c(- (|(=*J (I(-(,(O(m (=(-(,(O(m (4(2(-(,(O(m (I(-(,(@(O(m (=(-(,(@(O(m (4(2(-(,(@(O(m (I-V(- (=-V(- (4(2-V(- (c*d(- (a*d(- *(/D(T(- *T/D(T(- (2(-(,(.*K )O(I(- )O(=(- )O(4(2(- )O(I(@(- )O(=(@(- )O(4(2(@(- )O(I(-)c(] )O(=(-)c(] )O(I(@(-)c(] )O(=(@(-)c(] )O(=,F(- (=)j(-(,(O(m (=)j(-(,(@(O(m (I(@(-(,(O(m (=(@(-(,(O(m (4(2(@(-(,(O(m (=)j(-)c(] (I(@(-)c(] (=(@(-)c(] (a(-(,(X(m (c(-(,(X(m (c*)(- (a*)(- (I(@)P(- (=(@)P(- (I*))P(- (=*))P(- (=)j*))P(- (=(-(,+K+4 (c(-(G(] (a(-(G(] (=(-(,)m(,(O(m (=(-(,)m(,(@(O(m (=)j(-(,)m (=)j(-(,)m(,(O(m (=)j(-(,)m(,(@(O(m (I,H (=,H (I(@,H (=(@,H (I(-(G(5)Y (=(-(G(5)Y (I(-)c(](G(5)Y (=(-)c(](G(5)Y )D)f(6)L)F(- )D)F(6)L)f(- )D)f(-(,)J )D)F(-(,)J )L)F(-(,)J )L)f(-(,)J )D)f(-(6)D)F(- )D)F(-(6)L)F(- )L)F(-(6)L)f(- )L)f(-(6)D)f(- ,I)t*y,J)t ,J)t*y,I)t )L)F(-*y)D)F(- )D)F(-*y)L)F(- ,J)t*y)D)F(- ,I)t*y)L)F(- )D)F(-*y)D)f(- )D)f(-*y)D)F(- *I(-)g/E(2 (-)g(=+L,K(c (-)g(=+L,K(a (-)g(a+L,K(I (-)g(a+L,K(= 2Z)^*T(- 2[)^*((- )N)^*((- )Z)^*((- )N)^*T(-(,*e )N)^*((-(,*K (`(2/F*T(- (`(4/F*((- *(*A(T(- *T*A(T(- (=(-)7*z(I(- (I(-)7*z(=(- *z(=(-)7(I(- (=(-(,*K,L (I(-(,*K,L (=(-*{(g (4(2(-*{()(T (c)j(-)c()(T (4(b(M(2(b(N(f (4(b(N(2(b(M(f (M(b(2(N(b(4(f (M(b(4(N(b(2(f (4(b(M(2(b(M(f (M(b(2(N(b(2(f (4(b(N(2(b(N(f (M(b(4(N(b(4(f (I(f(,(b(M(G(] (=(f(,(b(M(G(] (c(f(,(b(2(G(] (a(f(,(b(2(G(] (I(f(,(b(N(G(] (=(f(,(b(N(G(] (c(f(,(b(4(G(] (a(f(,(b(4(G(] (I(f(,(b(M)c(] (=(f(,(b(M)c(] (c(f(,(b(2)c(] (a(f(,(b(2)c(] (I(f(,(b(N)c(] (=(f(,(b(N)c(] (c(f(,(b(4)c(] (a(f(,(b(4)c(] (I(f(,(b(M)7(I(f(,(b(N (c(f(,(b(4+M(c(f(,(b(2 (=(f(,(b(M)7(=(f(,(b(N (a(f(,(b(4+M(a(f(,(b(2 (I(f(,(b(M)7(=(f(,(b(M (I(f(,(b(N)7(=(f(,(b(N (=(f(,(b(M)7(I(f(,(b(M (=(f(,(b(N)7(I(f(,(b(N (I(f(,(b(M)7)O)P (I(f(,(b(N,L)O)P (=(f(,(b(M)7)O)P (=(f(,(b(N,L)O)P (c(f(,(b(4+M(a(f(,(b(2 (a(f(,(b(4+M(c(f(,(b(2 (2(@(-(,/G-W *L(B)7(=(- *-)h)7(=(- (I(-)7*-)h (=(-)7*-)h (=(-)7+5(j(G )T)7(I(- (I(-*{)T )U)7(=(- *|)7(=(- (I(-*{*| *})7(I(- (4+q)m (2+q)m (M+q)m (N+q)m (;2](=(- (;)L)F(- (;(=(- (;)D)F(- 2^/H(=(- (;2_(=(- (k(=(- (;(k(=(- *U(k(=(- (;*U(k(=(- (5(=(- +N-X(=*. +N2`(=*. (5(=*. (;(5*M(a(6(=(- (;(5*M(c(6(=(- /I(5(=(- (;2a(5(=(- 2b(9(=(- 2c(9(=(- 2d*;(9(=(- 2e*;(9(=(- (;(`,M(9(=(- (;(h,M(9(=(- /J(`,M(9(=(- /J(h,M(9(=(- (.(;(9(=(- 2f(=(- +O)L)F(- +O(=(- +O)D)F(- (;+O)L)F(- (;+O(=(- (;+O)D)F(- 2g(=(- (;2h(=(- /K(=(- (;/K(=(- 2i(=(- )D)F(9(- )D)f(9(- )L)F(9(- )L)f(9(- (4(2(9(- (I(5(- (c(5(- (a(5(- )D)F(5(- )D)f(5(- )L)F(5(- )L)f(5(- (4(2(5(- (M(N(5(- (=(-(,){(a (=(-(,){(c (I(-(,){(a (I(-(,){(c (4(-(,()(T (|(I*J (4(-(,(.*K )O(I,F(- (I)j(-(,(O(m (I)j(-(,(@(O(m (I)j(-)c(] (I)j*))P(- (I(-(,+K+4 (I(-(,)m(,(O(m (I(-(,)m(,(@(O(m (I)j(-(,)m (I)j(-(,)m(,(O(m (I)j(-(,)m(,(@(O(m (I(-*{(g *I(-)g/E(4 *L(B)7(I(- *~*-)h)7(I(- (I(-)7*~+5(j(G (=(-*{)U (=(-*{*} (I*d(- (=*d(- *~*-)h)7(=(- (=(-)7*~+5(j(G *-)h)7(I(- (I(-)7+5(j(G (I(-)7*~*-)h (=(-)7*~*-)h (a(k-U(- *z+6)D(- *z-Y)L(- +6)D(-(,/L-W -Y)L(-(,/L)m +6)D(-(,(X)m -Y)L(-(,(X)m /M(-)g(a+L)D)F *z/M(-)g(a+L)D)F (I(k(- (c(k(- (=(k(- (a(k(- (4(2(k(- (M(N(k(- )D)f(k(- )D)F(k(- )L)F(k(- )L)f(k(- (I(k*U(- (c(k*U(- (=(k*U(- (a(k*U(- *T(k)H(T(- *((k)H(T(- (I(k(-(G(] (c(k(-(G(] (=(k(-(G(] (a(k(-(G(] )D)f(k(-(G(] )D)F(k(-(G(] )L)F(k(-(G(] )L)f(k(-(G(] (I(k(-(,(@(X(m (c(k(-(,(@(X(m (=(k(-(,(@(X(m (a(k(-(,(@(X(m (I(k(-)n(=(k(- (c(k(-(I(:(a(k(- (=(k(-)n(I(k(- (a(k(-(I(:(c(k(- (I(k*x*J (c(k*x*J (=(k*x*J (a(k*x*J (I(5(.(9(- (c(5(.(9(- (=(5(.(9(- (a(5(.(9(- *((k(2,N(- *((k)Z,N(- *((k(4,N(- *((k)N,N(- (r)S*J2j*( (=(5(- +N-X(I+(*. +N2k(c+(*. +N-X(=+(*. +N2l(a+(*. (5(I+(*. (5(c+(*. (5(=+(*. (5(a+(*. (a(k(-(,)O){(I (a(k(-(,)O){(= (c(k(-(,)O){(I (c(k(-(,)O){(= (I(k(-(,)O){(c (=(k(-(,)O){(c (I(k(-(,)O){(a (=(k(-(,)O){(a (5*M(a(6(I(- (5*M(a(6(=(- (5*M(c(6(I(- (5*M(c(6(=(- (5*M(I(6(c(- (5*M(=(6(c(- (5*M(I(6(a(- (5*M(=(6(a(- *f(-(N(4 *f(-(N(2 *f(-(M(4 *f(-(M(2 *f(-(4(M *f(-(2(M *f(-(4(N *f(-(2(N (c(9(-)c(](,(X(] (M*.*/(_+P(< (I)j(-(,(Y+) (c)j(-(,(Y+) (=)j(-(,(Y+) (a)j(-(,(Y+)"],
+["Hearts","♡ ♥ ❤ ❥ ❣ ❦ ❧ ☙ 🎔 💑 💓 💔 💕 💖 💗 💘 💙 💚 💛 💜 💝 💞 💟 🖤 🤍 🤎 🩵 🩶 🩷 🫶","(9)I*W (5)I*W (;(5)I +r(;(5)I*0 (;)I*X(U): +s)I +r+s)I*0 )u+r+s)I*0 )I(,){*V*1(4 /N(,)I 2m)I -Z)I (y)| 2n)I 2o)I )I(,(- +t)I +*)I -[)I -])I )I(,*f 2p)| )I2q (5)I (9)I -^)I (F+t)I 2r)I 2s)I )I+Q"],
+["Stars","★ ☆ ☪ ⚝ ✡ ✦ ✧ ✩ ✪ ✫ ✬ ✭ ✮ ✯ ✰ ✴ ✵ ✶ ✷ ✸ ✹ ❂ ⭐ ⭑ ⭒ ⯨ ⯩ ⯪ ⯫ 🌃 🌟 🌠 🍮 🔯 🟀 🟁 🟂 🟃 🟄 🟅 🟆 🟇 🟈 🟉 🟊 🟋 🟌 🟍 🟎 🟏 🟐 🟑 🟒 🟓 🟔 🟙 ⁂ ⁎ ⁑ ✱ ✲ ✳ ✺ ✻ ✼ ✽ ✾ ⋆ 💫 ✨","(5(S (9(S (S(6+R *B(9(S (S(:-_ (5(r)-(S (9(r)-(S /O*B(9(S (.(9(S )H*2(5(S (5*2(9(S *B(5(S (;*B(5(S *C(S *;(9(S (o)-(5(S (o)-*C(S )>)-(5(S (o)-,O(5(S (;(o)-,O(5(S *N)-(5(S (.)H*2(o)-(S (9(s(S (5()(S (9()(S (4(v(5(S (2(v(5(S (S(,(4(v(5 (S(,(2(v(5 -`(,2t 2u(S 2v(S /P )>)-(S(,*O)i (F(|)-(5(S (s(|)-(5(S (|)-(5(S (s(|)-*C(S (F(r)-(5(S (s(r)-(5(S (r)-(5(S (s(r)-*C(S *~(F(r)-*C(S (F)?)-(5(S (;)?)-(5(S (s)>)-(5(S (;)>)-(5(S )>)-*C(S (s(o)-(5(S (;(o)-(5(S *P(;(o)-(5(S (;(o)-*C(S (F*N)-(5(S (;*N)-(5(S (;*N)-*C(S )V)-(9(S /Q *g)K (y/R/S/T (;)K )H*2)K (o/U)K +S)-)K )x)K )H*2)x)K (;)x)K )>+u(5(6(9*h (S)h /V(0 -a"],
+["Flowers & Snowflakes","✢ ✨ ✻ ✼ ✽ ✾ ✿ ❀ ❁ ❃ ❄ ❅ ❆ ❇ ❈ ❊ ❋ 🌱 🌷 🌸 🌹 🌺 🌻 🌼 🌿 💮 ⚘ ☘ ⚜ 🏵 🥀 💐 🪷 🪻","(r)x)K -a )x)K )H*2)x)K (;)x)K )>+u(5(6(9*h (5*h (9*h (o+u*B(5*h (;)x*C)K *i -b-c*i (;-d*i ,P (;,P (o)x,Q)K (;(o)x,Q)K 2w 2x 2y/W 2z 2{ 2| /W 2} (9+v +v 2~ 3( 3) 3*+v 3+ /X 3,"],
+["Weather","☀ ☁ ☂ ☃ ☄ ★ ☇ ☈ ☉ ☼ ☽ ☾ ♁ ⛄ ⛅ ⛆ ⛇ ⛈ ☔ ⚡ ❄ ❅ ❆ 🌀 🌁 🌂 🌈 🌊 🌋 🌌 🌍 🌎 🌏 🌑 🌒 🌓 🌔 🌕 🌖 🌗 🌘 🌙 🌚 🌛 🌜 🌝 🌞 🌡 🌤 🌥 🌦 🌧 🌨 🌩 🌪 🌫 🌬 💧 💨 🔥 🧊","(5*Y(,/Y *Z -e -f /Z (5(S /[ 3- *Y (9*Y(,/Y -g*<)o -h*<)o ++ -f-i/] *Y-j*Z +w (5-f 3.*Z(6+w -e(,+w3/ /^30(B *i -b-c*i (;-d*i 31 32 *A-e /_ -k*I 33 3435 ++-l36 ++-l37 ++-l38 +7)o(0 /`+R)o(0 -g*<)o(0 /`/a)o(0 )d)o(0 /b/a)o(0 -h*<)o(0 /b+R)o(0 +R)o +7)o(,(J -g*<)o(,(J -h*<)o(,(J )d)o(,(J *Y(,(J /c (9*Y(,()*Z (9*Y-j*Z (9*Y-j*Z(,+w *Z(,+w *Z(,/] *Z(,/[ *Z(,39 3: +x3;(J 3< )P(0 -m +y-n"],
+["Astrology & Religion","♈ ♉ ♊ ♋ ♌ ♍ ♎ ♏ ♐ ♑ ♒ ♓ ☿ ♀ ♁ ♂ ♃ ♄ ♅ ♆ ♇ ☉ ☊ ☋ ☌ ☍ ⛎ ⚳ ⚴ ⚵ ⚶ ⚷ ⚸ ⚹ ⚺ ⚻ ⚼ ☄ ⯓ ⯔ ⯕ ⯖ ⯗ ⯘ ⯙ ⯚ ⯛ ⯜ ⯝ ⯞ ⯟ ⯠ ⯡ ⯢ ⯣ ⯤ ⯥ ⯦ ⯧ ⯨ ⯩ ⯪ ⯫ ⯬ ⯭ ⯮ ⯯ ☥ ☦ ☧ ☨ ☩ ☪ ☫ ☬ ☭ ☮ ☯ ☸ ✝ ✞ ✟ ✠ ✡ ✢ ⛤ ⛥ ⛦ ⛧ ⛨ ☤ ⚕ ⚚ 🕉 🕎 🔯 🛐 ⛩ 🕋 🕌 🕍 ⛪ 📿 🪬 🧿","3= 3> 3? 3@ 3A 3B 3C 3D 3E 3F 3G 3H +z +8(B ++ *Q(B 3I 3J 3K 3L +{ *Y 3M/d 3N/d 3O 3P 3Q 3R 3S 3T 3U 3V (5)o3W 3X 3Y 3Z 3[ /Z +{+9(y +{+9(| +{+9(r +{+9)? 3] 3^ 3_ 3` 3a 3b (9)o3c (5)Y*V)_ -o(F)o3d 3e 3f 3g 3h 3i 3j 3k 3l (4(v(5(S (2(v(5(S (S(,(4(v(5 (S(,(2(v(5 (I)j(-(,(Y+) (c)j(-(,(Y+) (=)j(-(,(Y+) (a)j(-(,(Y+) /e /f)_ ,R+| )_(:/g )_(:/h (S(6+R /i(0 /j/k -p(6/l /m(0 /n/o 3m(:3n (+)_ *;(9(+)_ *B(+)_ /p)_ (S(:-_ (r)x)K +} 3o/q+} 3p/q+} *[+} (5)_*V3q -q /r(:3r /r(:3s /s(0 3t(,)V3u )>)-(S(,*O)i ,S(:3v 3w3x 3y 3z 3{ 3| 3}3~ 4( 4)4*"],
+["Currency","$ ¢ £ ¤ ¥ ₠ ₡ ₢ ₣ ₤ ₥ ₦ ₧ ₨ ₩ ₪ ₫ € ₭ ₮ ₯ ₰ ₱ ₲ ₳ ₴ ₵ ₶ ₷ ₸ ₹ ₺ ₻ ₼ ₽ ₾ ₿ ⃀ ﷼ ֏ ؋ ৲ ৳ ৻ ૱ ௹ ฿ ៛ ƒ ﹩ ＄ ￠ ￡ ￥ ￦ 💲 💰 💵 💴 💶 💷 💸 💳 🪙","+~(B /t(B -r(B -s(B -t(B 4+(B -u(B 4,(B ,(4-(B /u(B 4.(B 4/(B 40(B +T(B /v(B +741(B 42(B /w(B 43(B 44(B 45(B 4647(B 48(B 49(B 4:(B 4;(B 4<(B 4=4>(B 4?(B 4@(B /x+T(B 4A/u(B 4B(U(B 4C(B 4D(B 4E(B 4F(B 4G(B 4H(B 4I/y(B 4J(B -v+T(U -v+T(B -v4K(U 4L+T(B 4M+T(B 4N-s(04O 4P-s(04Q (+()(();(,)J ()+~(B ([+~(B ([/t(B ([-r(B ([-t(B ([/v(B (;+~(B /z4R ,T(,+~(B ,T(,-t(B ,T(,/w(B ,T(,-r(B /z(,4S 4T(d 4U"],
+["Business & Office","© ® ™ ℠ ℗ № ℅ ℆ ℀ ℁ ⅍ ℡ ℻ ☎ ☏ ✆ ✉ ✎ ✏ ✐ ✑ ✒ ✂ ✃ ✄ ✁ ⌨ ⌘ ⌥ ⏏ ⎙ ☐ ☑ ☒ ✓ ✔ ⚐ ⚑ ⚖ ⚙ ⚛ ⚒ ⚓ ⚔ ⚗ ⚘ ⚠ ⛔ ♲ ♳ ♴ ♵ ♶ ♷ ♸ ♹ ♺ ♻ ♼ ♽ ♾ ⚿ ⛓ 📈 📉 📊 📋 📌 📍 📎 📏 📐 📑 📒 📓 📔 📕 📖 📗 📘 📙 📚 📝 📞 📟 📠 📡 📢 📣 📤 📥 📦 📧 📨 📩 📪 📫 📬 📭 📮 💼 🗂 🗃 🗄 🗑 🗒 🗓 🗳 🖊 🖋 🖌 🖍 🖨 🖥 🖱 🖲 💻 💾 💿 📀 🔍 🔎 🔑 🔒 🔓 🔐 🔏 🏷","/{(B 4V(B 4W(U(B 4X(U /|4Y/{ /}(B 4Z(: 4[4] 4^(: 4_(G*14` 4a +:(B 4b(B (5+: (9+: +:/~(B ,U (`(2+U +U (h(2+U (9,V (5,V (5*j (`,W*j (9*j (h,W*j -w ,S(:-x(B 0(+; 0)(0 -y-z(0 )y(< )y(<(,*4 )y(<(,(g *4(U (;*4(U (9(1 (5(1 4c 4d 4e(0 -p(60* 4f ,X4g 0+ +v 4h(B +V4i 0,*](0 *](0(C4j+< *](0(C4k+< *](0(C4l+< *](0(C4m+< *](0(C4n+< *](0(C4o+< *](0(C4p+< *](0(C4q4r (50,*](0 4s-{(0 4t-{(0 4u-{(B (D+; 4v -|(,(c0- -|(,(a0- (]-| 4w 0. 4x0. 4y 4z0/ -}0/ 4{4| 4} 00 00(,4~5( *A,) )H,) +*,) +t,) -~,) 5) 5* +:5+ 5, 5-01 5.5/ 505152 5354 5502 5602 57 58(0 59,U ,U(,(a(-)7 *A,Y(,03(1 *A,Y(,*=(1 )H,Y(,*=(1 )H,Y(,03(1 5: 04 (d)s5; (d05(< 055< 5= 06,*07 065>07 )y(<(,)y (`(45?.( (`(45@.( (`(45A (`(45B 5C 5D08 (|5E5F 5G 5H08 5I5J 5K5L 5M )k09,+ )e09,+ +; ,Z )H,Z *A,Z(,+; ,Z(,5N.( 5O"],
+["Units","° ℃ ℉ K ℈ ℔ Ω ℧ Å µ ‰ ‱ ′ ″ ‴ ⁗ ℓ № ㎀ ㎁ ㎂ ㎃ ㎄ ㎅ ㎆ ㎇ ㎈ ㎉ ㎊ ㎋ ㎌ ㎍ ㎎ ㎏ ㎐ ㎑ ㎒ ㎓ ㎔ ㎕ ㎖ ㎗ ㎘ ㎙ ㎚ ㎛ ㎜ ㎝ ㎞ ㎟ ㎠ ㎡ ㎢ ㎣ ㎤ ㎥ ㎦ ㎧ ㎨ ㎩ ㎪ ㎫ ㎬ ㎭ ㎮ ㎯ ㎰ ㎱ ㎲ ㎳ ㎴ ㎵ ㎶ ㎷ ㎸ ㎹ ㎺ ㎻ ㎼ ㎽ ㎾ ㎿ ㏀ ㏁ ㏂ ㏃ ㏄ ㏅ ㏆ ㏇ ㏈ ㏉ ㏊ ㏋ ㏌ ㏍ ㏎ ㏏ ㏐ ㏑ ㏒ ㏓ ㏔ ㏕ ㏖ ㏗ ㏘ ㏙ ㏚ ㏛ ㏜ ㏝ ㏞ ㏟",".)(B .)5P .)5Q (+(*(()8 5R (z)1(](0 (Z(*((,[ *[.*(B (+(*(((_(,*R)7 5S(B .+0:(B .+**+,(B += (@+= *)+= *d+= (L()(z /}(B (8,,5T (8,- (8*5(_ (8,. (8+W (85U (80; (80< (85V (85W (80= (80> (8*5); (8*5(} (80? (8., (85X (85Y (85Z (85[ (85] (8*5(z (80@ (85^ (85_ (80A (85` (8*5(t (8,] (8,^ (8,/ (8,](D (8,^(D (8(t(D (8,/(D (8,],_ (8,^,_ (8(t,_ (8,/,_ (8(t)n(w (8(t)n(w(D (8,, (85a (85b (85c (8.- (8.-)n(w (8.-)n(w(D (80B (85d (8*5(w (80C (85e (85f (8*5)2 (8,` (85g (8,`0D (80E (85h (8*5)< (8.. (80F (8..0D (8)8.* (8(t.* (80G (80H (8./ (8.0 (8(~)n., (80I (85i (80J (8,a (85j (8*/ (85k (8,/(* (85l (85m (85n (85o (85p (80;() (85q (85r (80K (80L (85s (80M (80N (80O (85t (8)2)n(t (8(_)n(t"],
+["Punctuation","! ¡ ? ¿ ‽ ⸘ ⁇ ⁈ ⁉ ‼ . … ‥ ․ · • ‧ ∙ ◦ ‣ ⁃ ⁌ ⁍ ¶ ⁋ § † ‡ ※ ⁜ ⁂ ⁎ ⁑ ⁕ ⁖ ⁘ ⁙ ⁚ ⁛ ⁝ ⁞ ‐ ‑ ‒ – — ― ⸺ ⸻ ~ ⁓ ‖ | ¦ ‘ ’ ‚ ‛ “ ” „ ‟ « » ‹ › ¨ ´ ` ˆ ˜ ¯ ˘ ˙ ˚ ¸ ˛ ˇ ‾ ⁀ ⁔ ⁐ @ # & % ‰","*X(U *[*X(U +>(U *[+>(U 0P *[0P (@+>(U +>*X(U *X+>(U (@*X(U )d)a (X,0 (y)i0Q (l)i0Q *O)i *0 5u/H *0)h (9*0 -}*0 .1*0 (5(I*0 (5(=*0 0R(B )u0R(B .2(B .3 (@.3 5v(U +K)_ /Q *g)K (y/R/S/T +v,1(U (|)i,1 (r)i,1 )?)i,1 (y)i,1 (r)i(U 5w (O(r5x .1 5y.1 0S)P 5z)P 5{)P (X(] 5|)P 5})P *- 5~)P (@(O)z (O)z -Z(] (4)[)](U (2)[)](U )[0T)](U )[0U)](U (4(@)](U (2(@)](U (@0T)](U (@0U)](U )k(@)G)](U )e(@)G)](U )[)k)G)](U )[)e)G)](U 0V 6(.4 6).4 )3((6*.4 ()*- 0W 0X )i)7 *R)7 6+ 6, 6- ,b .56. *[6/ 60(M 61,c (V(B 62 63(B .+0:(B"],
+["Math","+ − ± ∓ × ÷ ⁄ ∕ ∗ ∘ ∙ √ ∛ ∜ ∝ ∞ ∟ ∠ ∡ ∢ ∣ ∤ ∥ ∦ ∧ ∨ ∩ ∪ ∫ ∬ ∭ ∮ ∯ ∰ ∱ ∲ ∳ ∴ ∵ ∶ ∷ ∸ ∹ ∺ ∻ ∼ ∽ ∾ ∿ ≀ ∂ ∆ ∇ ∈ ∉ ∊ ∋ ∌ ∍ ∎ ∏ ∐ ∑ ∀ ∁ ∃ ∄ ∅ ⊂ ⊃ ⊄ ⊅ ⊆ ⊇ ⊈ ⊉ ⊊ ⊋ ⊌ ⊍ ⊎ ⊏ ⊐ ⊑ ⊒ ⊓ ⊔ ⊕ ⊖ ⊗ ⊘ ⊙ ⊚ ⊛ ⊜ ⊝ ⊞ ⊟ ⊠ ⊡ ⊢ ⊣ ⊤ ⊥ ⊦ ⊧ ⊨ ⊩ ⊪ ⊫ ⊬ ⊭ ⊮ ⊯ ⊰ ⊱ ⊲ ⊳ ⊴ ⊵ ⊶ ⊷ ⊸ ⊹ ⊺ ⊻ ⊼ ⊽ ⊾ ⊿ ⋀ ⋁ ⋂ ⋃ ⋄ ⋅ ⋆ ⋇ ⋈ ⋉ ⋊ ⋋ ⋌ ⋍ ⋎ ⋏ ⋐ ⋑ ⋒ ⋓ ⋔ ⋮ ⋯ ⋰ ⋱ ℵ ℶ ℷ ℸ ℕ ℤ ℚ ℝ ℂ ℙ ℍ ℼ ℽ ℾ ℿ ⅀ ⅅ ⅆ ⅇ ⅈ ⅉ π","*K(B *e(B 64(B 65(B +?(B +@(B )q+X +@+X )K)h *R)h *0)h (8,2 -n,2 66,2 67(G 68 (2)G )G 0Y)G 69)G 6: *k)96; .6(G )9.6(G +Y(6 +Y). ,d ,3 *D (@*D *)*D .7*D 6<*D 6=*D *T*D *T.7*D *(.7*D 6> 6? 6@ 0Z )i*e 6A 6B0Z 6C *-)h )u*- *[6D(w 6E*I 6F*l 6G6H 6I 6J .8(: )96K.8(: ().8(: ,e+Z.9 *k)96L+Z.9 (),e+Z.9 6M(:6N +-*l +-6O +-,f (C,4 6P 0[6Q 0[*k)96R 0]0^ *|(: *}(: )9(_*|(: )9(_*}(: *|(:).(j(G *}(:).(j(G +.(_*|(:*m(j(G +.(_*}(:*m(j(G *|(:(,)9(j(G *}(:(,)9(j(G .: .:+? .:,3 (8*n(: (8,5(: (8*n(:).(j(G (8,5(:).(j(G (8.; (8.< (.*K (.*e (.+A (.+@+X (.)i)h (.*R)h (.)K)h (.*L (.)P (D*K (D*e (D+A (D)i)h (2,g (4,g (N,g (M,g 6S 6T -o 6U *)(O(](2.= (@(O(](@(2.= *k)96V )9-o *k)96W 6X(@(O(](@(2.= +B0_0` +C0_0` +[,h(: ,e+Z+[,h +[,h(:).(j(G ,e+Z+[,h).(j(G ,5(: *n(: 6Y 6Z6[6] 6^ 6_ 6` *m (2)G(,)^ (2(Y +-+Y(6 +-+Y). +-,d +-,3 )Y)h )i)h (S)h +@+A 6a (4+[0a,i*l (2+[0a,i*l (4,i*l (2,i*l )u*-*L )b+Y). )b+Y(6 (@*| (@*} (@,d (@,3 6b (O,0 6c(X,0 (M(2)t,0 (N(2)t,0 6d(0 6e(0 6f(0 6g(0 (W(*)+ (W(*), (W(*)E (W(*(p (W(*(~ (W(*)@ (W(*)( (W()*o (W(),6 (W(*,6 (W(**o (W+-,f (W(7(*)) (W(7())) (W(7()(n (W(7()(x (W(7())4 (Z()((*o"],
+["Comparisons","< > = ≠ ≈ ≉ ≊ ≋ ≌ ≍ ≎ ≏ ≐ ≑ ≒ ≓ ≔ ≕ ≖ ≗ ≘ ≙ ≚ ≛ ≜ ≝ ≞ ≟ ≡ ≢ ≣ ≤ ≥ ≦ ≧ ≨ ≩ ≪ ≫ ≬ ≭ ≮ ≯ ≰ ≱ ≲ ≳ ≴ ≵ ≶ ≷ ≸ ≹ ≺ ≻ ≼ ≽ ≾ ≿ ⊀ ⊁ ⋖ ⋗ ⋘ ⋙ ⋚ ⋛ ⋜ ⋝ ⋞ ⋟ ⋠ ⋡ ⋢ ⋣ ⋤ ⋥ ⋦ ⋧ ⋨ ⋩ ⩽ ⩾ ⪅ ⪆ ⪇ ⪈ ⪉ ⪊ ⪋ ⪌ ⪕ ⪖ ⪯ ⪰",")T(B )U(B *L(B )9(j(G +5(j(G )9+5(j(G +5(j).(j(G *)*- ,4(j(G *6(G 0b*6(G 6h,j 6i*16j 0b(j(G 0c(j(G).*1*n(: *n(:).0c(j(G -u*L *L-u *R*/(j(G *R(j(G 6k(G 6l 6m(G (S*L .>(j(G (j(G,76n 0Y,7 6o(j(G 0d(G )90d(G 6p*6(G )T).(j(G )U).(j(G )T)n(j(G )U)n(j(G )T*p)9(j(G )U*p)9(j(G ,k)T ,k)U ,j )9*6(G )9)T )9)U +.)T*m(j(G +.)U*m(j(G )T).*6(G )U).*6(G +.)T*m*6(G +.)U*m*6(G )T).)U )U).)T +.)T*m)U +.)U*m)T +B +C +B).(j(G +C).(j(G +B).*6(G +C).*6(G *k)90e *k)90f )T(,)i )U(,)i *P,k)T *P,k)U )T(j(G).)U )U(j(G).)T (j(G).)T (j(G).)U (j(G).+B (j(G).+C *k)90e).(j *k)90f).(j )9(8*n(:).(j(G )9(8,5(:).(j(G (8*n(:).)9(j(G (8,5(:).)9(j(G )T*p)9*6(G )U*p)9*6(G +B*p)9*6(G +C*p)9*6(G )T).+6(j(G )U).+6(j(G )T).,l )U).,l )T(6,m)9(j(G )U(6,m)9(j(G )T(6)9,l )U(6)9,l )T)70g(j)7)U )U)70g(j)7)T +6(j(G).)T +6(j(G).)U +B)7,m*L(B +C)7,m*L(B"],
+["Numbers","① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩ ⑪ ⑫ ⑬ ⑭ ⑮ ⑯ ⑰ ⑱ ⑲ ⑳ ⑴ ⑵ ⑶ ⑷ ⑸ ⑹ ⑺ ⑻ ⑼ ⑽ ⑾ ⑿ ⒀ ⒁ ⒂ ⒃ ⒄ ⒅ ⒆ ⒇ ⒈ ⒉ ⒊ ⒋ ⒌ ⒍ ⒎ ⒏ ⒐ ⒑ ⒒ ⒓ ⒔ ⒕ ⒖ ⒗ ⒘ ⒙ ⒚ ⒛ ⓪ ⓫ ⓬ ⓭ ⓮ ⓯ ⓰ ⓱ ⓲ ⓳ ⓴ ⓵ ⓶ ⓷ ⓸ ⓹ ⓺ ⓻ ⓼ ⓽ ⓾ ⓿ ❶ ❷ ❸ ❹ ❺ ❻ ❼ ❽ ❾ ❿ ➀ ➁ ➂ ➃ ➄ ➅ ➆ ➇ ➈ ➉ ➊ ➋ ➌ ➍ ➎ ➏ ➐ ➑ ➒ ➓ Ⅰ Ⅱ Ⅲ Ⅳ Ⅴ Ⅵ Ⅶ Ⅷ Ⅸ Ⅹ Ⅺ Ⅻ Ⅼ Ⅽ Ⅾ Ⅿ ⅰ ⅱ ⅲ ⅳ ⅴ ⅵ ⅶ ⅷ ⅸ ⅹ ⅺ ⅻ ⅼ ⅽ ⅾ ⅿ ↀ ↁ ↂ Ↄ ↄ ↅ ↆ ↇ ↈ ⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ ¼ ½ ¾ ⅐ ⅑ ⅒ ⅓ ⅔ ⅕ ⅖ ⅗ ⅘ ⅙ ⅚ ⅛ ⅜ ⅝ ⅞ ⅟ ↉ ０ １ ２ ３ ４ ５ ６ ７ ８ ９ ㉑ ㉒ ㉓ ㉔ ㉕ ㉖ ㉗ ㉘ ㉙ ㉚ ㉛ ㉜ ㉝ ㉞ ㉟ ㊱ ㊲ ㊳ ㊴ ㊵ ㊶ ㊷ ㊸ ㊹ ㊺ ㊻ ㊼ ㊽ ㊾ ㊿ 𝟎 𝟏 𝟐 𝟑 𝟒 𝟓 𝟔 𝟕 𝟖 𝟗 𝟘 𝟙 𝟚 𝟛 𝟜 𝟝 𝟞 𝟟 𝟠 𝟡 𝟢 𝟣 𝟤 𝟥 𝟦 𝟧 𝟨 𝟩 𝟪 𝟫 𝟬 𝟭 𝟮 𝟯 𝟰 𝟱 𝟲 𝟳 𝟴 𝟵 𝟶 𝟷 𝟸 𝟹 𝟺 𝟻 𝟼 𝟽 𝟾 𝟿 🄀 🄁 🄂 🄃 🄄 🄅 🄆 🄇 🄈 🄉 🄊 🄋 🄌","(.(A(l (.(A(y (.(A(| (.(A(r (.(A)? (.(A)> (.(A)Q (.(A(o (.(A)V (.(V** (.(V+] (.(V*N (.(V,n (.(V,o (.(V,p (.(V+S (.(V,q (.(V,r (.(V,s (.(V*> (^(A(l (^(A(y (^(A(| (^(A(r (^(A)? (^(A)> (^(A)Q (^(A(o (^(A)V (^(V** (^(V+] (^(V*N (^(V,n (^(V,o (^(V,p (^(V+S (^(V,q (^(V,r (^(V,s (^(V*> (A(l)d)a (A(y)d)a (A(|)d)a (A(r)d)a (A)?)d)a (A)>)d)a (A)Q)d)a (A(o)d)a (A)V)d)a (V**)d)a (V+])d)a (V*N)d)a (V,n)d)a (V,o)d)a (V,p)d)a (V+S)d)a (V,q)d)a (V,r)d)a (V,s)d)a (V*>)d)a (.(A*+ (Q(.(V+] (Q(.(V*N (Q(.(V,n (Q(.(V,o (Q(.(V,p (Q(.(V+S (Q(.(V,q (Q(.(V,r (Q(.(V,s (Q(.(V*> (@(.(A(l (@(.(A(y (@(.(A(| (@(.(A(r (@(.(A)? (@(.(A)> (@(.(A)Q (@(.(A(o (@(.(A)V (@(.(V** (Q(.(A*+ )R(Q(.(A(l )R(Q(.(A(y )R(Q(.(A(| )R(Q(.(A(r )R(Q(.(A)? )R(Q(.(A)> )R(Q(.(A)Q )R(Q(.(A(o )R(Q(.(A)V )R(Q(.(V** )R(.(3(A(l )R(.(3(A(y )R(.(3(A(| )R(.(3(A(r )R(.(3(A)? )R(.(3(A)> )R(.(3(A)Q )R(.(3(A(o )R(.(3(A)V )R(.(3(V** )R(Q(.(3(A(l )R(Q(.(3(A(y )R(Q(.(3(A(| )R(Q(.(3(A(r )R(Q(.(3(A)? )R(Q(.(3(A)> )R(Q(.(3(A)Q )R(Q(.(3(A(o )R(Q(.(3(A)V )R(Q(.(3(V** )A)B(l )A)B(y )A)B(| )A)B(r )A)B)? )A)B)> )A)B)Q )A)B(o )A)B)V )A)B** )A)B+] )A)B*N )A)B,8 )A)B(l+D )A)B)?+D )A)B(l+, ())A)B(l ())A)B(y ())A)B(| ())A)B(r ())A)B)? ())A)B)> ())A)B)Q ())A)B(o ())A)B)V ())A)B** ())A)B+] ())A)B*N ())A)B,8 ())A)B(l+D ())A)B)?+D ())A)B(l+, )A)B(l+,(~)) )A)B)?+, )A)B**+, )A)B)u(l+D (+()(()u(~ )A)B)>6q+9 )A)B,86r+9 )A)B,8+, )A)B(l+D+, *E*+ *E(l *E(y *E(| *E(r *E)? *E)> *E)Q *E(o *E)V *^*+ *^(l *^(y *^(| *^(r *^)? *^)> *^)Q *^(o *^)V )v)q(l*< )v)q(l(v )v)q(|.? )v)q(l6s )v)q(l6t )v)q(l6u )v)q(l6v )v)q(y0h )v)q(l6w )v)q(y.@ )v)q(|.@ )v)q(r.@ )v)q(l6x )v)q)?6y )v)q(l*F )v)q(|*q )v)q)?*q )v)q)Q*q )q6z(l )v)q*+0h ([(A*+ ([(A(l ([(A(y ([(A(| ([(A(r ([(A)? ([(A)> ([(A)Q ([(A(o ([(A)V (.(V*>(l (.(V*>(y (.(V*>(| (.(V*>(r (.(V*>)? (.(V*>)> (.(V*>)Q (.(V*>(o (.(V*>)V (.(V*_ (.(V*_(l (.(V*_(y (.(V*_(| (.(V*_(r (.(V*_)? (.(V*_)> (.(V*_)Q (.(V*_(o (.(V*_)V (.(V*` (.(V*`(l (.(V*`(y (.(V*`(| (.(V*`(r (.(V*`)? (.(V*`)> (.(V*`)Q (.(V*`(o (.(V*`)V (.(V,8 (/(A*+ (/(A(l (/(A(y (/(A(| (/(A(r (/(A)? (/(A)> (/(A)Q (/(A(o (/(A)V (W(A*+ (W(A(l (W(A(y (W(A(| (W(A(r (W(A)? (W(A)> (W(A)Q (W(A(o (W(A)V (3(A*+ (3(A(l (3(A(y (3(A(| (3(A(r (3(A)? (3(A)> (3(A)Q (3(A(o (3(A)V (3(/(A*+ (3(/(A(l (3(/(A(y (3(/(A(| (3(/(A(r (3(/(A)? (3(/(A)> (3(/(A)Q (3(/(A(o (3(/(A)V (e(A*+ (e(A(l (e(A(y (e(A(| (e(A(r (e(A)? (e(A)> (e(A)Q (e(A(o (e(A)V (A*+)d)a (A*+*, (A(l*, (A(y*, (A(|*, (A(r*, (A)?*, (A)>*, (A)Q*, (A(o*, (A)V*, )R(.(3(A*+ )R(Q(.(3(A*+"],
+["Fancy Letters","𝐀 𝐁 𝐂 𝐃 𝐄 𝐅 𝐆 𝐇 𝐈 𝐉 𝐊 𝐋 𝐌 𝐍 𝐎 𝐏 𝐐 𝐑 𝐒 𝐓 𝐔 𝐕 𝐖 𝐗 𝐘 𝐙 𝐚 𝐛 𝐜 𝐝 𝐞 𝐟 𝐠 𝐡 𝐢 𝐣 𝐤 𝐥 𝐦 𝐧 𝐨 𝐩 𝐪 𝐫 𝐬 𝐭 𝐮 𝐯 𝐰 𝐱 𝐲 𝐳 𝐴 𝐵 𝐶 𝐷 𝐸 𝐹 𝐺 𝐻 𝐼 𝐽 𝐾 𝐿 𝑀 𝑁 𝑂 𝑃 𝑄 𝑅 𝑆 𝑇 𝑈 𝑉 𝑊 𝑋 𝑌 𝑍 𝑎 𝑏 𝑐 𝑑 𝑒 𝑓 𝑔 𝑖 𝑗 𝑘 𝑙 𝑚 𝑛 𝑜 𝑝 𝑞 𝑟 𝑠 𝑡 𝑢 𝑣 𝑤 𝑥 𝑦 𝑧 𝑨 𝑩 𝑪 𝑫 𝑬 𝑭 𝑮 𝑯 𝑰 𝑱 𝑲 𝑳 𝑴 𝑵 𝑶 𝑷 𝑸 𝑹 𝑺 𝑻 𝑼 𝑽 𝑾 𝑿 𝒀 𝒁 𝒂 𝒃 𝒄 𝒅 𝒆 𝒇 𝒈 𝒉 𝒊 𝒋 𝒌 𝒍 𝒎 𝒏 𝒐 𝒑 𝒒 𝒓 𝒔 𝒕 𝒖 𝒗 𝒘 𝒙 𝒚 𝒛 𝒜 𝒞 𝒟 𝒢 𝒥 𝒦 𝒩 𝒪 𝒫 𝒬 𝒮 𝒯 𝒰 𝒱 𝒲 𝒳 𝒴 𝒵 𝒶 𝒷 𝒸 𝒹 𝒻 𝒽 𝒾 𝒿 𝓀 𝓁 𝓂 𝓃 𝓅 𝓆 𝓇 𝓈 𝓉 𝓊 𝓋 𝓌 𝓍 𝓎 𝓏 𝓐 𝓑 𝓒 𝓓 𝓔 𝓕 𝓖 𝓗 𝓘 𝓙 𝓚 𝓛 𝓜 𝓝 𝓞 𝓟 𝓠 𝓡 𝓢 𝓣 𝓤 𝓥 𝓦 𝓧 𝓨 𝓩 𝓪 𝓫 𝓬 𝓭 𝓮 𝓯 𝓰 𝓱 𝓲 𝓳 𝓴 𝓵 𝓶 𝓷 𝓸 𝓹 𝓺 𝓻 𝓼 𝓽 𝓾 𝓿 𝔀 𝔁 𝔂 𝔃 𝔄 𝔅 𝔇 𝔈 𝔉 𝔊 𝔍 𝔎 𝔏 𝔐 𝔑 𝔒 𝔓 𝔔 𝔖 𝔗 𝔘 𝔙 𝔚 𝔛 𝔜 𝔞 𝔟 𝔠 𝔡 𝔢 𝔣 𝔤 𝔥 𝔦 𝔧 𝔨 𝔩 𝔪 𝔫 𝔬 𝔭 𝔮 𝔯 𝔰 𝔱 𝔲 𝔳 𝔴 𝔵 𝔶 𝔷 𝔸 𝔹 𝔻 𝔼 𝔽 𝔾 𝕀 𝕁 𝕂 𝕃 𝕄 𝕆 𝕊 𝕋 𝕌 𝕍 𝕎 𝕏 𝕐 𝕒 𝕓 𝕔 𝕕 𝕖 𝕗 𝕘 𝕙 𝕚 𝕛 𝕜 𝕝 𝕞 𝕟 𝕠 𝕡 𝕢 𝕣 𝕤 𝕥 𝕦 𝕧 𝕨 𝕩 𝕪 𝕫 𝕬 𝕭 𝕮 𝕯 𝕰 𝕱 𝕲 𝕳 𝕴 𝕵 𝕶 𝕷 𝕸 𝕹 𝕺 𝕻 𝕼 𝕽 𝕾 𝕿 𝖀 𝖁 𝖂 𝖃 𝖄 𝖅 𝖆 𝖇 𝖈 𝖉 𝖊 𝖋 𝖌 𝖍 𝖎 𝖏 𝖐 𝖑 𝖒 𝖓 𝖔 𝖕 𝖖 𝖗 𝖘 𝖙 𝖚 𝖛 𝖜 𝖝 𝖞 𝖟 𝖠 𝖡 𝖢 𝖣 𝖤 𝖥 𝖦 𝖧 𝖨 𝖩 𝖪 𝖫 𝖬 𝖭 𝖮 𝖯 𝖰 𝖱 𝖲 𝖳 𝖴 𝖵 𝖶 𝖷 𝖸 𝖹 𝖺 𝖻 𝖼 𝖽 𝖾 𝖿 𝗀 𝗁 𝗂 𝗃 𝗄 𝗅 𝗆 𝗇 𝗈 𝗉 𝗊 𝗋 𝗌 𝗍 𝗎 𝗏 𝗐 𝗑 𝗒 𝗓 𝗔 𝗕 𝗖 𝗗 𝗘 𝗙 𝗚 𝗛 𝗜 𝗝 𝗞 𝗟 𝗠 𝗡 𝗢 𝗣 𝗤 𝗥 𝗦 𝗧 𝗨 𝗩 𝗪 𝗫 𝗬 𝗭 𝗮 𝗯 𝗰 𝗱 𝗲 𝗳 𝗴 𝗵 𝗶 𝗷 𝗸 𝗹 𝗺 𝗻 𝗼 𝗽 𝗾 𝗿 𝘀 𝘁 𝘂 𝘃 𝘄 𝘅 𝘆 𝘇 𝘈 𝘉 𝘊 𝘋 𝘌 𝘍 𝘎 𝘏 𝘐 𝘑 𝘒 𝘓 𝘔 𝘕 𝘖 𝘗 𝘘 𝘙 𝘚 𝘛 𝘜 𝘝 𝘞 𝘟 𝘠 𝘡 𝘢 𝘣 𝘤 𝘥 𝘦 𝘧 𝘨 𝘩 𝘪 𝘫 𝘬 𝘭 𝘮 𝘯 𝘰 𝘱 𝘲 𝘳 𝘴 𝘵 𝘶 𝘷 𝘸 𝘹 𝘺 𝘻 𝘼 𝘽 𝘾 𝘿 𝙀 𝙁 𝙂 𝙃 𝙄 𝙅 𝙆 𝙇 𝙈 𝙉 𝙊 𝙋 𝙌 𝙍 𝙎 𝙏 𝙐 𝙑 𝙒 𝙓 𝙔 𝙕 𝙖 𝙗 𝙘 𝙙 𝙚 𝙛 𝙜 𝙝 𝙞 𝙟 𝙠 𝙡 𝙢 𝙣 𝙤 𝙥 𝙦 𝙧 𝙨 𝙩 𝙪 𝙫 𝙬 𝙭 𝙮 𝙯 𝙰 𝙱 𝙲 𝙳 𝙴 𝙵 𝙶 𝙷 𝙸 𝙹 𝙺 𝙻 𝙼 𝙽 𝙾 𝙿 𝚀 𝚁 𝚂 𝚃 𝚄 𝚅 𝚆 𝚇 𝚈 𝚉 𝚊 𝚋 𝚌 𝚍 𝚎 𝚏 𝚐 𝚑 𝚒 𝚓 𝚔 𝚕 𝚖 𝚗 𝚘 𝚙 𝚚 𝚛 𝚜 𝚝 𝚞 𝚟 𝚠 𝚡 𝚢 𝚣 ℬ ℰ ℱ ℋ ℐ ℒ ℳ ℛ ℯ ℊ ℴ ℭ ℌ ℑ ℜ ℨ ℂ ℍ ℕ ℙ ℚ ℝ ℤ ℎ","(/(*(_ (/(*)1 (/(*(~ (/(*)) (/(*(n (/(*); (/(*(} (/(*)( (/(*(x (/(*)4 (/(*)8 (/(*(z (/(*(t (/(*)+ (/(*(u (/(*)@ (/(*)E (/(*(p (/(*(w (/(*)= (/(*({ (/(*)2 (/(*)< (/(*(g (/(*)C (/(*), (/()(_ (/())1 (/()(~ (/())) (/()(n (/()); (/()(} (/())( (/()(x (/())4 (/())8 (/()(z (/()(t (/())+ (/()(u (/())@ (/())E (/()(p (/()(w (/())= (/()({ (/())2 (/())< (/()(g (/())C (/()), (7(*(_ (7(*)1 (7(*(~ (7(*)) (7(*(n (7(*); (7(*(} (7(*)( (7(*(x (7(*)4 (7(*)8 (7(*(z (7(*(t (7(*)+ (7(*(u (7(*)@ (7(*)E (7(*(p (7(*(w (7(*)= (7(*({ (7(*)2 (7(*)< (7(*(g (7(*)C (7(*), (7()(_ (7())1 (7()(~ (7())) (7()(n (7()); (7()(} (7()(x (7())4 (7())8 (7()(z (7()(t (7())+ (7()(u (7())@ (7())E (7()(p (7()(w (7())= (7()({ (7())2 (7())< (7()(g (7())C (7()), (/(7(*(_ (/(7(*)1 (/(7(*(~ (/(7(*)) (/(7(*(n (/(7(*); (/(7(*(} (/(7(*)( (/(7(*(x (/(7(*)4 (/(7(*)8 (/(7(*(z (/(7(*(t (/(7(*)+ (/(7(*(u (/(7(*)@ (/(7(*)E (/(7(*(p (/(7(*(w (/(7(*)= (/(7(*({ (/(7(*)2 (/(7(*)< (/(7(*(g (/(7(*)C (/(7(*), (/(7()(_ (/(7())1 (/(7()(~ (/(7())) (/(7()(n (/(7()); (/(7()(} (/(7())( (/(7()(x (/(7())4 (/(7())8 (/(7()(z (/(7()(t (/(7())+ (/(7()(u (/(7())@ (/(7())E (/(7()(p (/(7()(w (/(7())= (/(7()({ (/(7())2 (/(7())< (/(7()(g (/(7())C (/(7()), (L(*(_ (L(*(~ (L(*)) (L(*(} (L(*)4 (L(*)8 (L(*)+ (L(*(u (L(*)@ (L(*)E (L(*(w (L(*)= (L(*({ (L(*)2 (L(*)< (L(*(g (L(*)C (L(*), (L()(_ (L())1 (L()(~ (L())) (L()); (L())( (L()(x (L())4 (L())8 (L()(z (L()(t (L())+ (L())@ (L())E (L()(p (L()(w (L())= (L()({ (L())2 (L())< (L()(g (L())C (L()), (/(L(*(_ (/(L(*)1 (/(L(*(~ (/(L(*)) (/(L(*(n (/(L(*); (/(L(*(} (/(L(*)( (/(L(*(x (/(L(*)4 (/(L(*)8 (/(L(*(z (/(L(*(t (/(L(*)+ (/(L(*(u (/(L(*)@ (/(L(*)E (/(L(*(p (/(L(*(w (/(L(*)= (/(L(*({ (/(L(*)2 (/(L(*)< (/(L(*(g (/(L(*)C (/(L(*), (/(L()(_ (/(L())1 (/(L()(~ (/(L())) (/(L()(n (/(L()); (/(L()(} (/(L())( (/(L()(x (/(L())4 (/(L())8 (/(L()(z (/(L()(t (/(L())+ (/(L()(u (/(L())@ (/(L())E (/(L()(p (/(L()(w (/(L())= (/(L()({ (/(L())2 (/(L())< (/(L()(g (/(L())C (/(L()), (P(*(_ (P(*)1 (P(*)) (P(*(n (P(*); (P(*(} (P(*)4 (P(*)8 (P(*(z (P(*(t (P(*)+ (P(*(u (P(*)@ (P(*)E (P(*(w (P(*)= (P(*({ (P(*)2 (P(*)< (P(*(g (P(*)C (P()(_ (P())1 (P()(~ (P())) (P()(n (P()); (P()(} (P())( (P()(x (P())4 (P())8 (P()(z (P()(t (P())+ (P()(u (P())@ (P())E (P()(p (P()(w (P())= (P()({ (P())2 (P())< (P()(g (P())C (P()), (W(*(_ (W(*)1 (W(*)) (W(*(n (W(*); (W(*(} (W(*(x (W(*)4 (W(*)8 (W(*(z (W(*(t (W(*(u (W(*(w (W(*)= (W(*({ (W(*)2 (W(*)< (W(*(g (W(*)C (W()(_ (W())1 (W()(~ (W())) (W()(n (W()); (W()(} (W())( (W()(x (W())4 (W())8 (W()(z (W()(t (W())+ (W()(u (W())@ (W())E (W()(p (W()(w (W())= (W()({ (W())2 (W())< (W()(g (W())C (W()), (/(P(*(_ (/(P(*)1 (/(P(*(~ (/(P(*)) (/(P(*(n (/(P(*); (/(P(*(} (/(P(*)( (/(P(*(x (/(P(*)4 (/(P(*)8 (/(P(*(z (/(P(*(t (/(P(*)+ (/(P(*(u (/(P(*)@ (/(P(*)E (/(P(*(p (/(P(*(w (/(P(*)= (/(P(*({ (/(P(*)2 (/(P(*)< (/(P(*(g (/(P(*)C (/(P(*), (/(P()(_ (/(P())1 (/(P()(~ (/(P())) (/(P()(n (/(P()); (/(P()(} (/(P())( (/(P()(x (/(P())4 (/(P())8 (/(P()(z (/(P()(t (/(P())+ (/(P()(u (/(P())@ (/(P())E (/(P()(p (/(P()(w (/(P())= (/(P()({ (/(P())2 (/(P())< (/(P()(g (/(P())C (/(P()), (3(*(_ (3(*)1 (3(*(~ (3(*)) (3(*(n (3(*); (3(*(} (3(*)( (3(*(x (3(*)4 (3(*)8 (3(*(z (3(*(t (3(*)+ (3(*(u (3(*)@ (3(*)E (3(*(p (3(*(w (3(*)= (3(*({ (3(*)2 (3(*)< (3(*(g (3(*)C (3(*), (3()(_ (3())1 (3()(~ (3())) (3()(n (3()); (3()(} (3())( (3()(x (3())4 (3())8 (3()(z (3()(t (3())+ (3()(u (3())@ (3())E (3()(p (3()(w (3())= (3()({ (3())2 (3())< (3()(g (3())C (3()), (3(/(*(_ (3(/(*)1 (3(/(*(~ (3(/(*)) (3(/(*(n (3(/(*); (3(/(*(} (3(/(*)( (3(/(*(x (3(/(*)4 (3(/(*)8 (3(/(*(z (3(/(*(t (3(/(*)+ (3(/(*(u (3(/(*)@ (3(/(*)E (3(/(*(p (3(/(*(w (3(/(*)= (3(/(*({ (3(/(*)2 (3(/(*)< (3(/(*(g (3(/(*)C (3(/(*), (3(/()(_ (3(/())1 (3(/()(~ (3(/())) (3(/()(n (3(/()); (3(/()(} (3(/())( (3(/()(x (3(/())4 (3(/())8 (3(/()(z (3(/()(t (3(/())+ (3(/()(u (3(/())@ (3(/())E (3(/()(p (3(/()(w (3(/())= (3(/()({ (3(/())2 (3(/())< (3(/()(g (3(/())C (3(/()), (3(7(*(_ (3(7(*)1 (3(7(*(~ (3(7(*)) (3(7(*(n (3(7(*); (3(7(*(} (3(7(*)( (3(7(*(x (3(7(*)4 (3(7(*)8 (3(7(*(z (3(7(*(t (3(7(*)+ (3(7(*(u (3(7(*)@ (3(7(*)E (3(7(*(p (3(7(*(w (3(7(*)= (3(7(*({ (3(7(*)2 (3(7(*)< (3(7(*(g (3(7(*)C (3(7(*), (3(7()(_ (3(7())1 (3(7()(~ (3(7())) (3(7()(n (3(7()); (3(7()(} (3(7())( (3(7()(x (3(7())4 (3(7())8 (3(7()(z (3(7()(t (3(7())+ (3(7()(u (3(7())@ (3(7())E (3(7()(p (3(7()(w (3(7())= (3(7()({ (3(7())2 (3(7())< (3(7()(g (3(7())C (3(7()), (3(/(7(*(_ (3(/(7(*)1 (3(/(7(*(~ (3(/(7(*)) (3(/(7(*(n (3(/(7(*); (3(/(7(*(} (3(/(7(*)( (3(/(7(*(x (3(/(7(*)4 (3(/(7(*)8 (3(/(7(*(z (3(/(7(*(t (3(/(7(*)+ (3(/(7(*(u (3(/(7(*)@ (3(/(7(*)E (3(/(7(*(p (3(/(7(*(w (3(/(7(*)= (3(/(7(*({ (3(/(7(*)2 (3(/(7(*)< (3(/(7(*(g (3(/(7(*)C (3(/(7(*), (3(/(7()(_ (3(/(7())1 (3(/(7()(~ (3(/(7())) (3(/(7()(n (3(/(7()); (3(/(7()(} (3(/(7())( (3(/(7()(x (3(/(7())4 (3(/(7())8 (3(/(7()(z (3(/(7()(t (3(/(7())+ (3(/(7()(u (3(/(7())@ (3(/(7())E (3(/(7()(p (3(/(7()(w (3(/(7())= (3(/(7()({ (3(/(7())2 (3(/(7())< (3(/(7()(g (3(/(7())C (3(/(7()), (e(*(_ (e(*)1 (e(*(~ (e(*)) (e(*(n (e(*); (e(*(} (e(*)( (e(*(x (e(*)4 (e(*)8 (e(*(z (e(*(t (e(*)+ (e(*(u (e(*)@ (e(*)E (e(*(p (e(*(w (e(*)= (e(*({ (e(*)2 (e(*)< (e(*(g (e(*)C (e(*), (e()(_ (e())1 (e()(~ (e())) (e()(n (e()); (e()(} (e())( (e()(x (e())4 (e())8 (e()(z (e()(t (e())+ (e()(u (e())@ (e())E (e()(p (e()(w (e())= (e()({ (e())2 (e())< (e()(g (e())C (e()), (L(*)1 (L(*(n (L(*); (L(*)( (L(*(x (L(*(z (L(*(t (L(*(p (L()(n (L()(} (L()(u ,9(*(~ ,9(*)( ,9(*(x ,9(*(p ,9(*), (W(*(~ (W(*)( (W(*)+ (W(*)@ (W(*)E (W(*(p (W(*), 6{6|"],
+["Enclosed Letters","Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ ⓐ ⓑ ⓒ ⓓ ⓔ ⓕ ⓖ ⓗ ⓘ ⓙ ⓚ ⓛ ⓜ ⓝ ⓞ ⓟ ⓠ ⓡ ⓢ ⓣ ⓤ ⓥ ⓦ ⓧ ⓨ ⓩ ⒜ ⒝ ⒞ ⒟ ⒠ ⒡ ⒢ ⒣ ⒤ ⒥ ⒦ ⒧ ⒨ ⒩ ⒪ ⒫ ⒬ ⒭ ⒮ ⒯ ⒰ ⒱ ⒲ ⒳ ⒴ ⒵ 🄐 🄑 🄒 🄓 🄔 🄕 🄖 🄗 🄘 🄙 🄚 🄛 🄜 🄝 🄞 🄟 🄠 🄡 🄢 🄣 🄤 🄥 🄦 🄧 🄨 🄩 🄪 🄫 🄬 🄭 🄮 🄯 🄰 🄱 🄲 🄳 🄴 🄵 🄶 🄷 🄸 🄹 🄺 🄻 🄼 🄽 🄾 🄿 🅀 🅁 🅂 🅃 🅄 🅅 🅆 🅇 🅈 🅉 🅊 🅋 🅌 🅍 🅎 🅏 🅐 🅑 🅒 🅓 🅔 🅕 🅖 🅗 🅘 🅙 🅚 🅛 🅜 🅝 🅞 🅟 🅠 🅡 🅢 🅣 🅤 🅥 🅦 🅧 🅨 🅩 🅪 🅫 🅬 🅭 🅮 🅯 🅰 🅱 🅲 🅳 🅴 🅵 🅶 🅷 🅸 🅹 🅺 🅻 🅼 🅽 🅾 🅿 🆀 🆁 🆂 🆃 🆄 🆅 🆆 🆇 🆈 🆉 Ａ Ｂ Ｃ Ｄ Ｅ Ｆ Ｇ Ｈ Ｉ Ｊ Ｋ Ｌ Ｍ Ｎ Ｏ Ｐ Ｑ Ｒ Ｓ Ｔ Ｕ Ｖ Ｗ Ｘ Ｙ Ｚ ａ ｂ ｃ ｄ ｅ ｆ ｇ ｈ ｉ ｊ ｋ ｌ ｍ ｎ ｏ ｐ ｑ ｒ ｓ ｔ ｕ ｖ ｗ ｘ ｙ ｚ","(.(+(*(((_ (.(+(*(()1 (.(+(*(((~ (.(+(*(()) (.(+(*(((n (.(+(*((); (.(+(*(((} (.(+(*(()( (.(+(*(((x (.(+(*(()4 (.(+(*(()8 (.(+(*(((z (.(+(*(((t (.(+(*(()+ (.(+(*(((u (.(+(*(()@ (.(+(*(()E (.(+(*(((p (.(+(*(((w (.(+(*(()= (.(+(*((({ (.(+(*(()2 (.(+(*(()< (.(+(*(((g (.(+(*(()C (.(+(*((), (.(+()(((_ (.(+()(()1 (.(+()(((~ (.(+()(()) (.(+()(((n (.(+()((); (.(+()(((} (.(+()(()( (.(+()(((x (.(+()(()4 (.(+()(()8 (.(+()(((z (.(+()(((t (.(+()(()+ (.(+()(((u (.(+()(()@ (.(+()(()E (.(+()(((p (.(+()(((w (.(+()(()= (.(+()((({ (.(+()(()2 (.(+()(()< (.(+()(((g (.(+()(()C (.(+()((), (^(+()(((_ (^(+()(()1 (^(+()(((~ (^(+()(()) (^(+()(((n (^(+()((); (^(+()(((} (^(+()(()( (^(+()(((x (^(+()(()4 (^(+()(()8 (^(+()(((z (^(+()(((t (^(+()(()+ (^(+()(((u (^(+()(()@ (^(+()(()E (^(+()(((p (^(+()(((w (^(+()(()= (^(+()((({ (^(+()(()2 (^(+()(()< (^(+()(((g (^(+()(()C (^(+()((), (^(+(*(((_ (^(+(*(()1 (^(+(*(((~ (^(+(*(()) (^(+(*(((n (^(+(*((); (^(+(*(((} (^(+(*(()( (^(+(*(((x (^(+(*(()4 (^(+(*(()8 (^(+(*(((z (^(+(*(((t (^(+(*(()+ (^(+(*(((u (^(+(*(()@ (^(+(*(()E (^(+(*(((p (^(+(*(((w (^(+(*(()= (^(+(*((({ (^(+(*(()2 (^(+(*(()< (^(+(*(((g (^(+(*(()C (^(+(*((), )})~6}(+(*(((w (.(7(+(*(((~ (.(7(+(*(((p (..0 (.6~ 7((0 (D(+(*(((_ (D(+(*(()1 (D(+(*(((~ (D(+(*(()) (D(+(*(((n (D(+(*((); (D(+(*(((} (D(+(*(()( (D(+(*(((x (D(+(*(()4 (D(+(*(()8 (D(+(*(((z (D(+(*(((t (D(+(*(()+ (D(+(*(((u (D(+(*(()@ (D(+(*(()E (D(+(*(((p (D(+(*(((w (D(+(*(()= (D(+(*((({ (D(+(*(()2 (D(+(*(()< (D(+(*(((g (D(+(*(()C (D(+(*((), (D7) (D,` (D0i (D0j (D7* (D7+ (Q(.(+(*(((_ (Q(.(+(*(()1 (Q(.(+(*(((~ (Q(.(+(*(()) (Q(.(+(*(((n (Q(.(+(*((); (Q(.(+(*(((} (Q(.(+(*(()( (Q(.(+(*(((x (Q(.(+(*(()4 (Q(.(+(*(()8 (Q(.(+(*(((z (Q(.(+(*(((t (Q(.(+(*(()+ (Q(.(+(*(((u (Q(.(+(*(()@ (Q(.(+(*(()E (Q(.(+(*(((p (Q(.(+(*(((w (Q(.(+(*(()= (Q(.(+(*((({ (Q(.(+(*(()2 (Q(.(+(*(()< (Q(.(+(*(((g (Q(.(+(*(()C (Q(.(+(*((), *=0k(B *=0l(B *=0m(B (../ (.(~(,7,7- (.7.0S (Q(D(+(*(((_ (Q(D(+(*(()1 (Q(D(+(*(((~ (Q(D(+(*(()) (Q(D(+(*(((n (Q(D(+(*((); (Q(D(+(*(((} (Q(D(+(*(()( (Q(D(+(*(((x (Q(D(+(*(()4 (Q(D(+(*(()8 (Q(D(+(*(((z (Q(D(+(*(((t (Q(D(+(*(()+ (Q(D(+(*(((u (Q(D(+(*(()@ (Q(D(+(*(()E (Q(D(+(*(((p (Q(D(+(*(((w (Q(D(+(*(()= (Q(D(+(*((({ (Q(D(+(*(()2 (Q(D(+(*(()< (Q(D(+(*(((g (Q(D(+(*(()C (Q(D(+(*((), ([(+(*(((_ ([(+(*(()1 ([(+(*(((~ ([(+(*(()) ([(+(*(((n ([(+(*((); ([(+(*(((} ([(+(*(()( ([(+(*(((x ([(+(*(()4 ([(+(*(()8 ([(+(*(((z ([(+(*(((t ([(+(*(()+ ([(+(*(((u ([(+(*(()@ ([(+(*(()E ([(+(*(((p ([(+(*(((w ([(+(*(()= ([(+(*((({ ([(+(*(()2 ([(+(*(()< ([(+(*(((g ([(+(*(()C ([(+(*((), ([(+()(((_ ([(+()(()1 ([(+()(((~ ([(+()(()) ([(+()(((n ([(+()((); ([(+()(((} ([(+()(()( ([(+()(((x ([(+()(()4 ([(+()(()8 ([(+()(((z ([(+()(((t ([(+()(()+ ([(+()(((u ([(+()(()@ ([(+()(()E ([(+()(((p ([(+()(((w ([(+()(()= ([(+()((({ ([(+()(()2 ([(+()(()< ([(+()(((g ([(+()(()C ([(+()((),"],
+["Latin Extras","ᴀ ʙ ᴄ ᴅ ᴇ ꜰ ɢ ʜ ɪ ᴊ ᴋ ʟ ᴍ ɴ ᴏ ᴘ ꞯ ʀ ꜱ ᴛ ᴜ ᴠ ᴡ ʏ ᴢ ᵃ ᵇ ᶜ ᵈ ᵉ ᶠ ᵍ ʰ ⁱ ʲ ᵏ ˡ ᵐ ⁿ ᵒ ᵖ ʳ ˢ ᵗ ᵘ ᵛ ʷ ˣ ʸ ᶻ ᴬ ᴮ ᴰ ᴱ ᴳ ᴴ ᴵ ᴶ ᴷ ᴸ ᴹ ᴺ ᴼ ᴾ ᴿ ᵀ ᵁ ⱽ ᵂ ɐ q ɔ p ǝ ɟ ƃ ɥ ᴉ ɾ ʞ l ɯ u o d b ɹ s ʇ n ʌ ʍ x ʎ z Æ æ Œ œ ß Ð ð Þ þ Ø ø Ł ł Đ đ Ħ ħ Ŋ ŋ ſ ƒ Ƕ ƿ Ȝ ȝ","(+((()(*(_ (+((()(*)1 (+((()(*(~ (+((()(*)) (+((()(*(n (+((()(*); (+((()(*(} (+((()(*)( (+((()(*(x (+((()(*)4 (+((()(*)8 (+((()(*(z (+((()(*(t (+((()(*)+ (+((()(*(u (+((()(*)@ (+((()(*)E (+((()(*(p (+((()(*(w (+((()(*)= (+((()(*({ (+((()(*)2 (+((()(*)< (+((()(*)C (+((()(*), )3((()(_ )3((())1 )3((()(~ )3((())) )3((()(n )3((()); )3((()(} )3((())( *E(+()(((x )3((())4 )3((())8 )3((()(z )3((()(t *E(+()(()+ )3((()(u )3((())@ )3((()(p )3((()(w )3((())= )3((()({ )3((())2 )3((())< )3((()(g )3((())C )3((()), )3(((*(_ )3(((*)1 )3(((*)) )3(((*(n )3(((*(} )3(((*)( )3(((*(x )3(((*)4 )3(((*)8 )3(((*(z )3(((*(t )3(((*)+ )3(((*(u )3(((*)@ )3(((*(p )3(((*)= )3(((*({ )3(((*)2 )3(((*)< (+()(()W(_ (+()(()E (+()(()H(u (+()(()@ (+()(()W(n (+()((.A)4(,(m (+()(()1(,7/ (+()(()W)( (+()(()W(x (+()(((p(,,: (+()(()W)8 (+()(((z (+()(()W(t (+()((({ (+()(((u (+()(()) (+()(()1 (+()(()W(p (+()(((w (+()(()W)= (+()(()+ (+()(()W)2 (+()(()W)< (+()(((g (+()(()W)C (+()((), (+(*((,t (+()((,t (+(*0n,u (+()0n,u (+()((+^(w (+(*((0o (+()((0o (+(*((0p (+()((0p (+(*(((u(,(m (+()(((u(,(m (+(*(((z(,(m (+()(((z(,(m (+(*(())(,(m (+()(())(,(m (+(*(()((,(m (+()(()((,(m (+(*((0q (+()((0q (+()(()O(w (+()(();(,)J (+(*((70 (+((71 (+(*((0r (+()((0r"],
+["Greek","Α Β Γ Δ Ε Ζ Η Θ Ι Κ Λ Μ Ν Ξ Ο Π Ρ Σ Τ Υ Φ Χ Ψ Ω α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ ς σ τ υ φ χ ψ ω ϐ ϑ ϒ ϕ ϖ ϗ Ϙ ϙ Ϛ ϛ Ϝ ϝ Ϟ ϟ Ϡ ϡ ϰ ϱ ϲ ϳ ϴ ϵ ϶","(Z(*((,v (Z(*((.B (Z(*((,6 (Z(*((.> (Z(*((,w (Z(*((0s (Z(*((0t (Z(*((,x (Z(*((.C (Z(*((.D (Z(*((0u (Z(*((*5 (Z(*((+_ (Z(*((0v (Z(*((0w (Z(*((*o (Z(*((+| (Z(*((,y (Z(*((0x (Z(*((,z (Z(*((,{ (Z(*((,R (Z(*((0y (Z(*((,[ (Z()((,v (Z()((.B (Z()((,6 (Z()((.> (Z()((,w (Z()((0s (Z()((0t (Z()((,x (Z()((.C (Z()((.D (Z()((0u (Z()((*5 (Z()((+_ (Z()((0v (Z()((0w (Z()((*o (Z()((+| (Z()((72,y (Z()((,y (Z()((0x (Z()((,z (Z()((,{ (Z()((,R (Z()((0y (Z()((,[ (Z.B(0 (Z,x(0 (Z,z(,)J(0 (Z,{(0 (Z*o(0 (Z73(0 (Z((0z,| (Z()((0z,| (Z((0{ (Z()((0{ (Z((0| (Z()((0| (Z((,| (Z()((,| (Z((0} (Z()((0} (Z.D(0 (Z+|(0 (Z.E,y(0 (Z((74 (Z(*,x(0 (Z.E,w(0 (Z)u.E,w(0"],
+["Phonetic","ɐ ɑ ɒ ɓ ɔ ɕ ɖ ɗ ɘ ə ɚ ɛ ɜ ɝ ɞ ɟ ɠ ɡ ɢ ɣ ɤ ɥ ɦ ɧ ɨ ɩ ɪ ɫ ɬ ɭ ɮ ɯ ɰ ɱ ɲ ɳ ɴ ɵ ɶ ɷ ɸ ɹ ɺ ɻ ɼ ɽ ɾ ɿ ʀ ʁ ʂ ʃ ʄ ʅ ʆ ʇ ʈ ʉ ʊ ʋ ʌ ʍ ʎ ʏ ʐ ʑ ʒ ʓ ʔ ʕ ʖ ʗ ʘ ʙ ʚ ʛ ʜ ʝ ʞ ʟ ʠ ʡ ʢ ʣ ʤ ʥ ʦ ʧ ʨ ʩ ʪ ʫ ʬ ʭ ʮ ʯ","(+()(()W(_ (+()((,v (+()(()W,v (+()(()1(,)J (+()(()H(u (+()(((~(,+` (+()(())(,)m (+()(())(,)J (+()(()u(n (+()((0~ (+()((0~(,)J (+()(()H(n (+()(()u)H(n (+()(()u)H(n(,)J (+()((*A)u)H(n (+()((.A)4(,(m (+()(((}(,)J (+()(((L(} (+((()(*(} (+()((,6 (+()((751( (+()(()W)( (+()(()((,)J (+()((76(,)J (+()(((x(,(m (+()((.C (+((()(*(x (+()(((z(,*O*- (+()(((z(,77 (+()(((z(,,})J (+()((78 (+()(()W(t (+()(()W(t(,)O,~ (+()(((t(,)J (+()(()+(,(4)J (+()(()+(,,})J (+((()(*)+ (+()((79(u (+((()(*,u (+()((*A,[ (+()((,{ (+()(()W(p (+()(()W(p(,)O,~ (+()(()W(p(,)J (+()(((p(,)O,~ (+()(((p(,)m (+()(((p(,,: (+()(()u(p(,,: (+((()(*(p (+((()(**[(p (+()(((w(,)J (+()((.F (+()((.A)4(,(m(6)J (+()((/I)u.F (+()((.F(,+` (+()(()W)= (+()(()=(,,})J (+()((({(] (+()((,z (+()(()2(,)J (+()(()W)2 (+()(()W)< (+()(()W)C (+((()(*)C (+()((),(,,})J (+()((),(,+` (+()((1) (+()((1)(,+` (+((-()a (+((7:.G7; (+((*[-()a (+((7<(~ (+((1*7= (+((()(*)1 (+()((*A)H(n (+((()(*(}(,)J (+((()(*)( (+()(()4(,7> (+()(()W)8 (+((()(*(z (+()(()E(,)J (+((-()a(,(m (+(()u-()a(,(m (+()((.H*r (+()((7?*r (+()((.H*r(,+` (+()((7@*r (+()((7A*r (+()((1+*r(,+` (+()((7B*r (+()((1,*r (+()((7C*r (+((1*1- (+((7D1- (+()(()W)((,,: (+()(()W)((,,:(6)m"],
+["Squares","■ □ ▢ ▣ ▤ ▥ ▦ ▧ ▨ ▩ ▪ ▫ ▬ ▭ ▮ ▯ ◔ ◕ ◜ ◝ ◞ ◟ ◧ ◨ ◩ ◪ ◫ ◰ ◱ ◲ ◳ ◴ ◵ ◶ ◷ ◻ ◼ ◽ ◾ ⬒ ⬓ ⬔ ⬕ ⬚ ⬛ ⬜ ⬝ ⬞ 🞌 🞍 🞎 🞏 🞐 🞑 🞒 🞓 🞔 🞕 🞖 🟗 🟘 🟥 🟦 🟧 🟨 🟩 🟪 🟫 ▀ ▁ ▂ ▃ ▄ ▅ ▆ ▇ █ ▉ ▊ ▋ ▌ ▍ ▎ ▏ ▐ ░ ▒ ▓ ▔ ▕ ▖ ▗ ▘ ▙ ▚ ▛ ▜ ▝ ▞ ▟ ⧄ ⧅ ⧆ ⧇ ⧈ ⌑ ⌗ ⌘ ⧉ ❏ ❐ ❑ ❒ ⊞ ⊟ ⊠ ⊡","(5(8 (9(8 (9(8(,/G7E (9(8+/(5()(8 (8(,(X+E (8(,(O+E (8(,7F1.+E (8(,(h(4(G(`(2+E (8(,(h(2(G(`(4+E (8(,)t1.+E (5()(8 (9()(8 (5+P (9+P (5(O+P (9(O+P (T(,(h(2)M(5 (T(,,4*p(h(4)M(5 (h(4)M+0)^ (h(2)M+0)^ (`(2)M+0)^ (`(4)M+0)^ (8(,(4(v(5 (8(,(2(v(5 (8(,(h(4)t(v(5 (8(,(`(2)t(v(5 (9(8(,(O7G)z (9(8(,(h(4)M (9(8(,(`(4)M (9(8(,(`(2)M (9(8(,(h(2)M (9(T(,(h(4)M (9(T(,(`(4)M (9(T(,(`(2)M (9(T(,(h(2)M (9(s(8 (5(s(8 (9(s()(8 (5(s()(8 (8(,)N(v(5 (8(,)Z(v(5 (8(,(h(2)t(v(5 (8(,(`(4)t(v(5 +K(8 (5)r(8 (9)r(8 (5*P()(8 (9*P()(8 (5.I(8 (5-)()(8 (F(9(8 (s(9(8 (/(9(8 (;(9(8 *P(;(9(8 1/(;(9(8 (9(8+/(5*P()(8 (9(8+/(5(s(8 (810 (.(8 (Q(.(8 )r*s(8 )r+t(8 )r-~(8 )r-[(8 )r+*(8 )r-](8 )r-^(8 (h(v)l (`(l*F)l (`(l*<)l (`(|*q)l (`(v)l (`)?*q)l (`(|.?)l (`)Q*q)l )d)l (4)Q*q)l (4(|.?)l (4)?*q)l (4(v)l (4(|*q)l (4(l*<)l (4(l*F)l (2(v)l (F.J (s.J 11.J (h(l*F)l (2(l*F)l )M(`(4 )M(`(2 )M(h(4 )M(h(4(6(`(4(6(`(2 )M(h(4(6(`(2 )M(h(4(6(h(2(6(`(4 )M(h(4(6(h(2(6(`(2 )M(h(2 )M(h(2(6(`(4 )M(h(2(6(`(4(6(`(2 (D,I)t+X (D,J)t+X (D)K (D()(T (D(8 (8*G 12(8 ,S(:-x(B (y137H (`(2-*(9(8 (h(2-*(9(8 (`(2*;(9(8 (h(2*;(9(8 (D*K (D*e (D+A (D)i)h"],
+["Circles","○ ◌ ◍ ● ◐ ◑ ◒ ◓ ◔ ◕ ◖ ◗ ◙ ◚ ◛ ◠ ◡ ◯ ◴ ◵ ◶ ◷ ⬤ ⭕ ⭗ ⭘ ⭙ 🞄 🞅 🞆 🞇 🞈 🞉 🞊 🟕 🟖 🟗 🟘 🟠 🟡 🟢 🟣 🟤 ⊕ ⊖ ⊗ ⊘ ⊙ ⊚ ⊛ ⊜ ⊝ ⦲ ⦵ ⦶ ⦷ ⦸ ⦹ ⦺ ⦻ ⦼ ⦽ ⦾ ⦿ ⧀ ⧁ ⧂ ⧃ ⚪ ⚫ 🔴 🔵 ❍","(9(T +K(T (T(,(O+E (5(T (T(,(4(v(5 (T(,(2(v(5 (T(,(`(v(5 (T(,(h(v(5 (T(,(h(2)M(5 (T(,,4*p(h(4)M(5 (4(v(5(T (2(v(5(T .K(9(T (h(v.K(9(T (`(v.K(9(T (h(v(T (`(v(T )r(T (9(T(,(h(4)M (9(T(,(`(4)M (9(T(,(`(2)M (9(T(,(h(2)M (5)r(T (;)r(T (;(T(,(T7I (;(T (;(.14 (5-)()(T (s(/(9(T (/(9(T (;(9(T *P(;(9(T 1/(;(9(T (9(T+/(5()(T (.(Y (Q(.(Y (.(8 (Q(.(8 )r-~(T )r-[(T )r+*(T )r-](T )r-^(T (.*K (.*e (.+A (.+@+X (.)i)h (.*R)h (.)K)h (.*L (.)P 0]0^(,()(T)7 (T(,(X(] (.(O(] (..6 (.*~7J (.7K (T15,7(X(](6)N(v15,7(O(] (T(,7L(g (.7M+@(B (M(-*{(T (.(9*0 (.*0 (.)T (.)U (T(,()(T(G*1(2 (T(,(y(X7N(G*1(2 (s(9(T (s(5(T )r*s(T )r+t(T *;(9(T"],
+["Triangles","▲ △ ▴ ▵ ▶ ▷ ▸ ▹ ▼ ▽ ▾ ▿ ◀ ◁ ◂ ◃ ◢ ◣ ◤ ◥ ◬ ◭ ◮ ◸ ◹ ◺ ◿ 🞀 🞁 🞂 🞃 🟕 🟖 ⧊ ⧋ ⧌ ⧍ ⧎ ⧏ ⧐ 🔺 🔻 🔼 🔽 ⯅ ⯆ ⯇ ⯈ ► ▻ ◄ ◅ ⊿","(5*?(Y (9*?(Y (5*?()(Y (9*?()(Y (5)e(Y (9)e(Y (5)e()(Y (9)e()(Y (5*a(Y (9*a(Y (5*a()(Y (9*a()(Y (5)k(Y (9)k(Y (5)k()(Y (9)k()(Y (5(`(2(Y (5(`(4(Y (5(h(4(Y (5(h(2(Y (9*?(Y(,)i *?(Y(,(4(v(5 *?(Y(,(2(v(5 (h(4(Y (h(2(Y (`(4(Y (`(2(Y (5)k-+(2(Y (5*?-+(2(Y (5)e-+(2(Y (5*a-+(2(Y (.(Y (Q(.(Y (Y(,)i)7 (Y(,.L (w*/(Y (Y(,7O,c)Z (2(Y)7(4(Y (4(Y+M(O(] (O(]+M(2(Y *?*s(Y *a*s(Y *?()*s(Y *a()*s(Y (5(s*?(Y,; (5(s*a(Y,; (5(s)k(Y,; (5(s)e(Y,; (5)e-, (9)e-, (5)k-, (9)k-, (2(Y"],
+["Diamonds & Others","▰ ▱ ◆ ◇ ◈ ◊ ⬖ ⬗ ⬘ ⬙ ⬟ ⬠ ⬡ ⬢ ⬣ ⬥ ⬦ ⬧ ⬨ ⬩ ⬪ ⬫ ⬬ ⬭ ⬮ ⬯ ⭓ ⭔ 🞗 🞘 🞙 🞚 🞛 🞜 🞝 🞞 🞟 🞠 ⯁ ⯂ ⯃ ⯄","(516 (916 (5)Y (9)Y (9)Y+/(5())Y *G )Y(,(4(v(5 )Y(,(2(v(5 )Y(,)N(v(5 )Y(,)Z(v(5 (5,< (9,< (9.M (5.M (X(5.M (5(s)Y (9(s)Y (5(s*G (9(s*G (5())Y (5()*G (9()*G (5(X-- (9(X-- (5(O-- (9(O-- (5)e,< (9)e,< (5.I)Y (5*P())Y (5(s())Y (9)Y+/(5*P())Y (9)Y+/(5(s)Y )Y10 (5.I*G (5*P()*G (5(s()*G (9*G+/(5()*G (5)Y,; )W(5,< (X(517 (517"],
+["Lines & Box","─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ┌ ┍ ┎ ┏ ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟ ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯ ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿ ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍ ╎ ╏ ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟ ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯ ╰ ╱ ╲ ╳ ╴ ╵ ╶ ╷ ╸ ╹ ╺ ╻ ╼ ╽ ╾ ╿ ▏ ▕ ▔ ▁ ⎯ ⎸ ⎹ ⏐ ⎺ ⎻ ⎼ ⎽ 〰 ﹏ ﹋ ﹌ _ ‗ ¯ ‾ ⸏ ⸐ ⸑","(<(?(F(X (<(?(;(X (<(?(F(O (<(?(;(O (<(?(F*))P(X (<(?(;*))P(X (<(?(F*))P(O (<(?(;*))P(O (<(?(F*d)P(X (<(?(;*d)P(X (<(?(F*d)P(O (<(?(;*d)P(O (<(?(F(N(6(2 (<(?(N(F(6(2(; (<(?(N(;(6(2(F (<(?(;(N(6(2 (<(?(F(N(6(4 (<(?(N(F(6(4(; (<(?(N(;(6(4(F (<(?(;(N(6(4 (<(?(F(M(6(2 (<(?(M(F(6(2(; (<(?(M(;(6(2(F (<(?(;(M(6(2 (<(?(F(M(6(4 (<(?(M(F(6(4(; (<(?(M(;(6(4(F (<(?(;(M(6(4 (<(?(F(O(6(2 (<(?(O(F(6(2(; (<(?(M(;(6(2(N(F (<(?(N(;(6(2(M(F (<(?(O(;(6(2(F (<(?(N(F(6(2(M(; (<(?(M(F(6(2(N(; (<(?(;(O(6(2 (<(?(F(O(6(4 (<(?(O(F(6(4(; (<(?(M(;(6(4(N(F (<(?(N(;(6(4(M(F (<(?(O(;(6(4(F (<(?(N(F(6(4(M(; (<(?(M(F(6(4(N(; (<(?(;(O(6(4 (<(?(F(N(6(X (<(?(4(;(6(2(N(F (<(?(2(;(6(4(N(F (<(?(N(F(6(X(; (<(?(N(;(6(X(F (<(?(2(F(6(4(N(; (<(?(4(F(6(2(N(; (<(?(;(N(6(X (<(?(F(M(6(X (<(?(4(;(6(2(M(F (<(?(2(;(6(4(M(F (<(?(M(F(6(X(; (<(?(M(;(6(X(F (<(?(2(F(6(4(M(; (<(?(4(F(6(2(M(; (<(?(;(M(6(X (<(?(F(O(6(X (<(?(4(;(6(2(O(F (<(?(2(;(6(4(O(F (<(?(O(F(6(X(; (<(?(M(;(6(N(X(F (<(?(N(;(6(M(X(F (<(?(O(;(6(X(F (<(?(4(M(;(6(2(N(F (<(?(2(M(;(6(4(N(F (<(?(4(N(;(6(2(M(F (<(?(2(N(;(6(4(M(F (<(?(N(F(6(M(X(; (<(?(M(F(6(N(X(; (<(?(2(F(6(4(O(; (<(?(4(F(6(2(O(; (<(?(;(O(6(X (<(?(F(@)P(X (<(?(;(@)P(X (<(?(F(@)P(O (<(?(;(@)P(O (<(?(@(X (<(?(@(O (<(?(N)[(6(2(@ (<(?(N(@(6(2)[ (<(?(@(N(6(2 (<(?(N)[(6(4(@ (<(?(N(@(6(4)[ (<(?(@(N(6(4 (<(?(M)[(6(2(@ (<(?(M(@(6(2)[ (<(?(@(M(6(2 (<(?(M)[(6(4(@ (<(?(M(@(6(4)[ (<(?(@(M(6(4 (<(?(O)[(6(2(@ (<(?(O(@(6(2)[ (<(?(@(O(6(2 (<(?(O)[(6(4(@ (<(?(O(@(6(4)[ (<(?(@(O(6(4 (<(?(N)[(6(X(@ (<(?(N(@(6(X)[ (<(?(@(N(6(X (<(?(M)[(6(X(@ (<(?(M(@(6(X)[ (<(?(@(M(6(X (<(?(O)[(6(X(@ (<(?(O(@(6(X)[ (<(?(@(O(6(X (<(?(F)^(N(6(2 (<(?(F)^(N(6(4 (<(?(F)^(M(6(4 (<(?(F)^(M(6(2 (<(?(F)t(h(2(G(`(4 (<(?(F)t(h(4(G(`(2 (<(?(F)t)_ (<(?(F(4 (<(?(F(M (<(?(F(2 (<(?(F(N (<(?(;(4 (<(?(;(M (<(?(;(2 (<(?(;(N (<(?(F(4(6(;(2 (<(?(F(M(6(;(N (<(?(;(4(6(F(2 (<(?(;(M(6(F(N (4(l*F)l (2(l*F)l (h(l*F)l (`(l*F)l (X)z*b (4(O(<)z (2(O(<)z (O)z*b (X+118 (X+119 (X+11: (X+11; +a)P +a*g)z +a,b (@+a,b *g)z (@*g)z 0W ,b .N 1<.N )u1<.N"],
+["Corners","⌜ ⌝ ⌞ ⌟ ⌈ ⌉ ⌊ ⌋ ⌌ ⌍ ⌎ ⌏ ┌ ┐ └ ┘ ┏ ┓ ┗ ┛ ╔ ╗ ╚ ╝ ╭ ╮ ╯ ╰ ◜ ◝ ◞ ◟ ◠ ◡ ⎾ ⎿ ⏋ ⏌ ⸢ ⸣ ⸤ ⸥ 「 」 『 』 ⌐ ¬ ⨽ ⨼",")N(4)S )N(2)S )Z(4)S )Z(2)S (4-. (2-. (4,= (2,= )Z(2+2 )Z(4+2 )N(2+2 )N(4+2 (<(?(F(N(6(2 (<(?(F(N(6(4 (<(?(F(M(6(2 (<(?(F(M(6(4 (<(?(;(N(6(2 (<(?(;(N(6(4 (<(?(;(M(6(2 (<(?(;(M(6(4 (<(?(@(N(6(2 (<(?(@(N(6(4 (<(?(@(M(6(2 (<(?(@(M(6(4 (<(?(F)^(N(6(2 (<(?(F)^(N(6(4 (<(?(F)^(M(6(4 (<(?(F)^(M(6(2 (h(4)M+0)^ (h(2)M+0)^ (`(2)M+0)^ (`(4)M+0)^ (h(v(T (`(v(T )w(0(F(O(6)N(2 )w(0(F(O(6)Z(2 )w(0(F(O(6)N(4 )w(0(F(O(6)Z(4 )N(4(v(K )N(2(v(K )Z(4(v(K )Z(2(v(K (4)S(K (2)S(K (4(9)S(K (2(9)S(K )u)9(B )9(B 7P1=*l 1=*l"],
+["Brackets","( ) [ ] { } ⟨ ⟩ ⟪ ⟫ ⟬ ⟭ ⟮ ⟯ ⟦ ⟧ ⦃ ⦄ ⦅ ⦆ ⦇ ⦈ ⦉ ⦊ ⦋ ⦌ ⦍ ⦎ ⦏ ⦐ ⦑ ⦒ ⦓ ⦔ ⦕ ⦖ ⦗ ⦘ 〈 〉 《 》 「 」 『 』 【 】 〔 〕 〖 〗 〘 〙 〚 〛 ‹ › « » ⁅ ⁆ ❨ ❩ ❪ ❫ ❬ ❭ ❮ ❯ ❰ ❱ ❲ ❳ ❴ ❵ ⸨ ⸩ ﹙ ﹚ ﹛ ﹜ ﹝ ﹞ （ ） ［ ］ ｛ ｝ ｟ ｠ ｢ ｣","(4)X (2)X (4(8(K (2(8(K (4)b(K (2)b(K (4)G(K (2)G(K (4(@)G(K (2(@)G(K (4(9)})~(K (2(9)})~(K (4+b)X (2+b)X (4(9(8(K (2(9(8(K (4(9)b(K (2(9)b(K (4(9)X (2(9)X ),-/(4*n(K ),-/(2*n(K ),-/(41>(K ),-/(21>(K (4(8(K(,.L (2(8(K(,.L (4(8(K(,-0*/)N)S (2(8(K(,-0*/)Z)S (4(8(K(,-0*/)Z)S (2(8(K(,-0*/)N)S (4)G(K(,)i (2)G(K(,)i (4)^)T(K (2)^)U(K (@(4)^)U(K (@(2)^)T(K (4(5)})~(K (2(5)})~(K (4)G(K (2)G(K (4(@)G(K (2(@)G(K (4)S(K (2)S(K (4(9)S(K (2(9)S(K (4(5-1(K (2(5-1(K (4)})~(K (2)})~(K (4(9-1(K (2(9-1(K (4(9)})~(K (2(9)})~(K (4(9(8(K (2(9(8(K )[)k)G)](U )[)e)G)](U )k(@)G)](U )e(@)G)](U (4(8(K(,1? (2(8(K(,1? (s(4)X): (s(2)X): (s+b(4)X): (s+b(2)X): (s)k)G(K): (s)e)G(K): (;)k)G)](U): (;)e)G)](U): (;)k)G(K): (;)e)G(K): (F(4)})~(K): (F(2)})~(K): (s(4)b(K): (s(2)b(K): (4(@)X (2(@)X ()(4)X ()(2)X ()(4)b(K ()(2)b(K ()(4)})~(K ()(2)})~(K ([(4)X ([(2)X ([(4(8(K ([(2(8(K ([(4)b(K ([(2)b(K ([(4(9)X ([(2(9)X 1@(4)S(K 1@(2)S(K"],
+["Technical","⌀ ⌁ ⌂ ⌃ ⌄ ⌅ ⌆ ⌇ ⌈ ⌉ ⌊ ⌋ ⌌ ⌍ ⌎ ⌏ ⌐ ⌑ ⌒ ⌓ ⌔ ⌕ ⌖ ⌗ ⌘ ⌙ ⌚ ⌛ ⌜ ⌝ ⌞ ⌟ ⌠ ⌡ ⌢ ⌣ ⌤ ⌥ ⌦ ⌧ ⌨ 〈 〉 ⌫ ⌬ ⌭ ⌮ ⌯ ⌰ ⌱ ⌲ ⌳ ⌴ ⌵ ⍻ ⍼ ⍽ ⍾ ⍿ ⎀ ⎁ ⎂ ⎃ ⎄ ⎅ ⎆ ⎇ ⎈ ⎉ ⎊ ⎋ ⎌ ⎍ ⎎ ⎏ ⎐ ⎑ ⎒ ⎓ ⎔ ⎖ ⎗ ⎘ ⎙ ⎚ ⎛ ⎜ ⎝ ⎞ ⎟ ⎠ ⎡ ⎢ ⎣ ⎤ ⎥ ⎦ ⎧ ⎨ ⎩ ⎪ ⎫ ⎬ ⎭ ⎮ ⎯ ⎰ ⎱ ⎲ ⎳ ⎴ ⎵ ⎶ ⎷ ⎸ ⎹ ⎺ ⎻ ⎼ ⎽ ⎾ ⎿ ⏀ ⏁ ⏂ ⏃ ⏄ ⏅ ⏆ ⏇ ⏈ ⏉ ⏊ ⏋ ⏌ ⏍ ⏎ ⏏ ⏐ ⏑ ⏒ ⏓ ⏔ ⏕ ⏖ ⏗ ⏘ ⏙ ⏚ ⏛ ⏜ ⏝ ⏞ ⏟ ⏠ ⏡ ⏢ ⏣ ⏤ ⏥ ⏦ ⏧ ⏨ ⏩ ⏪ ⏫ ⏬ ⏭ ⏮ ⏯ ⏰ ⏱ ⏲ ⏳ ⏴ ⏵ ⏶ ⏷ ⏸ ⏹ ⏺ ⏻ ⏼ ⏽ ⏾ ⏿","7Q(B 7R(- 7S (M*. (N*. 7T 7U +a)z (4-. (2-. (4,= (2,= )Z(2+2 )Z(4+2 )N(2+2 )N(4+2 )u)9(B (8*G )^ 7V 7W +:7X 1A7Y 12(8 ,S(:-x(B )W)9(B 7Z 1B )N(4)S )N(2)S )Z(4)S )Z(2)S )N(v*D )Z(v*D 7[ 7] (M*.,j(y(X7^ 0(+; 1C(G*1(2 (g*/(_+P(< -w )k)G(K )e)G(K 1C(G*1(4 1D*R 7_ ,47` 7a 7b7c 7d7e 7f7g 7h 7i 7j )9*4(U (2)G(,(a-U(- 7k)H(< 1E(0 (O)z(,*O)i 7l(0 7m1F(0 7n1F(0 7o(0 7p(0 (9(8(,*2(O)z 7q(0 7r+;(0 7s(0 (.(X(](,7t (.(Y(N -Z(T(,7u(- 7v(0 7w(0 7x(0 1G7y(0 1G7z(0 7{(0 7|(0 1H1I(0+9(y 7}(0 1J7~+;(0 8(1K 8)1K -y-z(0 8*-z(0 (4)X(h)J (4)X*b (4)X(`)J (2)X(h)J (2)X*b (2)X(`)J (4(8(K(h)S (4(8(K*b (4(8(K(`)S (2(8(K(h)S (2(8(K*b (2(8(K(`)S (4)b(K(h)J (4)b(K*O.O (4)b(K(`)J )b(K*b (2)b(K(h)J (2)b(K*O.O (2)b(K(`)J *D*b (X)z*b (h(4).(`(2)b(K.2 (h(2).(`(4)b(K.2 ,f)N ,f)Z )N(8(K )Z(8(K )Z(8(K)n)N(8(K 8+(0)Z (4(O(<)z (2(O(<)z (X+118 (X+119 (X+11: (X+11; )w(0(F(O(6)N(2 )w(0(F(O(6)Z(2 )w(0(F(O(,(T )w(0(F(N(6(X(,(T )w(0(F(M(6(X(,(T )w(0(F(O(,(Y )w(0(F(N(6(X(,(Y )w(0(F(M(6(X(,(Y )w(0(F(O(6*I )w(0(F(N(6(X(,*I )w(0(F(M(6(X(,*I )w(0(F(N(6(X )w(0(F(M(6(X )w(0(F(O(6)N(4 )w(0(F(O(6)Z(4 (88, 8-(0 0)(0 (O)z*b *t0X *t)O)n*z *t*z)n)O *t)O)n(y-2 *t(y-2)n)O *t(y-213 *t8. *t8/ *t80 ++81 82 )N)X )Z)X )N)b(K )Z)b(K )N)})~(K )Z)})~(K (983 1D*R(,(T 84 85 861I 87,d 1J88(0 (5)e(@(Y (5)k(@(Y (5*?(@(Y (5*a(@(Y (5)e(@(Y(,(O(] (5)k(@(Y(,(O(] (5)e(Y(,(@(O(] 891L 8: 8;1L 1B(,8<8= (5(s)k(Y (5(s)e(Y (5(s*?(Y (5(s*a(Y (@(O(] (5(8(C)a (5(T(C8> -3(0 -38?(0 -3*V(0 -38@(0 8A-4(0"],
+["Dingbats","✀ ✁ ✂ ✃ ✄ ✅ ✆ ✇ ✈ ✉ ✊ ✋ ✌ ✍ ✎ ✏ ✐ ✑ ✒ ✓ ✔ ✕ ✖ ✗ ✘ ✙ ✚ ✛ ✜ ✝ ✞ ✟ ✠ ✡ ✢ ✣ ✤ ✥ ✦ ✧ ✨ ✩ ✪ ✫ ✬ ✭ ✮ ✯ ✰ ✱ ✲ ✳ ✴ ✵ ✶ ✷ ✸ ✹ ✺ ✻ ✼ ✽ ✾ ✿ ❀ ❁ ❂ ❃ ❄ ❅ ❆ ❇ ❈ ❉ ❊ ❋ ❌ ❍ ❎ ❏ ❐ ❑ ❒ ❓ ❔ ❕ ❖ ❗ ❘ ❙ ❚ ❛ ❜ ❝ ❞ ❟ ❠ ❡ ❢ ❣ ❤ ❥ ❦ ❧ ❨ ❩ ❪ ❫ ❬ ❭ ❮ ❯ ❰ ❱ ❲ ❳ ❴ ❵ ➕ ➖ ➗ ➰ ➿ ☚ ☛ ☜ ☝ ☞ ☟ ☠ ☡ ☢ ☣ ☤ ☥ ☦ ☧ ☨ ☩ ☪ ☫ ☬ ☭ ☮ ☯","(51M*j (h,W*j (5*j (`,W*j (9*j (9(;*4(U +:/~(B 8B8C 8D ,U *=-5 *=)` 1N)` .P)` (`(2+U +U (h(2+U (9,V (5,V *4(U (;*4(U +?(g (;+?(g )y(g (;)y(g *B(Z)_ (;(Z)_ )H*2)_ (;)H*2)_ (+)_ *;(9(+)_ *B(+)_ /p)_ (S(:-_ (r)x)K (r.Q)K (;(r.Q)K (r8E)K (5(r)-(S (9(r)-(S -a /O*B(9(S (.(9(S )H*2(5(S (5*2(9(S *B(5(S (;*B(5(S *C(S *;(9(S (;)K )H*2)K (o/U)K (o)-(5(S (o)-*C(S )>)-(5(S (o)-,O(5(S (;(o)-,O(5(S *N)-(5(S +S)-)K )x)K )H*2)x)K (;)x)K )>+u(5(6(9*h (5*h (9*h (o+u*B(5*h (.)H*2(o)-(S (;)x*C)K *i -b-c*i (;-d*i ,P (;,P .Q)K (o)x,Q)K (;(o)x,Q)K )_(U *;(9(T (Q(D)_(U (`(2-*(9(8 (h(2-*(9(8 (`(2*;(9(8 (h(2*;(9(8 (5+>(U): (9+>(U): (9*X(U): (5)Y*e(9(g (;*X(U(0 (F(O(] (s(O(] (;(O(] (;)[)W*,)](U): (;)[*,)](U): (;(@)W*,)](U): (;(@*,)](U): (;*g)[*,)](U): (;*g(@*,)](U): *M+48F(B): (;*X(U): (;)I*X(U): (;(5)I +r(;(5)I*0 +s)I +r+s)I*0 (s(4)X): (s(2)X): (s+b(4)X): (s+b(2)X): (s)k)G(K): (s)e)G(K): (;)k)G)](U): (;)e)G)](U): (;)k)G(K): (;)e)G(K): (F(4)})~(K): (F(2)})~(K): (s(4)b(K): (s(2)b(K): (;*K(B (;*e(B (;+@(B )b,E (@)b,E (5(4)g)s (5(2)g)s (9(4)g)s (9(M)g)s (9(2)g)s (9(N)g)s .R(61O 8G(B 8H(B 8I(B -q /e /f)_ ,R+| )_(:/g )_(:/h (S(6+R /i(0 /j/k -p(6/l /m(0 /n/o"],
+["Check Marks","✓ ✔ ✗ ✘ ☐ ☑ ☒ ⍻ √ ✅ ❌ ❎ ❍ ⊠ ⊗ ⮽ 🗸 🗹 🗴 🗵 🗶 🗷 🗙 ☓ ✕ ✖ ✖️ ⨯","*4(U (;*4(U )y(g (;)y(g )y(< )y(<(,*4 )y(<(,(g )9*4(U (8,2 (9(;*4(U )_(U (Q(D)_(U *;(9(T (D+A (.+A )y(<(,(F(g (F*4(U )y(<(,(/*4 )y(L(g )y(<(,(L(g )y(/(L(g )y(<(,(/(L(g 8J(g 14 +?(g (;+?(g (;+?(g 8K).)_*l"],
+["Music & Games","♩ ♪ ♫ ♬ ♭ ♮ ♯ 𝄞 𝄟 𝄠 𝄡 𝄢 𝄪 𝄫 𝄬 𝄭 𝄮 𝄯 𝄰 𝄱 𝄲 𝄳 𝄴 𝄵 𝄶 𝄷 𝄸 𝄹 𝄺 𝄻 𝄼 𝄽 𝄾 𝄿 𝅀 𝅁 𝅂 𝅃 𝅝 𝅗𝅥 𝅘𝅥 𝅘𝅥𝅮 𝅘𝅥𝅯 🎵 🎶 🎼 🎹 🎸 🎺 🎷 🥁 🎻 🪕 🪗 🎤 🎧 ♔ ♕ ♖ ♗ ♘ ♙ ♚ ♛ ♜ ♝ ♞ ♟ ♠ ♡ ♢ ♣ ♤ ♥ ♦ ♧ ⚀ ⚁ ⚂ ⚃ ⚄ ⚅ 🎲 🎯 🎮 🕹 🎳 🎰 🧩 🃏 🀄 🂡 🂢 🂣 🂤 🂥 🂦 🂧 🂨 🂩 🂪 🂫 🂬 🂭 🂮 🂱 🂲 🂳 🂴 🂵 🂶 🂷 🂸 🂹 🂺 🂻 🂼 🂽 🂾 🂿 🃁 🃂 🃃 🃄 🃅 🃆 🃇 🃈 🃉 🃊 🃋 🃌 🃍 🃎 🃑 🃒 🃓 🃔 🃕 🃖 🃗 🃘 🃙 🃚 🃛 🃜 🃝 🃞 🃟 🀀 🀁 🀂 🀃 🀅 🀆 🀇 🀈 🀉 🀊 🀋 🀌 🀍 🀎 🀏 🀐 🀑 🀒 🀓 🀔 🀕 🀖 🀗 🀘 🀙 🀚 🀛 🀜 🀝 🀞 🀟 🀠 🀡 🀢 🀣 🀤 🀥 🀦 🀧 🀨 🀩 🀪 🀫","*<,* *F,* 1P*F.S 1P1Q.S .T+c(B .T.U(B .T+^(B )*(0(},> )*(0(},>-6.V )*(0(},>-6.W )*(0(~,> )*(0);,> )*(0(@+^ )*(0(@+c )*(0+c(M )*(0+c(N )*(0.U(M )*(0.U(N )*(0+^(M )*(0+^(N )*(0*<1R+^ )*(0*<1R+c )*(08L1S )*(01T1S )*(0-6.V )*(0-6.W )*(01U.V )*(01U.W )*(08M*c )*(01V*c )*(0(v*c )*(0*<*c )*(0*F*c )*(01Q*c )*(08N*c )*(08O*c )*(0(l+D8P*c )*(0(g,? )*(01V,* )*(08Q,?)*(0+d+4 )*(0,?(5)*(0+d+4 )*(0,?(5)*(0+d+4)*(0+d8R )*(0,?(5)*(0+d+4)*(0+d8S )*,* 8T)*.S )*8U )*-w 8V 8W 8X 8Y(,8Z 8[ 8] 8^ 8_ 8` (9*H+e (9*H+f (9*H1W (9*H1X (9*H+g (9*H1Y (5*H+e (5*H+f (5*H1W (5*H1X (5*H+g (5*H1Y (51Z*W (9)I*W (9)Y*W (51[*W (91Z*W (5)I*W (5)Y*W (91[*W +F8a +F8b +F8c +F8d +F8e +F8f 1]+F 1H8g 8h1] 8i 8j 8k01 8l8m.O (i(d(5-7 )/)0*s.X (i(d-8(:*7 (i(d(y(:*7 (i(d(|(:*7 (i(d(r(:*7 (i(d)?(:*7 (i(d)>(:*7 (i(d)Q(:*7 (i(d(o(:*7 (i(d)V(:*7 (i(d**(:*7 (i(d-9(:*7 (i(d+g(:*7 (i(d+f(:*7 (i(d+e(:*7 (i(d-8(:)| (i(d(y(:)| (i(d(|(:)| (i(d(r(:)| (i(d)?(:)| (i(d)>(:)| (i(d)Q(:)| (i(d(o(:)| (i(d)V(:)| (i(d**(:)| (i(d-9(:)| (i(d+g(:)| (i(d+f(:)| (i(d+e(:)| (i(d*s-7 (i(d-8(:*8 (i(d(y(:*8 (i(d(|(:*8 (i(d(r(:*8 (i(d)?(:*8 (i(d)>(:*8 (i(d)Q(:*8 (i(d(o(:*8 (i(d)V(:*8 (i(d**(:*8 (i(d-9(:*8 (i(d+g(:*8 (i(d+f(:*8 (i(d+e(:*8 (i(d-8(:*9 (i(d(y(:*9 (i(d(|(:*9 (i(d(r(:*9 (i(d)?(:*9 (i(d)>(:*9 (i(d)Q(:*9 (i(d(o(:*9 (i(d)V(:*9 (i(d**(:*9 (i(d-9(:*9 (i(d+g(:*9 (i(d+f(:*9 (i(d+e(:*9 (i(d(9-7 )/)0)F+x )/)0)L+x )/)0)f+x )/)0)D+x )/)0+*.X )/)0(9.X )/)0(l(:*u )/)0(y(:*u )/)0(|(:*u )/)0(r(:*u )/)0)?(:*u )/)0)>(:*u )/)0)Q(:*u )/)0(o(:*u )/)0)V(:*u )/)0(l(:*v )/)0(y(:*v )/)0(|(:*v )/)0(r(:*v )/)0)?(:*v )/)0)>(:*v )/)0)Q(:*v )/)0(o(:*v )/)0)V(:*v )/)0(l(:*w )/)0(y(:*w )/)0(|(:*w )/)0(r(:*w )/)0)?(:*w )/)0)>(:*w )/)0)Q(:*w )/)0(o(:*w )/)0)V(:*w )/)08n )/)08o )/)08p )/)08q )/)08r )/)08s )/)08t )/)08u )/)0-7 )/)0.Y"],
+["Smileys","☺ ☻ ☹ ツ ㋡ ü 😀 😁 😂 😃 😄 😅 😆 😇 😈 😉 😊 😋 😌 😍 😎 😏 😐 😑 😒 😓 😔 😕 😖 😗 😘 😙 😚 😛 😜 😝 😞 😟 😠 😡 😢 😣 😤 😥 😦 😧 😨 😩 😪 😫 😬 😭 😮 😯 😰 😱 😲 😳 😴 😵 😶 😷 🙁 🙂 🙃 🙄 🙅 🙆 🤐 🤑 🤒 🤓 🤔 🤕 🤖 🤗 🤠 🤡 🤢 🤣 🤤 🤥 🤦 🤧 🤨 🤩 🤪 🤫 🤬 🤭 🤮 🤯 🥰 🥱 🥲 🥳 🥴 🥵 🥶 🥷 🥸 🥹 🥺 🧐 🫠 🫡 🫢 🫣 🫤 🫥 🫦 🫧 🫨","(9)p(J (5)p(J (9.Z(J (>((+G (.(>+G (+()((({(,0V -:(J -:(J(,)p*3 (J(,1^(:8v )p(J(,)H*: )p(J(,)H*:(6)p*3 )p(J(,)H*:(6.[.] )p(J(,)H*:(61_*3 )p(J(,8w )p(J(,.^ 1`(J )p(J(,)p*3 (J8x8y-; 1a(J )p(J(,8z*3 )p(J(,1b 8{(J 8|(J 8}(J 8~(J (J(,.[.] 9((J 9)(J 9*(J ._(J (J9+(_1c ._(J(,)p*3 ._(J(,*A*3 (J(,.`.a (J(,.`.a(61`-4 (J(,.`.a(61_*3 1d(J 9,(J 9-(J 9.(J 1e(J 9/(J (J(,90(:91 1d*p1a(J .Z(J(,)H*: 92(J 93(J 94(J 95(J 96(J 97(J 981e(J (J(,)H*: 99(J (J(,)H*:(6.[.] (J9:*/9; 9<(J 9=(J 9>(J /V(J (J-i*: (J(,9?9@ -).Z(J -))p(J 9A(J (J(,1f*3 (J(,+V9B1g (J(,1h1g 9C(J 9D(J (J(,/c 9E(J 9F(J (J(,9G 9H(J 1i(J (J(,9I-< 9J(J 9K(J 1f*V*1,=9L 9M(J 9N(J (J.b 9O(J (J(,(l9P*= -:(J(,(S*3 -:(J(,(l)r(6(l()-4 (J(,.c.d*A9Q 9R(J(,9S.d*: )p(J(,)p*3(6)`.d*: (J(,)H*:9T 9U(J(,9V-W )p(J(,)p*3(6(|)| 9W(J )p(J(,9X (J(,1j1((61j-< (J(,9Y*3(6+a*: 9Z(J 9[(J 9] 9^(J (J9_.Y1^ (J(,9`*3 (J(,9a 9b(J 9c(J (J(,)H*3(6)`)n*: (J(,9d-4 (J(,)t*: +K)z(J 9e9f 9g 9h(J"],
+["Hands","☚ ☛ ☜ ☝ ☞ ☟ ✊ ✋ ✌ ✍ 👆 👇 👈 👉 👊 👋 👌 👍 👎 👏 👐 🙌 🙏 🤝 🤌 🤏 🤘 🤙 🤚 🤛 🤜 🤞 🤟 🫰 🫱 🫲 🫳 🫴 🫵 🫶 🫷 🫸 💪 🦾 🖐 🖖 🖕 ✍️ 💅 🤲","(5(4)g)s (5(2)g)s (9(4)g)s (9(M)g)s (9(2)g)s (9(N)g)s *=-5 *=)` 1N)` .P)` (9(M)g-=)s (9(N)g-=)s (9(4)g-=)s (9(2)g-=)s 9i)`(B 9j)`(B 1h)`(B 1k(M(B 1k(N(B 9k+Q(B )H+Q(B +39l9m+Q*/9n +3(,9o+Q 9p 9q-> 9r)` (B(:*1.^ 9s,@)` *=.Y(:)` 9t-5 9u-5 )`(,)s(6*O->,X (x9v9w)`(B )`(,)s.c(69x,X (=)` (I)` .b(N)` .b(M)` )s)g,c*19y )I+Q (I1l)` (=1l)` 9z9{ 9|9} *=)`(,->9~ *=)`(,:(,j*O(6*R-> )u)`(,*O.c:) .P)` :*:+ :,(M:-"],
+["People & Gender","♀ ♂ ⚢ ⚣ ⚤ ⚥ ⚦ ⚧ ⚨ ⚩ ⚪ ☿ 👶 🧒 👦 👧 🧑 👨 👩 🧓 👴 👵 👱 🧔 👲 👳 🧕 👮 👷 💂 🕵 👸 🤴 🦸 🦹 🧙 🧚 🧛 🧜 🧝 🧞 🧟 💃 🕺 👯 🧘 🏃 🚶 🧍 🧎 👤 👥 🫂 👪 💑 💏 🚹 🚺 🚻 🚼","+8(B *Q(B 1m+8(B 1m*Q(B :.+8(6*Q(B *Q(6+8(B *Q(,(m(B *Q(,(m(6*Q(6+8(B (O*Q(,(m(B (X*Q(,(m(B (s(9(T +z .e :/ :0 :1 1n +h .f .g1n .g+h .g.f +3(,:21o :3+3 +h(,:4*o:5 +h(,:6 +3(,:7 :8:9 :::; :< :=).:> :? :@ :A :B 1p :C 1q :D :E :F 1r :G +h:H .f(,:I:J +3*//X1A :K :L :M+3 :N+3 :O*/1s :P*/1s :Q1i :R /N(,)I 1c :S(0 :T(0 :U .e(0"],
+["Food","🍅 🍆 🍇 🍈 🍉 🍊 🍋 🍌 🍍 🍎 🍏 🍐 🍑 🍒 🍓 🍔 🍕 🍖 🍗 🍘 🍙 🍚 🍛 🍜 🍝 🍞 🍟 🍠 🍡 🍢 🍣 🍤 🍥 🍦 🍧 🍨 🍩 🍪 🍫 🍬 🍭 🍮 🍯 🍰 🍱 🍲 🍳 🍴 🍵 🍶 🍷 🍸 🍹 🍺 🍻 🍼 🍽 🍾 🍿 🥐 🥑 🥒 🥓 🥔 🥕 🥖 🥗 🥘 🥙 🥚 🥛 🥜 🥝 🥞 🥟 🥠 🥡 🥢 🥣 🥤 🥥 🥦 🥧 🥨 🥩 🥪 🥫 🥬 🥭 🥮 🥯 🧀 🧁 🧂 🧃 🧄 🧅 🧆 🧇 🧈 🧉 🧊 🧋 🫐 🫑 🫒 🫓 🫔 🫕 🫖 🫗 🫘 🫙 🫚 🫛 ☕",":V :W :X :Y :Z :[ :] :^ :_ *s1t +*1t :` :a :b :c :d :e(::f 1u*V:g :h,~ -?:i -?1v :j-? :k(6-? :l1w :m 1x ,(:n :o:p1y :q :r :s :t:u +q1z(,:v:w :x+y1{ :y+y +y1{ :z 1| :{(] 1} 1~ /P :|.h :} :~(< .h(:-; ;( 2((6.i ;)-i;* ;+.j(6.< ;,,+ ;-,+ ;.2) 2*;/ ;02*;1 .e.j 2((6.i(,;2 .j(,;3;4 ;5 ;6 ;7 ;8 ;9 1y ;: ;;1x +*;< ;=;>(:-; ;?2+ ;@ ,+(:;A ;B ;C ;D ;E ;F1| ;G(< ;H 1w(,;I .<(,;J ;K ;L ;M ;N 1T(:1u 2, ;O-; ;P+* ;Q )o1z ;R ;S;T ;U +H;V 2-(< ;W ;X ;Y ;Z ;[ ;]2) +y-n ;^;_ ;` 1E;a ;b 2+ ;c ;d ;e ;f;g ;h ;i ;j,2 ;k;l ;m2-"],
+["Clothing","👑 👒 🎩 🎓 🧢 ⛑ 🪖 👓 🕶 🥽 🥼 🦺 👔 👕 👖 🧣 🧤 🧥 🧦 👗 👘 🥻 🩱 🩲 🩳 👙 👚 👛 👜 👝 🛍 🎒 🩴 👞 👟 🥾 🥿 👠 👡 🩰 👢 💍 💄 💼 🪭 🪮",";n -@-< )N-< ;o.; ;p.; 2.(,(9)_ ;q2. ;r 111b ;s ;t2/ 1M;u ;v ;w ;x ;y ;z 2/ ;{ ;| ;} ;~ <(<) <* -2 <+ -@<, <- <. </ <0<1 <2<3 <420 <5-A <6-A <7<8 +c-A <9-A -@20 <:<; -@<< *R <= 04 <>)`<? 1o0*"],
+["Halloween","🎃 👻 💀 ☠ 🦇 🕷 🕸 🧙 🧛 🧟 🍬 🍭 🌕 🌑 ⚰ ⚱ 🔮 🪦 🕯 🐈‍⬛ 😈 👿 👹 👺 🩸 🗡 ⛧","<@ <A .R .R(61O <B 21 21<C 1p 1q 1r 1} 1~ )d)o(0 +7)o(0 <D <E<F <G1v <H <I <J(5)r(8 )p(J(,.^ <K 22<L 22<M <N(:<O .3.i *[+}"],
+["Flags","🇺🇳 🇪🇺 🏴‍☠️ 🏳️‍🌈 🎌 🚩 🏁 🏴 🏳 🇦🇫 🇦🇱 🇩🇿 🇦🇸 🇦🇩 🇦🇴 🇦🇮 🇦🇶 🇦🇬 🇦🇷 🇦🇲 🇦🇼 🇦🇺 🇦🇹 🇦🇿 🇧🇸 🇧🇭 🇧🇩 🇧🇧 🇧🇾 🇧🇪 🇧🇿 🇧🇯 🇧🇲 🇧🇹 🇧🇴 🇧🇶 🇧🇦 🇧🇼 🇧🇻 🇧🇷 🇮🇴 🇧🇳 🇧🇬 🇧🇫 🇧🇮 🇨🇻 🇰🇭 🇨🇲 🇨🇦 🇰🇾 🇨🇫 🇹🇩 🇨🇱 🇨🇳 🇨🇽 🇨🇨 🇨🇴 🇰🇲 🇨🇬 🇨🇩 🇨🇰 🇨🇷 🇭🇷 🇨🇺 🇨🇼 🇨🇾 🇨🇿 🇨🇮 🇩🇰 🇩🇯 🇩🇲 🇩🇴 🇪🇨 🇪🇬 🇸🇻 🇬🇶 🇪🇷 🇪🇪 🇸🇿 🇪🇹 🇫🇰 🇫🇴 🇫🇯 🇫🇮 🇫🇷 🇬🇫 🇵🇫 🇹🇫 🇬🇦 🇬🇲 🇬🇪 🇩🇪 🇬🇭 🇬🇮 🇬🇷 🇬🇱 🇬🇩 🇬🇵 🇬🇺 🇬🇹 🇬🇬 🇬🇳 🇬🇼 🇬🇾 🇭🇹 🇭🇲 🇻🇦 🇭🇳 🇭🇰 🇭🇺 🇮🇸 🇮🇳 🇮🇩 🇮🇷 🇮🇶 🇮🇪 🇮🇲 🇮🇱 🇮🇹 🇯🇲 🇯🇵 🇯🇪 🇯🇴 🇰🇿 🇰🇪 🇰🇮 🇰🇵 🇰🇷 🇰🇼 🇰🇬 🇱🇦 🇱🇻 🇱🇧 🇱🇸 🇱🇷 🇱🇾 🇱🇮 🇱🇹 🇱🇺 🇲🇴 🇲🇬 🇲🇼 🇲🇾 🇲🇻 🇲🇱 🇲🇹 🇲🇭 🇲🇶 🇲🇷 🇲🇺 🇾🇹 🇲🇽 🇫🇲 🇲🇩 🇲🇨 🇲🇳 🇲🇪 🇲🇸 🇲🇦 🇲🇿 🇲🇲 🇳🇦 🇳🇷 🇳🇵 🇳🇱 🇳🇨 🇳🇿 🇳🇮 🇳🇪 🇳🇬 🇳🇺 🇳🇫 🇲🇰 🇲🇵 🇳🇴 🇴🇲 🇵🇰 🇵🇼 🇵🇸 🇵🇦 🇵🇬 🇵🇾 🇵🇪 🇵🇭 🇵🇳 🇵🇱 🇵🇹 🇵🇷 🇶🇦 🇷🇴 🇷🇺 🇷🇼 🇷🇪 🇧🇱 🇸🇭 🇰🇳 🇱🇨 🇲🇫 🇵🇲 🇻🇨 🇼🇸 🇸🇲 🇸🇹 🇸🇦 🇸🇳 🇷🇸 🇸🇨 🇸🇱 🇸🇬 🇸🇽 🇸🇰 🇸🇮 🇸🇧 🇸🇴 🇿🇦 🇬🇸 🇸🇸 🇪🇸 🇱🇰 🇸🇩 🇸🇷 🇸🇯 🇸🇪 🇨🇭 🇸🇾 🇹🇼 🇹🇯 🇹🇿 🇹🇭 🇹🇱 🇹🇬 🇹🇰 🇹🇴 🇹🇹 🇹🇳 🇹🇲 🇹🇨 🇹🇻 🇹🇷 🇺🇬 🇺🇦 🇦🇪 🇬🇧 🇺🇸 🇺🇲 🇺🇾 🇺🇿 🇻🇺 🇻🇪 🇻🇳 🇻🇬 🇻🇮 🇼🇫 🇪🇭 🇾🇪 🇿🇲 🇿🇼 🇦🇽","(1+i<P<Q (1<R,323 <S(1 /_(1 ,X<T -}(1 <U(1 (5(1 (9(1 (1<V<W (1<X<Y (1<Z.H (1<[24+Z (1<]<^ (1<_<` (1<a<b (1<c<d (1<e(6<f<g (1<h<i (1<j0G (1<k<l (1<m<n (1<o,c (1<p<q (1<r<s (1<t<u (1<v<w (1<x<y (1<z,7 (1<{.k (1<|<} (1<~=( (1=)=* (1=+=, (1=-=.25(:.l (1=/26=0(6=10H (1=2(6=3.m (1=4=5 (1=6-B=7 (1=8=9 (127/x=:=;=< (1===>=? (1=@=A (1=B=C=D (1=E.n (1=F=G=H (1=I=J (1=K,^ (1=L=M (1=N*@=O (1=P=Q*S=R (1=S=T (1=U=V (128=W (1=X-B=Y (1=Z=[*@./ (1=]0I (1=^,/ (1=_=` (1=a*1.o*S(:*1.0 (1=b*@=c (1=d=e=f (1=g=h (1=i=j (1=k=l (1=m=n (1=o=p (1=q=r=s (1=t=u (1=v=w (1=x=y (1=z*S.p (1={=| (1=}=~ (1>(>)0O (1>*.q>+ (1>,>- (1>.>/ (1>0>1 (1>2>3 (1>4*@>5>6 (1>7*@>8 (1>9>: (1>;>< (1>=>> (1,(>?>@ (1,(>A0= (1,(>B>C>D (1>E.r (1>F>G (129.s (1>H-C (1>I>J (1>K.t (1>L>M (1>N>O (1>P>Q (1>R>S (1>T.u (1>U>V (1>W>X (1.q>Y (1>Z>[ (1>]0J (1>^>_ (1>`-B(6>a*@>b (1>c>d>e>f>g2: (1>h>i (1>j>k>l (1>m-D (1>n>o (1>p*/ (1>q>r (1>s>t*S(:>u (1>v>w (1>x>y (1>z(:+h>{ (1>|>} (1>~?( (1?)?* (1?+?, (1?-?. (1?/?0 (1?1?2 (1?3+j (1?4-E (12;.o2<*S(:?5 (12;*S(:?6 (1?70F (1?8., (1?92<.o*S?: (1?;?< (1?=?> (1??1, (1?@?A (1?B?C (1?D?E (1?F?G (1?H?I (1?J-F (1?K0? (1?L.. (1?M?N (1?O,` (1?P0@ (1?Q?R (1?S*@?T (1?U?V (1?W0m (1?X*5 (1?Y?Z (1?[?] (1?^?_.v(:0A (1?`*S(:0l (1?a0k (1?b?c (1?d,@ (1?e0C (1?f,. (1?g?h (1?i,] (1?j,- (1?k?l (1?m?n (1?o?p (1+7?q?r (1+7?s?t (1?u-G (1?v-H (1?w?x (1?y+_ (1?z-B0> (1)D?{?| (1?}?~*@@( (1@)+V (1@*/s (1@+@, (1@-0E (1@.25(:0B (1@/,, (1@0+7.q@1 (1@2@3 (1@4.w (1@50K (1@6@7 (1@8@9 (1@:@; (1@<@=0M (1@>@? (1@@-I (1@A@B-J (1@C@D (1@E-K (1+I@F@G (1+I@H@I(6@J.x@K@L (1+I@M(6@N@O (1+I@P@Q (1+I@R@S2=@T (1+I@U(6@V0L (1+I@W(6*1@X@Y (124@Z (1@[@]@^ (1@_@`(6@a@b (1@c@d,A (1@e@f (1@g@h (1@i@j (1@k@l@m (1@n@o (126@p@q2=@r (1@s@t (1@u-L (1@v*@@w (1@x-M (1)L@y.y (1)L29(6*1)L2,*@@z (1)L2>0j (1@{@| (1@}@~A( (12>0i (1A)0N (1A*(6A+A,A- (1A.-N (1A/A0 (1A12?*SA2 (1A3A4(:28A5 (1A6A7 (1A8+i*S(:A9 (1A:A; (1A<A= (1A>A? (1A@AA (1AB(G (1AC(6ADAE (1AFAG (1AHAI (1AJ(6AK*@1+ (1ALAM (1ANAO (1APAQ (1ARAS (1+i2?AT,t (1+iAU0< (1+i.vAV (1+i.vAWAX*@AY (1AZA[ (1A]A^ (1A_.z (1A`Aa*S(:2@ (1AbAcAd (12A2B27Ae (12A2BAf2C (1Ag(6AhAi (1AjAkAl (1Am2D (1AnAo (1ApAq (1Ar*@As"],
+["Japanese","ぁ あ ぃ い ぅ う ぇ え ぉ お か が き ぎ く ぐ け げ こ ご さ ざ し じ す ず せ ぜ そ ぞ た だ ち ぢ っ つ づ て で と ど な に ぬ ね の は ば ぱ ひ び ぴ ふ ぶ ぷ へ べ ぺ ほ ぼ ぽ ま み む め も ゃ や ゅ ゆ ょ よ ら り る れ ろ ゎ わ ゐ ゑ を ん ゔ ゕ ゖ ァ ア ィ イ ゥ ウ ェ エ ォ オ カ ガ キ ギ ク グ ケ ゲ コ ゴ サ ザ シ ジ ス ズ セ ゼ ソ ゾ タ ダ チ ヂ ッ ツ ヅ テ デ ト ド ナ ニ ヌ ネ ノ ハ バ パ ヒ ビ ピ フ ブ プ ヘ ベ ペ ホ ボ ポ マ ミ ム メ モ ャ ヤ ュ ユ ョ ヨ ラ リ ル レ ロ ヮ ワ ヰ ヱ ヲ ン ヴ ヵ ヶ ヷ ヸ ヹ ヺ ー ・ ヽ ヾ ゝ ゞ 〃 々 〆 〇 〒 〓 〜 〝 〞 〟 〠 〶","(R((()(_ (R(((_ (R((()(x (R(((x (R((()({ (R((({ (R((()(n (R(((n (R((()(u (R(((u (R((+W (R((.r (R((-E (R((.t (R((.{ (R((.u (R((+j (R((.s (R((.| (R((2E (R((,A (R((.y (R((-L (R((2F (R((.} (R((2G (R((-N (R((2H (R((-M (R((2I (R((.~ (R((.x (R((/( (R((2J (R((()+G (R((+G (R((2K (R((/) (R((-C (R(((G (R((.p (R((,- (R((-G (R((+_ (R((-H (R((+V (R((,a (R((.m (R((,, (R((/* (R((.n (R((*o (R((-D (R((2L (R((2M (R((/+ (R((.k (R((.w (R((/, (R((.l (R((2N (R((,. (R((/- (R((*5 (R((,@ (R((-F (R((()+k (R((+k (R((()+l (R((+l (R((()+m (R((+m (R((/. (R((// (R((-J (R((-K (R((-I (R((()+n (R((+n (R((-O (R((-P (R((/0 (R(()+ (R((.z (R((()+W (R((()+j (>((()(_ (>(((_ (>((()(x (>(((x (>((()({ (>((({ (>((()(n (>(((n (>((()(u (>(((u (>((+W (>((.r (>((-E (>((.t (>((.{ (>((.u (>((+j (>((.s (>((.| (>((2E (>((,A (>((.y (>((-L (>((2F (>((.} (>((2G (>((-N (>((2H (>((-M (>((2I (>((.~ (>((.x (>((/( (>((2J (>((()+G (>((+G (>((2K (>((/) (>((-C (>(((G (>((.p (>((,- (>((-G (>((+_ (>((-H (>((+V (>((,a (>((.m (>((,, (>((/* (>((.n (>((*o (>((-D (>((2L (>((2M (>((/+ (>((.k (>((.w (>((/, (>((.l (>((2N (>((,. (>((/- (>((*5 (>((,@ (>((-F (>((()+k (>((+k (>((()+l (>((+l (>((()+m (>((+m (>((/. (>((// (>((-J (>((-K (>((-I (>((()+n (>((+n (>((-O (>((-P (>((/0 (>(()+ (>((.z (>((()+W (>((()+j (>((2: (>((2C (>((2@ (>((At AuAv/|(U (>*O)i (>,B(U (>.G,B(U (R,B(U (R.G,B(U Aw(U /1,B(U /1Ax(U /1(V*+ /2(U Ay(U *I)P )u(@+=)](U (@+=)](U *g(@+=)](U /2(U(J (./2(U"],
+["Enclosed CJK","㊀ ㊁ ㊂ ㊃ ㊄ ㊅ ㊆ ㊇ ㊈ ㊉ ㊊ ㊋ ㊌ ㊍ ㊎ ㊏ ㊐ ㊑ ㊒ ㊓ ㊔ ㊕ ㊖ ㊗ ㊘ ㊙ ㊚ ㊛ ㊜ ㊝ ㊞ ㊟ ㊠ ㊡ ㊢ ㊣ ㊤ ㊥ ㊦ ㊧ ㊨ ㊩ ㊪ ㊫ ㊬ ㊭ ㊮ ㊯ ㊰ ㋐ ㋑ ㋒ ㋓ ㋔ ㋕ ㋖ ㋗ ㋘ ㋙ ㋚ ㋛ ㋜ ㋝ ㋞ ㋟ ㋠ ㋡ ㋢ ㋣ ㋤ ㋥ ㋦ ㋧ ㋨ ㋩ ㋪ ㋫ ㋬ ㋭ ㋮ ㋯ ㋰ ㋱ ㋲ ㋳ ㋴ ㋵ ㋶ ㋷ ㋸ ㋹ ㋺ ㋻ ㋼ ㋽ ㋾ 🈀 🈁 🈂 🈐 🈑 🈒 🈓 🈔 🈕 🈖 🈗 🈘 🈙 🈚 🈛 🈜 🈝 🈞 🈟 🈠 🈡 🈢 🈣 🈤 🈥 🈦 🈧 🈨 🈩 🈪 🈫 🈬 🈭 🈮 🈯 🈰 🈱 🈲 🈳 🈴 🈵 🈶 🈷 🈸 🈹 🈺 🈻 🉐 🉑","(.(q(l (.(q(y (.(q(| (.(q(r (.(q)? (.(q)> (.(q)Q (.(q(o (.(q)V (.(q** (.(q)o (.(q-m (.(q-k (.(qAz (.(qA{ (.(q++ (.(q*Y (.(qA| (.(qA} (.(qA~ (.(qB( (.(qB) (.(qB* (.(qB+ (.(qB, (.(qB- (.(q*Q (.(q+8 (.(qB. (.(qB/ (.(q-y (.(qB0 (.(qB1 (.(q*c (.(qB2 (.(qB3 (.(q/^ (.(q*2 (.(q*g (.(q(4 (.(q(2 (.(qB4 (.(qB5 (.(qB6 (.(qB7 (.(qB8 (.(qB9 (.(qB: (.(q-` (.(>(_ (.(>(x (.(>({ (.(>(n (.(>(u (.(>+W (.(>-E (.(>.{ (.(>+j (.(>.| (.(>,A (.(>-L (.(>.} (.(>-N (.(>-M (.(>.~ (.(>/( (.(>+G (.(>/) (.(>(G (.(>,- (.(>-G (.(>+_ (.(>-H (.(>+V (.(>,a (.(>/* (.(>-D (.(>/+ (.(>/, (.(>,. (.(>/- (.(>*5 (.(>,@ (.(>-F (.(>+k (.(>+l (.(>+m (.(>/. (.(>// (.(>-J (.(>-K (.(>-I (.(>+n (.(>-O (.(>-P (.(>/0 (8(RB; (D(>B< (D(>,A (D)5)6B= (D)5)6B> (D)5)6B? (D(>-C (D)5)6B@ (D)5)6BA (D)5)6BB (D)5)6BC (D)5)6BD (D)5)6BE (D)5)6BF (D)5)6BG (D)5)6BH (D)5)6BI (D)5)6BJ (D)5)6BK (D)5)6BL (D)5)6BM (D)5)6BN (D)5)6BO (D)5)6BP (D)5)6BQ (D)5)6BR (D)5)6BS (D)5)6BT (D)5)6BU (D)5)6BV (D)5)6BW (D)5)6BX (D)5)6BY (D)5)6BZ (D)5)6B[ (D)5)6B] (D)5)6B^ (D)5)6B_ (D)5)6B` (D)5)6Ba (D)5)6Bb (D)5)6Bc (D)5)6Bd (D)5)6Be (D)5)6Bf (D)5)6Bg (D)5)6Bh (.(qBi (.(qBj"],
+["Korean","ㄱ ㄲ ㄳ ㄴ ㄵ ㄶ ㄷ ㄸ ㄹ ㄺ ㄻ ㄼ ㄽ ㄾ ㄿ ㅀ ㅁ ㅂ ㅃ ㅄ ㅅ ㅆ ㅇ ㅈ ㅉ ㅊ ㅋ ㅌ ㅍ ㅎ ㅏ ㅐ ㅑ ㅒ ㅓ ㅔ ㅕ ㅖ ㅗ ㅘ ㅙ ㅚ ㅛ ㅜ ㅝ ㅞ ㅟ ㅠ ㅡ ㅢ ㅣ ㅤ ㅥ ㅦ ㅧ ㅨ ㅩ ㅪ ㅫ ㅬ ㅭ ㅮ ㅯ ㅰ ㅱ ㅲ ㅳ ㅴ ㅵ ㅶ ㅷ ㅸ ㅹ ㅺ ㅻ ㅼ ㅽ ㅾ ㅿ ㆀ ㆁ ㆂ ㆃ ㆄ ㆅ ㆆ ㆇ ㆈ ㆉ ㆊ ㆋ ㆌ ㆍ ㆎ ㉠ ㉡ ㉢ ㉣ ㉤ ㉥ ㉦ ㉧ ㉨ ㉩ ㉪ ㉫ ㉬ ㉭ ㉮ ㉯ ㉰ ㉱ ㉲ ㉳ ㉴ ㉵ ㉶ ㉷ ㉸ ㉹ ㉺ ㉻ ㉼ ㉽ ㉾","(E((/3 (E((Bk (E((Bl (E((/4 (E((Bm (E((Bn (E((/5 (E((Bo (E((/6 (E((Bp (E((Bq (E((Br (E((Bs (E((Bt (E((Bu (E((Bv (E((/7 (E((/8 (E((Bw (E((Bx (E((/9 (E((By (E((-Q (E((/: (E((Bz (E((/; (E((/< (E((/= (E((/> (E((/? (E(((_ (E((,t (E((+k (E((B{ (E((B| (E(((n (E((B} (E((2D (E(((u (E((+n (E((B~ (E((,u (E((+m (E((({ (E((C( (E((-P (E((-O (E((+l (E((23 (E((C) (E(((x (EC* (E((C+ (E((C, (E((C- (E((C. (E((C/ (E((C0 (E((C1 (E((C2 (E((C3 (E((C4 (E((C5 (E((C6 (E((C7 (E((C8 (E((C9 (E((C: (E((C; (E((C< (E((C= (E((C> (E((C? (E((C@ (E((CA (E((CB (E((CC (E((CD (E((CE (E((CF (E((CG (E((CH (E((CI (E((CJ (E((CK (E((CL (E((CM (E((CN (E((CO (E((CP (E((CQ (E((CR (E((CS (E((CT (.(E/3 (.(E/4 (.(E/5 (.(E/6 (.(E/7 (.(E/8 (.(E/9 (.(E-Q (.(E/: (.(E/; (.(E/< (.(E/= (.(E/> (.(E/? (.(E/3(_ (.(E/4(_ (.(E/5(_ (.(E/6(_ (.(E/7(_ (.(E/8(_ (.(E/9(_ (.(E-Q(_ (.(E/:(_ (.(E/;(_ (.(E/<(_ (.(E/=(_ (.(E/>(_ (.(E/?(_ (.2O.5CU (.2O.5CV (.(E-Q({"],
+["Alchemy","🜀 🜁 🜂 🜃 🜄 🜅 🜆 🜇 🜈 🜉 🜊 🜋 🜌 🜍 🜎 🜏 🜐 🜑 🜒 🜓 🜔 🜕 🜖 🜗 🜘 🜙 🜚 🜛 🜜 🜝 🜞 🜟 🜠 🜡 🜢 🜣 🜤 🜥 🜦 🜧 🜨 🜩 🜪 🜫 🜬 🜭 🜮 🜯 🜰 🜱 🜲 🜳 🜴 🜵 🜶 🜷 🜸 🜹 🜺 🜻 🜼 🜽 🜾 🜿 🝀 🝁 🝂 🝃 🝄 🝅 🝆 🝇 🝈 🝉 🝊 🝋 🝌 🝍 🝎 🝏 🝐 🝑 🝒 🝓 🝔 🝕 🝖 🝗 🝘 🝙 🝚 🝛 🝜 🝝 🝞 🝟 🝠 🝡 🝢 🝣 🝤 🝥 🝦 🝧 🝨 🝩 🝪 🝫 🝬 🝭 🝮 🝯 🝰 🝱 🝲 🝳","(H(0(CCW (H(0(CCX (H(0(C-m (H(0(C++ (H(0(C-k (H(0(CCY (H(0(C-RCZ (H(0(C-RC[ (H(0(C-RC] (H(0(C-RC^ (H(0(C2P (H(0(CC_ (H(0(CC` (H(0(C/@ (H(0(CCa/@ (H(0(C(5/@ (H(0(C+z,C (H(0(C+zCb (H(0(C+zCc (H(0(CCd (H(0(C+H (H(0(CCe (H(0(CCf (H(0(CCg (H(0(C2Q+H (H(0(C2QCh (H(0(CCi (H(0(CCj (H(0(C-S+J (H(0(C-SCk (H(0(C/A(:-S (H(0(C-T(:-S (H(0(C+o+J (H(0(CCl+J (H(0(C,C(:+o (H(0(C/A(:+o (H(0(C/A(:Cm (H(0(C+o2R (H(0(C+H(:+o2R (H(0(C,C(:+H(:+o (H(0(CCn (H(0(CCo+J (H(0(CCp+J (H(0(C+p+J (H(0(C,C(:+p (H(0(C+H(:+p (H(0(C,C(:+H(:+p (H(0(C2P(:+p (H(0(C-T(:+p (H(0(C-T(:Cq (H(0(C-T (H(0(CCr (H(0(CCs (H(0(CCt (H(0(CCu (H(0(CCv (H(0(CCw (H(0(CCx (H(0(CCy (H(0(CCz (H(0(CC{ (H(0(CC| (H(0(CC}+J (H(0(CC~ (H(0(CD( (H(0(CD)D* (H(0(CD+ (H(0(CD, (H(0(CD- (H(0(CD. (H(0(CD/ (H(0(CD0 (H(0(CD1 (H(0(CD2 (H(0(CD3 (H(0(CD4 (H(0(CD5 (H(0(CD6 (H(0(CD7D8 (H(0(CD9(:D: (H(0(C-q (H(0(C2S (H(0(CD;2S (H(0(CD< (H(0(CD= (H(0(CD> (H(0(CD?D@ (H(0(C2T (H(0(C.h2T (H(0(C2U (H(0(CDA2U (H(0(CDB (H(0(C/B2V/B (H(0(C/B2VDC (H(0(CDD (H(0(CDE (H(0(CDF (H(0(CDG (H(0(CDH (H(0(CDI (H(0(CDJ (H(0(CDK (H(0(CDL (H(0(CDM (H(0(CDN (H(0(CDO (H(0(C0+ (H(0(C2W(:DP (H(0(C2W(:DQ (H(0(CDR (H(0(CDS (H(0(C-` (H(0(CDT (H(0(CDU (H(0(C(v/y (H(0(C(vDV"]
+];
+
+const $ = id => document.getElementById(id);
+const EMBED = document.documentElement.classList.contains('embed');
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+};
+
+/* ---------- decode ---------- */
+const B = AL.length, A = {};
+for (let i = 0; i < B; i++) A[AL[i]] = i;
+const decodeName = s => {
+  const w = [];
+  for (let i = 0; i < s.length; i += 2) w.push(VOCAB[A[s[i]] * B + A[s[i + 1]]]);
+  return w.join(' ');
+};
+const ALL = [];
+const CATS = DATA.map(([title, gs, ns], ci) => {
+  const glyphs = gs.split(' '), names = ns.split(' ');
+  const slug = title.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-');
+  const items = glyphs.map((c, i) => {
+    const g = { c, n: decodeName(names[i] || ''), cat: title, ci };
+    g.hay = (g.n + ' ' + title).toLowerCase();
+    g.words = g.hay.split(/[\s-]+/);
+    ALL.push(g);
+    return g;
+  });
+  return { title, slug, items };
+});
+const TOTAL = ALL.length;
+
+/* ---------- build ---------- */
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const glyphsEl = $('glyphs');
+const tileHtml = (g, idx) => `<button class="g" type="button" data-i="${idx}" aria-label="${esc(g.n || g.c)}">${esc(g.c)}</button>`;
+let html = `<section class="cat" id="recent" hidden><div class="cat__head"><h2 class="cat__title">Recent</h2><span class="cat__count" id="recentCount"></span><button class="btn is--ghost" type="button" data-clear-recent><span class="btn__box">Clear</span></button></div><div class="tiles" id="recentTiles"></div></section>`;
+let k = 0;
+CATS.forEach(cat => {
+  html += `<section class="cat" id="${cat.slug}" data-cat="${cat.slug}"><div class="cat__head"><h2 class="cat__title">${esc(cat.title)}</h2><span class="cat__count" data-count>${cat.items.length}</span><button class="btn is--ghost" type="button" data-copy-cat="${cat.slug}"><span class="btn__box">Copy all</span></button></div><div class="tiles">`;
+  cat.items.forEach(g => { g.i = k; html += tileHtml(g, k++); });
+  html += `</div></section>`;
+});
+html += `<p class="empty" id="empty" hidden></p>`;
+glyphsEl.innerHTML = html;
+CATS.forEach(cat => {
+  cat.el = $(cat.slug);
+  cat.countEl = cat.el.querySelector('[data-count]');
+  cat.items.forEach(g => { g.el = cat.el.querySelector(`[data-i="${g.i}"]`); });
+});
+
+$('cats').innerHTML = CATS.map(c => `<a href="#${c.slug}" data-cat="${c.slug}"><i></i>${esc(c.title)}<span>${c.items.length}</span></a>`).join('');
+$('chips').innerHTML = CATS.map(c => `<a href="#${c.slug}" data-cat="${c.slug}">${esc(c.title)}</a>`).join('');
+const navLinks = [...document.querySelectorAll('#cats a, #chips a')];
+
+/* ---------- size ---------- */
+const SIZES = [['s','S'],['m','M'],['l','L']];
+document.querySelectorAll('[data-seg]').forEach(seg => {
+  seg.innerHTML = SIZES.map(([v, l]) => `<button type="button" data-size="${v}" aria-label="Size ${l}">${l}</button>`).join('');
+});
+function setSize(v){
+  if (v === 'm') document.documentElement.removeAttribute('data-size');
+  else document.documentElement.setAttribute('data-size', v);
+  document.querySelectorAll('[data-size]').forEach(b => { if (b.tagName === 'BUTTON') b.setAttribute('aria-pressed', String(b.dataset.size === v)); });
+  store.set('sv-glyphs-size', v);
+  queue();
+}
+document.addEventListener('click', e => { const b = e.target.closest('button[data-size]'); if (b) setSize(b.dataset.size); });
+
+/* ---------- clipboard ---------- */
+async function copyText(t){
+  try { await navigator.clipboard.writeText(t); return true; }
+  catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = t; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch(_){}
+    ta.remove(); return ok;
+  }
+}
+let toastT = 0;
+function toast(glyph, text){
+  $('toastGlyph').textContent = glyph || '';
+  $('toastGlyph').hidden = !glyph;
+  $('toastText').textContent = text;
+  $('toast').classList.add('is--on');
+  clearTimeout(toastT); toastT = setTimeout(() => $('toast').classList.remove('is--on'), 1400);
+}
+function flash(el){
+  if (!el) return;
+  el.classList.add('is--hit');
+  setTimeout(() => el.classList.remove('is--hit'), 260);
+}
+
+/* ---------- recent ---------- */
+let recent = store.get('sv-glyphs-recent', []).filter(c => typeof c === 'string').slice(0, 40);
+const byChar = new Map(); ALL.forEach(g => { if (!byChar.has(g.c)) byChar.set(g.c, g); });
+function renderRecent(){
+  const items = recent.map(c => byChar.get(c)).filter(Boolean);
+  $('recent').hidden = !items.length || !!query;
+  $('recentCount').textContent = items.length;
+  $('recentTiles').innerHTML = items.map(g => tileHtml(g, g.i)).join('');
+}
+function pushRecent(c){
+  recent = [c, ...recent.filter(x => x !== c)].slice(0, 40);
+  store.set('sv-glyphs-recent', recent);
+  renderRecent();
+}
+
+/* ---------- copy a glyph ---------- */
+async function copyGlyph(g, el){
+  flash(el);
+  const ok = await copyText(g.c);
+  toast(g.c, ok ? 'Copied' : 'Press ⌘C to copy');
+  if (ok) pushRecent(g.c);
+  setDetail(g);
+}
+
+/* ---------- collection ---------- */
+let picked = [];
+function renderTray(){
+  $('tray').hidden = !picked.length;
+  $('trayStr').textContent = picked.map(g => g.c).join('');
+  $('trayStr').scrollLeft = 1e6;
+  ALL.forEach(g => g.el.classList.remove('is--picked'));
+  picked.forEach(g => g.el.classList.add('is--picked'));
+}
+function collect(g, el){
+  flash(el);
+  picked.push(g);
+  renderTray();
+  toast(g.c, `Collected · ${picked.length}`);
+}
+$('trayCopy').addEventListener('click', async () => {
+  const s = picked.map(g => g.c).join('');
+  const ok = await copyText(s);
+  toast('', ok ? `Copied ${picked.length} glyph${picked.length === 1 ? '' : 's'}` : 'Copy failed');
+});
+$('trayClear').addEventListener('click', () => { picked = []; renderTray(); });
+
+/* ---------- detail ---------- */
+let current = null;
+const hex = cp => cp.toString(16).toUpperCase().padStart(4, '0');
+function setDetail(g){
+  if (!g || g === current) return;
+  current = g;
+  const cps = [...g.c].map(ch => ch.codePointAt(0));
+  $('dGlyph').textContent = g.c;
+  $('dName').innerHTML = `${esc(g.n || 'unnamed')}<small>${esc(g.cat)}</small>`;
+  const rows = [
+    ['Unicode', cps.map(cp => 'U+' + hex(cp)).join(' ')],
+    ['HTML', cps.map(cp => `&#x${hex(cp)};`).join('')],
+    ['CSS', cps.map(cp => '\\' + hex(cp)).join('')],
+    ['JS', cps.map(cp => cp > 0xFFFF ? `\\u{${hex(cp)}}` : `\\u${hex(cp)}`).join('')]
+  ];
+  $('codes').innerHTML = rows.map(([l, v]) => `<button type="button" data-code="${esc(v)}" title="Copy ${l}"><span>${l}</span><span>${esc(v)}</span></button>`).join('');
+}
+$('codes').addEventListener('click', async e => {
+  const b = e.target.closest('[data-code]'); if (!b) return;
+  const ok = await copyText(b.dataset.code);
+  toast('', ok ? `Copied ${b.dataset.code}` : 'Copy failed');
+});
+$('dGlyph').addEventListener('click', () => current && copyGlyph(current, current.el));
+$('dCollect').addEventListener('click', () => current && collect(current, current.el));
+
+/* ---------- tile events ---------- */
+glyphsEl.addEventListener('click', e => {
+  const t = e.target.closest('.g');
+  if (t){
+    const g = ALL[+t.dataset.i];
+    if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) collect(g, t);
+    else copyGlyph(g, t);
+    return;
+  }
+  const cc = e.target.closest('[data-copy-cat]');
+  if (cc){
+    const cat = CATS.find(c => c.slug === cc.dataset.copyCat);
+    const vis = cat.items.filter(g => !g.el.hidden).map(g => g.c);
+    copyText(vis.join(' ')).then(ok => toast('', ok ? `Copied ${vis.length} ${cat.title.toLowerCase()}` : 'Copy failed'));
+    return;
+  }
+  if (e.target.closest('[data-clear-recent]')){ recent = []; store.set('sv-glyphs-recent', recent); renderRecent(); queue(); }
+});
+glyphsEl.addEventListener('mouseover', e => { const t = e.target.closest('.g'); if (t) setDetail(ALL[+t.dataset.i]); });
+glyphsEl.addEventListener('focusin', e => { const t = e.target.closest('.g'); if (t) setDetail(ALL[+t.dataset.i]); });
+
+/* ---------- search ---------- */
+let query = '';
+const qEl = $('q');
+if (matchMedia('(max-width:767px)').matches) qEl.placeholder = 'Search symbols…';
+function runSearch(){
+  query = qEl.value.trim().toLowerCase();
+  $('clear').hidden = !query;
+  const terms = query.split(/\s+/).filter(Boolean);
+  let shown = 0;
+  CATS.forEach(cat => {
+    let n = 0;
+    cat.items.forEach(g => {
+      const hit = !terms.length || g.c === qEl.value.trim() || terms.every(t => g.c === t || (t.length === 1 ? g.words.includes(t) : t.length === 2 ? g.words.some(w => w.startsWith(t)) : g.hay.includes(t)));
+      if (g.el.hidden === hit) g.el.hidden = !hit;
+      if (hit) n++;
+    });
+    cat.el.hidden = !n;
+    cat.countEl.textContent = n;
+    navLinks.forEach(a => { if (a.dataset.cat === cat.slug){ a.hidden = !n; const s = a.querySelector('span'); if (s) s.textContent = n; } });
+    shown += n;
+  });
+  $('count').innerHTML = query
+    ? `${shown.toLocaleString('en')} <span>of ${TOTAL.toLocaleString('en')} glyphs</span>`
+    : `${TOTAL.toLocaleString('en')} <span>glyphs</span>`;
+  const empty = $('empty');
+  empty.hidden = !!shown;
+  if (!shown) empty.innerHTML = `Nothing matches <b>${esc(qEl.value.trim())}</b>. Try a shape or a word from the name, like <b>arrow</b>, <b>circle</b>, <b>bold</b> or <b>check</b>.`;
+  renderRecent();
+  queue();
+}
+let searchT = 0;
+qEl.addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(runSearch, 90); });
+$('clear').addEventListener('click', () => { qEl.value = ''; runSearch(); qEl.focus(); });
+
+/* ---------- scroll spy ---------- */
+let activeCat = '';
+function setActive(slug){
+  if (slug === activeCat) return;
+  activeCat = slug;
+  navLinks.forEach(a => a.classList.toggle('is--active', a.dataset.cat === slug));
+  const chip = document.querySelector(`#chips a[data-cat="${slug}"]`);
+  if (chip && getComputedStyle($('chips')).display !== 'none'){
+    const p = chip.parentElement;
+    p.scrollTo({ left: chip.offsetLeft - p.clientWidth / 2 + chip.clientWidth / 2, behavior: 'smooth' });
+  }
+  const link = document.querySelector(`#cats a[data-cat="${slug}"]`);
+  if (link){
+    const p = link.parentElement, top = link.offsetTop - p.offsetTop;
+    if (top < p.scrollTop || top > p.scrollTop + p.clientHeight - 40) p.scrollTo({ top: top - 40, behavior: 'smooth' });
+  }
+}
+function spy(){
+  const line = document.querySelector('.bar').getBoundingClientRect().bottom + 8;
+  let cur = '';
+  for (const cat of CATS){
+    if (cat.el.hidden) continue;
+    if (cat.el.getBoundingClientRect().top <= line) cur = cat.slug; else break;
+  }
+  if (!cur){ const first = CATS.find(c => !c.el.hidden); cur = first ? first.slug : ''; }
+  setActive(cur);
+}
+addEventListener('scroll', () => requestAnimationFrame(spy), { passive: true });
+
+/* ---------- keys ---------- */
+function randomGlyph(){
+  const pool = ALL.filter(g => !g.el.hidden);
+  if (!pool.length) return;
+  const g = pool[Math.floor(Math.random() * pool.length)];
+  g.el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  copyGlyph(g, g.el);
+}
+addEventListener('keydown', e => {
+  const t = e.target;
+  const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+  if (e.key === 'Escape' && t === qEl){ if (qEl.value){ qEl.value = ''; runSearch(); } else qEl.blur(); return; }
+  if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === '/'){ e.preventDefault(); qEl.focus(); qEl.select(); }
+  else if (e.key === 'r' || e.key === 'R'){ e.preventDefault(); randomGlyph(); }
+});
+
+/* ---------- footer wordmark + year ---------- */
+(function(){
+  const src = document.querySelector('.nav__logo svg');
+  const dst = document.querySelector('.foot-logo svg');
+  if (src && dst) dst.innerHTML = src.innerHTML;
+  const y = $('year'); if (y) y.textContent = new Date().getFullYear();
+})();
+
+/* ---------- crosshair marks (same logic as lab index) ---------- */
+const marksEl = $('marks');
+function drawMarks(){
+  if (EMBED) return;
+  const sy = scrollY, sx = scrollX;
+  const V = [], H = [];
+  document.querySelectorAll('.sv-section').forEach(sec => {
+    if (sec.classList.contains('bar')) return;
+    const s = sec.getBoundingClientRect();
+    const c = sec.querySelector(':scope > .sv-container').getBoundingClientRect();
+    const top = s.top + sy, bot = s.bottom + sy - 1;
+    V.push({x:c.left + sx, a:top, b:bot + 1}, {x:c.right + sx - 1, a:top, b:bot + 1});
+    H.push({y:bot, a:s.left + sx, b:s.right + sx});
+  });
+  document.querySelectorAll('footer .sv-grid.is--cells').forEach(g => {
+    const gr = g.getBoundingClientRect();
+    [...g.children].forEach(cell => {
+      const r = cell.getBoundingClientRect();
+      const L = (Math.abs(r.left - gr.left) < 1 ? r.left - 1 : r.left) + sx;
+      const R = r.right + sx, T = r.top + sy - 1, B = r.bottom + sy;
+      V.push({x:L, a:T, b:B}, {x:R, a:T, b:B});
+      H.push({y:T, a:L, b:R}, {y:B, a:L, b:R});
+    });
+  });
+  const near = (p, q) => Math.abs(p - q) < 1.5;
+  const pts = new Map();
+  V.forEach(v => H.forEach(h => {
+    if (v.x >= h.a - 1.5 && v.x <= h.b + 1.5 && h.y >= v.a - 1.5 && h.y <= v.b + 1.5){
+      const key = Math.round(v.x) + ',' + Math.round(h.y);
+      if (!pts.has(key)) pts.set(key, {x:v.x, y:h.y});
+    }
+  }));
+  let out = '';
+  pts.forEach(p => {
+    let arms = '';
+    if (V.some(v => near(v.x, p.x) && v.a < p.y - 1.5 && v.b >= p.y - 1.5)) arms += 'u';
+    if (V.some(v => near(v.x, p.x) && v.b > p.y + 1.5 && v.a <= p.y + 1.5)) arms += 'd';
+    if (H.some(h => near(h.y, p.y) && h.a < p.x - 1.5 && h.b >= p.x - 1.5)) arms += 'l';
+    if (H.some(h => near(h.y, p.y) && h.b > p.x + 1.5 && h.a <= p.x + 1.5)) arms += 'r';
+    if (arms.length > 2) out += `<span class="sv-mark" data-arms="${arms}" style="left:${p.x - 5}px;top:${p.y - 5}px"></span>`;
+  });
+  marksEl.innerHTML = out;
+}
+function layout(){
+  const bar = document.querySelector('.bar');
+  document.documentElement.style.setProperty('--bar-h', bar.offsetHeight + 'px');
+  drawMarks(); spy();
+}
+let raf = 0;
+function queue(){ cancelAnimationFrame(raf); raf = requestAnimationFrame(layout); }
+new ResizeObserver(queue).observe(document.body);
+if (document.fonts) document.fonts.ready.then(queue);
+
+/* ---------- theme toggle (shared with lab index) ---------- */
+const themeBtns = document.querySelectorAll('.theme button');
+function setTheme(t){
+  if (t === 'light') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  themeBtns.forEach(b => b.setAttribute('aria-selected', String(b.dataset.themeValue === t)));
+  try { localStorage.setItem('sv-lab-theme', t); } catch(e) {}
+}
+themeBtns.forEach(b => b.addEventListener('click', () => setTheme(b.dataset.themeValue)));
+setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+
+/* ---------- init ---------- */
+setSize(store.get('sv-glyphs-size', 'm'));
+const initQ = new URLSearchParams(location.search).get('q');
+if (initQ) qEl.value = initQ;
+runSearch();
+setDetail(byChar.get('✦') || ALL[0]);
+layout();
+
+/* ---------- embed: idle animation (no cursor in the lab card) ---------- */
+if (EMBED){
+  setInterval(() => {
+    const vis = ALL.filter(g => { const r = g.el.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight && r.width; });
+    for (let i = 0; i < 3 && vis.length; i++){
+      const g = vis[Math.floor(Math.random() * vis.length)];
+      g.el.classList.remove('is--pulse'); void g.el.offsetWidth; g.el.classList.add('is--pulse');
+      if (i === 0) setDetail(g);
+    }
+  }, 420);
+}
+</script>
+</body>
+</html>
