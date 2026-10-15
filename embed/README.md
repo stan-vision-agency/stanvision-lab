@@ -48,3 +48,18 @@ Murmuration.mountAll();               // mount elements added later
 ## Lazy loading (Webflow)
 
 Sites load the file only after `window.load` + `requestIdleCallback`, and only once an element is within about 200 px of the viewport; the loader guards against loading twice when a page has several instances. The Primer Webflow component "Visual - Murmuration" holds that loader.
+
+# CTA texture embed
+
+`cta-texture.js` / `cta-texture.min.js` (about 11 KB, 5.3 KB gzipped): port of Primer's prototype background "primer-vignette-background" (Primer Texture Motion export used on the CTA + footer prototype): a looping corner-vignette swirl (top right + bottom left), Bayer 8x8 ordered dither in two colours, a split line below which the colours swap, and an optional strip above the frame in a second palette. Canvas 2D, no iframe; draws in a Web Worker through an OffscreenCanvas when the browser can (main thread fallback capped at 20 fps). Stops when the tab is hidden or the element is off screen.
+
+```html
+<div data-cta-texture aria-hidden="true" style="position:absolute;inset:auto 0 0 0;height:calc(100% + 700px)"></div>
+<script>
+  var t = PrimerCtaTexture.mount(el, { palette: [bg, fg], abovePalette: [aboveBg, aboveFg], extendTop: 700, paused: false });
+  t.setSplit(px);        // CSS px from the canvas top; below it the colours swap
+  t.setExtendTop(px); t.pause(); t.play(); t.destroy();
+</script>
+```
+
+Colours are CSS colour strings or `[r,g,b]`; the host resolves them from its own variables. Paused = one frame, redrawn only when the split, size or colours change (use it for `prefers-reduced-motion`). Load from a pinned commit with SRI, like the Murmuration runtime.

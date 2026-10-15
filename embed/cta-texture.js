@@ -1,0 +1,379 @@
+/*!
+ * Primer CTA texture runtime (StanVision lab, made for Primer).
+ * Port of the client prototype's "primer-vignette-background" (Primer Texture Motion export,
+ * /backgrounds/cta-footer.html): a looping corner-vignette swirl, ordered (Bayer 8x8) dither in two
+ * colours, a moving split line below which the two colours swap, and an optional strip above the frame
+ * drawn in a second palette. Canvas 2D, no dependencies, no iframe.
+ *
+ * Usage:
+ *   <div data-cta-texture aria-hidden="true" style="position:absolute;inset:auto 0 0 0;height:calc(100% + 700px)"></div>
+ *   var t = PrimerCtaTexture.mount(el, { palette: [bg, fg], abovePalette: [bg, fg], extendTop: 700 });
+ *   t.setSplit(px);   // CSS px from the canvas top: below it the colours swap
+ *   t.setExtendTop(px); t.pause(); t.play(); t.still(true|false); t.destroy();
+ * Colours are [r,g,b] arrays or CSS colour strings (rgb()/hex) resolved by the host.
+ * Draws in a Web Worker through an OffscreenCanvas when the browser can, else on the main thread.
+ * Stops drawing when the tab is hidden or the element is off screen; paused / still = one frame,
+ * redrawn only when the split, size or colours change.
+ */
+(function () {
+  'use strict';
+  if (typeof window === 'undefined' || window.PrimerCtaTexture) return;
+
+  /* ------------------------------------------------------------------ core
+     Self-contained (no closures over this file): its source is also shipped to the worker. */
+  function core(env) {
+    var C = {
+      speed: 1, scale: 0.45, vigTL: false, vigTR: true, vigBL: true, vigBR: false,
+      vigSize: 0.6, vigSoft: 0.8, vigEdge: 0.11, pixel: 2, matrix: 8, strength: 1,
+      exposure: 0.55, brightness: 0, contrast: -0.01, gamma: 1, black: 0, white: 1, stabilize: 0.92,
+      period: 20, loop: true, startAt: 0,
+      palette: [[255, 233, 214], [255, 84, 10]], abovePalette: [[249, 250, 247], [255, 233, 214]],
+      splitAt: 100000, extendTop: 0
+    };
+    var k0;
+    for (k0 in env.cfg) if (env.cfg[k0] != null) C[k0] = env.cfg[k0];
+
+    var cv = env.canvas, ctx = cv.getContext('2d');
+    function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+    function loopedPhase(t, freq, period, on) {
+      if (!on || !period || period <= 0.01) return t * freq;
+      var cycles = Math.max(1, Math.round((freq * period) / (2 * Math.PI)));
+      var u = (((t % period) + period) % period) / period;
+      return u * 2 * Math.PI * cycles;
+    }
+    /* Bayer 8x8 thresholds */
+    var MAT = (function () {
+      var m = [[0, 2], [3, 1]];
+      while (m.length < 8) {
+        var s = m.length, q = [], y, x;
+        for (y = 0; y < s * 2; y++) {
+          q.push([]);
+          for (x = 0; x < s * 2; x++) q[y].push(m[y % s][x % s] * 4 + [[0, 2], [3, 1]][Math.floor(y / s)][Math.floor(x / s)]);
+        }
+        m = q;
+      }
+      var arr = new Float32Array(64);
+      for (var yy = 0; yy < 8; yy++) for (var xx = 0; xx < 8; xx++) arr[yy * 8 + xx] = (m[yy][xx] + 0.5) / 64;
+      return arr;
+    })();
+
+    var genC = env.mk(8, 8), genX = genC.getContext('2d', { willReadFrequently: true });
+    var GW = 0, GH = 0, genImg = null;
+    function ensureGen(w, h) {
+      var AR = w / h, base = 320 * 180, gw, gh;
+      if (AR >= 1) { gw = Math.round(Math.sqrt(base * AR)); gh = Math.round(gw / AR); }
+      else { gh = Math.round(Math.sqrt(base / AR)); gw = Math.round(gh * AR); }
+      gw = Math.max(8, gw); gh = Math.max(8, gh);
+      if (gw !== GW || gh !== GH) { GW = gw; GH = gh; genC.width = GW; genC.height = GH; genImg = genX.createImageData(GW, GH); }
+    }
+    var ss = function (x) { return x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x); };
+    function hash2(x, y) {
+      var n = (x * 374761393 + y * 668265263) | 0;
+      n = Math.imul(n ^ (n >>> 13), 1274126177);
+      return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+    }
+    function tileNoise(x, y, P) {
+      var xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+      var x0 = ((xi % P) + P) % P, x1 = (x0 + 1) % P;
+      var u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+      var a = hash2(x0, yi), b = hash2(x1, yi), c = hash2(x0, yi + 1), d = hash2(x1, yi + 1);
+      return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+    }
+    function tileFbm(x, y, P, oct) {
+      var sum = 0, amp = 0.5, norm = 0;
+      for (var k = 0; k < oct; k++) { sum += amp * tileNoise(x, y, P); norm += amp; x *= 2; y = y * 2.03 + 3.7; P *= 2; amp *= 0.5; }
+      return sum / norm;
+    }
+    function swirl(dx, dy, sc, flow, twist) {
+      var r = Math.hypot(dx, dy) / sc, u = Math.atan2(dy, dx) / (Math.PI * 2);
+      u += r * (0.35 + 0.12 * Math.sin(twist));
+      var w = tileFbm(u * 5 + flow, r * 2.5 + 9, 5, 3) - 0.5, w2 = tileFbm(u * 9 - flow * 2, r * 3.5 + 2, 9, 2) - 0.5;
+      var Rr = r + w * 0.4;
+      u += w2 * 0.12;
+      var bd = tileFbm(u * 7 + flow * 2, Rr * 4.5, 7, 4), ct = tileFbm(u * 11 - flow * 3, Rr * 7 + 5, 11, 3);
+      var fb = 1 - Math.abs(2 * tileFbm(u * 14 + flow * 4, Rr * 13, 14, 3) - 1);
+      fb = fb * fb;
+      var pt = ss((bd * 0.65 + ct * 0.35 - 0.36) / 0.24);
+      return clamp(pt * (0.6 + 0.5 * fb) + 0.15 * pt * pt, 0, 1);
+    }
+    /* the vignette generator: luminance into genC (white = paper, dark = ink) */
+    function vignette(t) {
+      var ext = Math.max(0, C.extendTop * dpr), top = H > ext ? ext / (H - ext) : 0;
+      var d = genImg.data, sp = C.speed * 0.25, AR = (GW / GH) * (1 + top);
+      var reach = clamp(C.vigSize, 0, 1), soft = clamp(C.vigSoft, 0.05, 1), wob = clamp(C.vigEdge, 0, 0.5);
+      var breath = loopedPhase(t, sp, C.period, C.loop), drift = loopedPhase(t, sp * 4.5, C.period, C.loop);
+      var sc = Math.max(0.3, C.scale);
+      var flow = loopedPhase(t, sp * 1.05, C.period, C.loop) / (Math.PI * 2);
+      var flowPrev = null, fade = 0;
+      if (C.loop && C.period > 0.01) {
+        var F = Math.min(3, C.period / 3), uu = ((t % C.period) + C.period) % C.period;
+        if (uu > C.period - F) {
+          flowPrev = flow - Math.max(1, Math.round((sp * 1.05 * C.period) / (2 * Math.PI)));
+          var ff = (uu - (C.period - F)) / F;
+          fade = ff * ff * (3 - 2 * ff);
+        }
+      }
+      var on = [C.vigTL, C.vigTR, C.vigBL, C.vigBR], TAU = Math.PI * 2, k;
+      var cAng = [Math.atan2(-0.5, -AR / 2), Math.atan2(-0.5, AR / 2), Math.atan2(0.5, -AR / 2), Math.atan2(0.5, AR / 2)];
+      var RING = [0, 1, 3, 2], sFrom = [], sGap = [], sA = [], sB = [];
+      for (k = 0; k < 4; k++) {
+        var a = RING[k], b = RING[(k + 1) % 4], gap = cAng[b] - cAng[a];
+        while (gap <= 0) gap += TAU;
+        sFrom.push(cAng[a]); sGap.push(gap); sA.push(a); sB.push(b);
+      }
+      var maxR = Math.hypot(AR / 2, 0.5);
+      var hole = Math.max(0, (1 - reach) * maxR * 1.13), band = Math.max(0.03, soft * 0.45);
+      var pulse = 1 + 0.07 * Math.sin(breath);
+      for (var j = 0; j < GH; j++) {
+        var ny = (j / GH) * (1 + top) - top, dy = ny - 0.5;
+        for (var i = 0; i < GW; i++) {
+          var nx = i / GW, dx = (nx - 0.5) * AR, ang = Math.atan2(dy, dx), p = (j * GW + i) * 4, inf = 0;
+          for (k = 0; k < 4; k++) {
+            var rel = ang - sFrom[k];
+            if (rel < 0) rel += TAU;
+            if (rel >= sGap[k]) continue;
+            var f = rel / sGap[k];
+            if (on[sA[k]]) inf += ss(1 - f);
+            if (on[sB[k]]) inf += ss(f);
+            break;
+          }
+          var v;
+          if (inf <= 0) v = 1;
+          else {
+            var w = 1 + wob * Math.sin(ang * 3.1 + breath) + wob * 0.5 * Math.sin(ang * 3.1 * 2.3 - drift);
+            var R = Math.max(0.02, hole * w * pulse);
+            var e = clamp((Math.hypot(dx, dy) - R) / band, 0, 1);
+            var m = e * e * (3 - 2 * e) * Math.min(1, inf);
+            v = m <= 0 ? 1 : 1 - m * (flowPrev === null ? swirl(dx, dy, sc, flow, breath)
+              : swirl(dx, dy, sc, flow, breath) * (1 - fade) + swirl(dx, dy, sc, flowPrev, breath) * fade);
+          }
+          var c = Math.round(clamp(v, 0, 1) * 255);
+          d[p] = d[p + 1] = d[p + 2] = c; d[p + 3] = 255;
+        }
+      }
+      genX.putImageData(genImg, 0, 0);
+    }
+
+    var gridC = env.mk(8, 8), gridX = gridC.getContext('2d', { willReadFrequently: true });
+    var cellC = env.mk(8, 8), cellX = cellC.getContext('2d');
+    var prevL = null, frameDt = 1 / 60;
+    function lumaGrid(cols, rows) {
+      gridC.width = cols; gridC.height = rows;
+      gridX.imageSmoothingEnabled = true; gridX.imageSmoothingQuality = 'high';
+      gridX.drawImage(genC, 0, 0, cols, rows);
+      var d = gridX.getImageData(0, 0, cols, rows).data;
+      var expo = Math.pow(2, C.exposure), cf = Math.tan(((clamp(C.contrast, -0.98, 0.98) + 1) * Math.PI) / 4);
+      var bp = C.black, wp = Math.max(C.white, bp + 0.01), span = wp - bp, ig = 1 / Math.max(0.05, C.gamma);
+      var L = new Float32Array(cols * rows), i, p;
+      for (i = 0, p = 0; i < L.length; i++, p += 4) {
+        var v = (0.2126 * d[p] + 0.7152 * d[p + 1] + 0.0722 * d[p + 2]) / 255;
+        v = v * expo + C.brightness; v = (v - 0.5) * cf + 0.5; v = clamp((v - bp) / span, 0, 1);
+        L[i] = Math.pow(v, ig);
+      }
+      var a = clamp(C.stabilize || 0, 0, 0.95);
+      if (a > 0 && prevL && prevL.length === L.length) {
+        var k = Math.pow(a, clamp(frameDt * 60, 0.25, 4));
+        for (i = 0; i < L.length; i++) L[i] = L[i] * (1 - k) + prevL[i] * k;
+      }
+      prevL = L;
+      return L;
+    }
+    function indexMap(L, cols, rows) {
+      var n = L.length, idx = new Uint8Array(n), st = C.strength;
+      for (var y = 0; y < rows; y++) {
+        var my = (y % 8) * 8;
+        for (var x = 0; x < cols; x++) {
+          var q = y * cols + x, t = 1 - L[q], b = Math.floor(t), f = t - b;
+          idx[q] = clamp(f > 0.5 + (MAT[my + (x % 8)] - 0.5) * st ? b + 1 : b, 0, 1);
+        }
+      }
+      return idx;
+    }
+    function paint(img, idx, pal) {
+      for (var i = 0, p = 0; i < idx.length; i++, p += 4) {
+        var c = pal[idx[i]];
+        img.data[p] = c[0]; img.data[p + 1] = c[1]; img.data[p + 2] = c[2]; img.data[p + 3] = 255;
+      }
+    }
+    function drawCells(idx, cols, rows, cellPx) {
+      cellC.width = cols; cellC.height = rows;
+      var im = cellX.createImageData(cols, rows), P = C.palette, A = C.abovePalette;
+      paint(im, idx, P); cellX.putImageData(im, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(cellC, 0, 0, cols * cellPx, rows * cellPx);
+      var sy = Math.max(0, Math.round(C.splitAt * dpr));
+      if (sy < H) {
+        paint(im, idx, [P[1], P[0]]); cellX.putImageData(im, 0, 0);
+        ctx.save(); ctx.beginPath(); ctx.rect(0, sy, W, H - sy); ctx.clip();
+        ctx.drawImage(cellC, 0, 0, cols * cellPx, rows * cellPx); ctx.restore();
+      }
+      var ty = Math.round(C.extendTop * dpr);
+      if (ty > 0 && A && A.length === 2) {
+        paint(im, idx, A); cellX.putImageData(im, 0, 0);
+        ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, Math.min(ty, sy)); ctx.clip();
+        ctx.drawImage(cellC, 0, 0, cols * cellPx, rows * cellPx); ctx.restore();
+      }
+    }
+
+    var W = 0, H = 0, dpr = 1, cssW = 1, cssH = 1, rawDpr = 1;
+    function resize() {
+      dpr = Math.min(env.maxDpr || 2, rawDpr || 1);
+      W = Math.max(16, Math.round(cssW * dpr)); H = Math.max(16, Math.round(cssH * dpr));
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; prevL = null; }
+      ensureGen(W, H);
+    }
+    var hidden = false, paused = false, dirty = true, t0 = 0, held = 0, lastNow = 0, frozenT = C.startAt, warmed = false, announced = false, alive = true;
+    function render(t) {
+      resize();
+      var cellPx = Math.max(1, C.pixel * (W / 1000));
+      var cols = clamp(Math.ceil(W / cellPx), 2, 900), rows = clamp(Math.ceil(H / cellPx), 2, 1400);
+      var needed = Math.max(W / cols, H / rows);
+      if (needed > cellPx) { cellPx = needed; cols = clamp(Math.ceil(W / cellPx), 2, 900); rows = clamp(Math.ceil(H / cellPx), 2, 1400); }
+      if (!warmed || !prevL) {
+        warmed = true;
+        var sa = clamp(C.stabilize || 0, 0, 0.95);
+        if (sa > 0) {
+          var STRIDE = 3, K = Math.min(120, Math.ceil(Math.log(0.05) / Math.log(sa)));
+          frameDt = STRIDE / 60; prevL = null;
+          for (var w = Math.ceil(K / STRIDE) * STRIDE; w >= STRIDE; w -= STRIDE) {
+            var tw = t - w / 60;
+            if (C.loop && C.period > 0.01) tw = ((tw % C.period) + C.period) % C.period;
+            vignette(tw); lumaGrid(cols, rows);
+          }
+          frameDt = 1 / 60;
+        }
+      }
+      vignette(t);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      var L = lumaGrid(cols, rows);
+      drawCells(indexMap(L, cols, rows), cols, rows, cellPx);
+      if (!announced) { announced = true; env.ready(); }
+    }
+    var lastRender = 0;
+    function frame(now) {
+      if (!alive) return;
+      env.raf(frame);
+      if (env.minMs && now - lastRender < env.minMs) return;
+      lastRender = now;
+      if (hidden) { if (!held) held = now; lastNow = 0; return; }
+      if (paused) {
+        if (!held) held = now;
+        if (dirty) { dirty = false; frameDt = 1 / 60; render(frozenT); }
+        lastNow = 0; return;
+      }
+      if (held) { if (t0) t0 += now - held; held = 0; }
+      if (!t0) t0 = now;
+      var t = C.startAt + (now - t0) / 1000;
+      frameDt = lastNow ? (now - lastNow) / 1000 : 1 / 60; lastNow = now;
+      if (C.loop && C.period > 0.01) t = t % C.period;
+      frozenT = t; dirty = false;
+      render(t);
+    }
+    env.raf(frame);
+    return {
+      size: function (w, h, r) { cssW = w; cssH = h; rawDpr = r; dirty = true; },
+      hidden: function (v) { hidden = !!v; dirty = true; },
+      paused: function (v) { paused = !!v; dirty = true; },
+      split: function (px) { if (px !== C.splitAt) { C.splitAt = px; dirty = true; } },
+      ext: function (px) { if (px !== C.extendTop) { C.extendTop = px; dirty = true; prevL = null; } },
+      colours: function (p, a) { if (p) C.palette = p; if (a) C.abovePalette = a; dirty = true; },
+      stop: function () { alive = false; }
+    };
+  }
+
+  /* ------------------------------------------------------------------ host */
+  function toRgb(c) {
+    if (Array.isArray(c)) return c.slice(0, 3);
+    c = String(c || '').trim();
+    var m = c.match(/^#([0-9a-f]{6})$/i);
+    if (m) return [parseInt(m[1].slice(0, 2), 16), parseInt(m[1].slice(2, 4), 16), parseInt(m[1].slice(4, 6), 16)];
+    m = c.match(/rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)/i);
+    if (m) return [Math.round(+m[1]), Math.round(+m[2]), Math.round(+m[3])];
+    return null;
+  }
+  function pal(p) { if (!p) return null; var a = toRgb(p[0]), b = toRgb(p[1]); return a && b ? [a, b] : null; }
+
+  var WORKER_SRC = null;
+  function workerUrl() {
+    if (WORKER_SRC) return WORKER_SRC;
+    var src = 'var core=' + core.toString() + ';var api=null,cv=null;' +
+      'var raf=typeof requestAnimationFrame==="function"?function(f){return requestAnimationFrame(f)}:function(f){return setTimeout(function(){f(performance.now())},1000/60)};' +
+      'self.onmessage=function(e){var m=e.data;if(m.k==="init"){cv=m.canvas;api=core({canvas:cv,cfg:m.cfg,maxDpr:m.maxDpr,mk:function(w,h){return new OffscreenCanvas(w,h)},raf:raf,ready:function(){self.postMessage({k:"ready"})}});' +
+      'api.size(m.w,m.h,m.dpr);api.hidden(m.hidden);api.paused(m.paused);return}if(!api)return;if(m.k==="stop"){api.stop();self.close();return}api[m.k].apply(null,m.a)};';
+    WORKER_SRC = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+    return WORKER_SRC;
+  }
+
+  function mount(el, opts) {
+    opts = opts || {};
+    if (el.__ctaTexture) return el.__ctaTexture;
+    var cfg = {};
+    if (opts.palette) cfg.palette = pal(opts.palette);
+    if (opts.abovePalette) cfg.abovePalette = pal(opts.abovePalette);
+    if (opts.extendTop != null) cfg.extendTop = +opts.extendTop || 0;
+    if (opts.splitAt != null) cfg.splitAt = +opts.splitAt;
+    if (opts.startAt != null) cfg.startAt = +opts.startAt;
+    var maxDpr = opts.maxDpr || 2;
+    var canvas = document.createElement('canvas');
+    canvas.setAttribute('aria-hidden', 'true');
+    canvas.style.cssText = 'display:block;position:absolute;inset:0;width:100%;height:100%';
+    el.appendChild(canvas);
+
+    var send, worker = null, api = null, onScreen = true, pausedState = !!opts.paused;
+    function size() { return [el.clientWidth || 1, el.clientHeight || 1, window.devicePixelRatio || 1]; }
+    function isHidden() { return document.hidden || !onScreen; }
+    function ready() { el.setAttribute('data-cta-texture-state', 'ready'); if (opts.onReady) opts.onReady(); }
+
+    var canWorker = opts.worker !== false && typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined' &&
+      typeof canvas.transferControlToOffscreen === 'function';
+    function runHere(cvs) {
+      api = core({ canvas: cvs, cfg: cfg, maxDpr: maxDpr, mk: function (w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; },
+        raf: function (f) { return requestAnimationFrame(f); }, ready: ready, minMs: opts.mainThreadMs || 50 });
+      var s = size(); api.size(s[0], s[1], s[2]); api.hidden(isHidden()); api.paused(pausedState);
+      send = function (k, a) { api[k].apply(null, a); };
+    }
+    if (canWorker) {
+      try {
+        worker = new Worker(workerUrl());
+        var off = canvas.transferControlToOffscreen(), s0 = size();
+        worker.postMessage({ k: 'init', canvas: off, cfg: cfg, maxDpr: maxDpr, w: s0[0], h: s0[1], dpr: s0[2], hidden: isHidden(), paused: pausedState }, [off]);
+        var gotReady = false;
+        worker.onmessage = function (e) { if (e.data && e.data.k === 'ready') { gotReady = true; ready(); } };
+        worker.onerror = function () {
+          if (gotReady) return;
+          worker.terminate(); worker = null;
+          var fresh = canvas.cloneNode(false); canvas.replaceWith(fresh); canvas = fresh; runHere(fresh);
+        };
+        send = function (k, a) { if (worker) worker.postMessage({ k: k, a: a }); else if (api) api[k].apply(null, a); };
+      } catch (err) { worker = null; runHere(canvas); }
+    } else runHere(canvas);
+    el.setAttribute('data-cta-texture-state', 'running');
+
+    var ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(function () { send('size', size()); }) : null;
+    if (ro) ro.observe(el); else window.addEventListener('resize', function () { send('size', size()); });
+    var io = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver(function (es) {
+      onScreen = es[es.length - 1].isIntersecting; send('hidden', [isHidden()]);
+    }) : null;
+    if (io) io.observe(el);
+    function vis() { send('hidden', [isHidden()]); }
+    document.addEventListener('visibilitychange', vis);
+
+    var lastSplit = null, ctl = {
+      setSplit: function (px) { px = Math.round(px * 2) / 2; if (px !== lastSplit) { lastSplit = px; send('split', [px]); } },
+      setExtendTop: function (px) { send('ext', [Math.max(0, +px || 0)]); },
+      setColours: function (p, a) { send('colours', [pal(p), pal(a)]); },
+      pause: function () { pausedState = true; send('paused', [true]); },
+      play: function () { pausedState = false; send('paused', [false]); },
+      isPaused: function () { return pausedState; },
+      destroy: function () {
+        send('stop', []); if (worker) worker.terminate(); if (ro) ro.disconnect(); if (io) io.disconnect();
+        document.removeEventListener('visibilitychange', vis); canvas.remove(); el.__ctaTexture = null;
+      }
+    };
+    el.__ctaTexture = ctl;
+    return ctl;
+  }
+
+  window.PrimerCtaTexture = { mount: mount, version: '1.0.0' };
+  try { window.dispatchEvent(new CustomEvent('primer-cta-texture-ready')); } catch (e) {}
+})();
