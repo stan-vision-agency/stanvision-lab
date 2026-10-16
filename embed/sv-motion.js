@@ -1,5 +1,5 @@
 /*!
- * sv-motion 1.0.0 (StanVision, made for Primer): SV.motion core + GSAP effects library (motion.md §5, motion-library.md).
+ * sv-motion 1.1.0 (StanVision, made for Primer): SV.motion core + GSAP effects library (motion.md §5, motion-library.md).
  * GSAP comes from Webflow's integration (Site settings > GSAP: Core, ScrollTrigger, CustomEase, ScrollToPlugin, SplitText).
  * Load it deferred after Webflow's GSAP scripts; it also waits for the GSAP globals if it runs earlier.
  */
@@ -11,7 +11,7 @@
   w.SV = w.SV || {}
   /* the inline stub (Webflow js__motion embed) may already hold SV.motion.booted for the page's widget embeds */
   var M = (SV.motion = SV.motion || {})
-  M.version = '1.0.0'
+  M.version = '1.1.0'
 
   /* ---- SV.motion core (D-234/D-246, D-249): eases, tokens, effect registry, one deferred ScrollTrigger refresh,
      pauseWhenHidden for loops. Under prefers-reduced-motion each effect sets its end state instead of moving. ---- */
@@ -19,8 +19,9 @@
   var loaded = new Promise(function (r) { d.readyState === 'complete' ? r() : w.addEventListener('load', r, { once: true }) })
   var fontsReady = (d.fonts && d.fonts.ready) || Promise.resolve()
   var reg = {}, refreshT
-  M.dur = { micro: 0.25, hover: 0.4, reveal: 0.65, move: 0.45, wipe: 0.77, texture: 1.6, stagger: 0.045, items: 0.08 }
-  M.ease = { house: 'power3.inOut', arrive: 'power3.out', cross: 'power2.inOut', wipe: 'power2.inOut', wipePhoto: 'power3.inOut', flock: 'expo.out' }
+  M.dur = { micro: 0.25, hover: 0.4, reveal: 0.65, move: 0.45, wipe: 0.77, texture: 1.6, stagger: 0.045, items: 0.08,
+    labelOut: 0.18, labelGap: 0.04, labelIn: 0.38 } // D-282 label slide: exit, empty beat, entry
+  M.ease = { house: 'power3.inOut', arrive: 'power3.out', cross: 'power2.inOut', wipe: 'power2.inOut', wipePhoto: 'power3.inOut', flock: 'expo.out', labelOut: 'power2.in', labelIn: 'expo.out' }
   M.reduce = w.matchMedia('(prefers-reduced-motion: reduce)').matches
   M.ready = Promise.all([dom, fontsReady])
   M.register = function (name, fn) { reg[name] = fn }
@@ -64,7 +65,11 @@
       CustomEase.create('sv-wipe', '0.7,0,0.3,1')
       CustomEase.create('sv-wipe-photo', '0.7,0,0.1,1')
       CustomEase.create('sv-flock', '0.16,1,0.3,1')
-      M.ease = { house: 'customEase', arrive: 'sv-arrive', cross: 'sv-cross', wipe: 'sv-wipe', wipePhoto: 'sv-wipe-photo', flock: 'sv-flock' }
+      /* D-282 label slide: the exit leans back ~7 % (anticipation) then accelerates away; the entry arrives fast and settles
+         with a 1.5 % overshoot (soft landing), so the label never stops dead */
+      CustomEase.create('sv-label-out', 'M0,0 C0.45,-0.25 0.7,0.15 1,1')
+      CustomEase.create('sv-label-in', 'M0,0 C0.16,0.7 0.3,1.03 0.55,1.015 C0.75,1.005 0.85,1 1,1')
+      M.ease = { house: 'customEase', arrive: 'sv-arrive', cross: 'sv-cross', wipe: 'sv-wipe', wipePhoto: 'sv-wipe-photo', flock: 'sv-flock', labelOut: 'sv-label-out', labelIn: 'sv-label-in' }
     }
     M.mm = gsap.matchMedia()
     gsap.defaults({ ease: M.ease.arrive, duration: M.dur.reveal })
@@ -88,13 +93,13 @@
       function touch(e) { return e.pointerType === 'touch'; }
       function fv(el) { try { return el.matches(':focus-visible') || el.matches(':has(:focus-visible)'); } catch (x) { return false; } }
 
-      /* ---- btn-hover: one delegated listener set, so Silktide's late buttons work too; built on first hover/focus ---- */
+      /* ---- btn-hover: one delegated listener set, so Silktide's late buttons work too; built on first hover/focus.
+         D-274: nav text links (.nav__links__child) take the label slide too, without the fill (the nav pill is their fill).
+         D-275/D-282: hover-in = label exits left and re-enters from the right, hover-out = exits right and re-enters from the
+         left (Stan's video); a slide always finishes, a flick (leave during the slide) adds no second slide. ---- */
       var BTN = '.button:not([data-wf--button--button---variant="link"]):not([icon-only="yes"]):not([icon-only="true"]),' +
                 '#silktide-wrapper .st-button, .footer__newsletter-submit';
-      function btnOf(t) {
-        var el = t && t.closest && t.closest(BTN);
-        return el && !el.closest('.nav__links__child') ? el : null; // nav items take nav-hover
-      }
+      function btnOf(t) { return (t && t.closest && t.closest(BTN)) || null; }
       function wrapIn(host) { // the host becomes the mask, its content moves into span.sv-label
         var s = host.querySelector(':scope > .sv-label');
         if (s) return s;
@@ -118,8 +123,8 @@
         if (el.__svh) return el.__svh;
         el.setAttribute('data-motion', 'btn-hover');
         el.setAttribute('data-motion-init', 'on');
-        var h = { on: false }, label = labelOf(el);
-        if (!el.matches('.footer__newsletter-submit')) {
+        var h = { on: false, label: labelOf(el) }, label = h.label;
+        if (!el.matches('.footer__newsletter-submit') && !el.closest('.nav__links__child')) {
           var fill = document.createElement('span');
           fill.className = 'sv-fill';
           fill.setAttribute('aria-hidden', 'true');
@@ -128,13 +133,18 @@
             ? gsap.fromTo(fill, { scaleX: 1, autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2, ease: 'none', paused: true })
             : gsap.fromTo(fill, { scaleX: 0 }, { scaleX: 1, duration: M.dur.hover, ease: E.arrive, paused: true });
         }
-        if (label && !M.reduce) {
-          h.slide = gsap.timeline({ paused: true })
-            .to(label, { xPercent: -105, duration: 0.18, ease: 'power2.in' })
-            .set(label, { xPercent: 105 })
-            .to(label, { xPercent: 0, duration: 0.22, ease: E.arrive });
-        }
         return (el.__svh = h);
+      }
+      /* dir 1 = hover-in (out to the left, in from the right), -1 = hover-out (mirror); one timeline per direction, reused */
+      function slide(h, dir) {
+        if (!h.label || M.reduce) return;
+        var k = dir > 0 ? 'tIn' : 'tOut';
+        if ((h.tIn && h.tIn.isActive()) || (h.tOut && h.tOut.isActive())) return;
+        if (!h[k]) h[k] = gsap.timeline({ paused: true })
+          .to(h.label, { xPercent: -110 * dir, duration: M.dur.labelOut, ease: E.labelOut })
+          .set(h.label, { xPercent: 110 * dir }, '+=' + M.dur.labelGap)
+          .to(h.label, { xPercent: 0, duration: M.dur.labelIn, ease: E.labelIn });
+        h[k].restart();
       }
       function enter(el) {
         if (el.disabled || el.hasAttribute('data-cc-autofocus')) return;
@@ -142,13 +152,14 @@
         if (h.on) return;
         h.on = true;
         if (h.fill) h.fill.play();
-        if (h.slide && !h.slide.isActive()) h.slide.restart();
+        slide(h, 1);
       }
       function leave(el) {
         var h = el.__svh;
         if (!h || !h.on) return;
         h.on = false;
         if (h.fill) h.fill.reverse();
+        slide(h, -1);
       }
       document.addEventListener('pointerover', function (e) {
         if (touch(e)) return;
@@ -168,7 +179,7 @@
         if (el && !el.contains(e.relatedTarget) && !el.matches(':hover')) leave(el);
       });
 
-      /* ---- nav-hover (D-240 option A): one pill glides to the hovered / focused item; labels stay still ---- */
+      /* ---- nav-hover (D-240 option A): one pill glides to the hovered / focused item; the labels slide with btn-hover (D-274) ---- */
       M.register('nav-hover', function (root) {
         M.mm.add({ desk: '(min-width: 992px) and (hover: hover) and (pointer: fine)', rm: '(prefers-reduced-motion: reduce)' }, function (ctx) {
           if (!ctx.conditions.desk) return;
@@ -284,8 +295,13 @@
         function go() { var h = window.PrimerMurmuration && PrimerMurmuration.get(el); if (h) fn(h); return !!h; }
         if (!go()) document.addEventListener('primer-murmuration:loaded', go, { once: true });
       }
+      /* D-276: the js__motion stub sets html.sv-intro-pending before the hero is parsed (css__animations hides the hero bar's
+         label, icon and fill while it is set), so the bar never shows before its wipe. Every path below ends it: intro built
+         (the from-states take over in the same task), intro skipped, reduced motion, no bar; the stub also ends it on load
+         failure and after 4 s. */
+      function unpend() { document.documentElement.classList.remove('sv-intro-pending'); }
       M.register('intro', function (root, p, q, rm) {
-        if (rm) return; // everything at rest; the murmuration runtime holds its still frame
+        if (rm) return unpend(); // everything at rest; the murmuration runtime holds its still frame
         var tex = q('[data-murmuration-v2]')[0], LATE = +p.late || 400, t0 = null;
         if (tex) murm(tex, function (h) {
           /* flock-in: the runtime's canvas (not the observed element, so its lazy start still sees it) rises from the band bottom at
@@ -305,7 +321,7 @@
         });
         M.ready.then(function () {
           var now = t0 = performance.now(), fcp = (performance.getEntriesByType ? performance.getEntriesByType('paint') : []).filter(function (e) { return e.name === 'first-contentful-paint'; })[0];
-          if ((fcp && now - fcp.startTime > LATE) || window.scrollY > 40 || !window.SplitText) return;
+          if ((fcp && now - fcp.startTime > LATE) || window.scrollY > 40 || !window.SplitText) return unpend(); // skipped: final state at once
           var nav = document.querySelector('.navigation'), h1 = q('h1')[0], eyebrow = q('.hero__eyebrow .button')[0], lead = q('.hero__lead')[0];
           var bar = q('.hero__cta .button')[0], ST = +p.stagger || M.dur.stagger;
           /* label + icon move inside their button (the mask); the label text moves in span.sv-label so the .btn-link::after hit area keeps its box */
@@ -317,6 +333,7 @@
           var at = +p.rest || 0.65;
           if (eyebrow) { gsap.set(eyebrow, { clipPath: 'inset(0px)' }); tidy.push([eyebrow, 'clipPath']); /* static mask, never animated */ tl.from(inner(eyebrow), { yPercent: 100, y: '0.7em', clearProps: 'transform' }, at); at += ST; }
           if (lead) { var s2 = split(lead); splits.push(s2); tl.from(s2.lines, { yPercent: 100, y: '0.7em', stagger: ST }, at); }
+          unpend(); // same task as the from-states below: no frame shows the bar between the two
           if (bar && barIn.length) { // wipe-solo: the bar colour grows from the left edge across the viewport and settles on the bar (prototype keyframes)
             var cta = bar.closest('.hero__cta'), wipe = document.createElement('div');
             wipe.className = 'sv-intro-wipe';
@@ -332,7 +349,11 @@
             gsap.set(bar, { backgroundColor: 'transparent', zIndex: 1 });
             tl.to(wipe, { keyframes: { xPercent: X, scaleX: SX, easeEach: 'none' }, duration: 0.95, ease: 'none' }, +p.wipe || 0.8)
               .call(function () { gsap.set(bar, { clearProps: 'backgroundColor,zIndex' }); wipe.remove(); });
-            tl.from(barIn, { yPercent: 100, clearProps: 'transform' }, +p.bar || 1.55);
+            /* D-276: below the bar's bottom edge from this frame on (the bar is the mask: the label's own mask clips sideways only,
+               so the label must travel its height + 2 rem to leave the 4 rem bar); rises once the block has reached the right */
+            var BAR0 = { yPercent: 100, y: '2rem' };
+            gsap.set(barIn, BAR0);
+            tl.fromTo(barIn, BAR0, { yPercent: 0, y: 0, immediateRender: false, clearProps: 'transform' }, +p.bar || 1.55);
           }
           tl.eventCallback('onComplete', function () {
             splits.forEach(function (s) { s.revert(); });
@@ -432,6 +453,68 @@
         }).observe(root, { attributes: true, attributeFilter: ['class'] });
       });
 
+      /* ---- stats-in (D-277, prototype hero=3 "Billions move through Primer"): the boxes stay put; their texts rise out of
+         masks and the figures count up. Box k starts at order[k] x 0.11 s (default orders 0,1,2 / 1,2,3: a diagonal), its
+         lines 0.25 s later, 0.045 s apart, 0.65 s sv-arrive from yPercent 100 + 0.7 em; figures count from 0 over 1.4 s
+         (power3.out = 1-(1-t)^4) from the same moment. >= 992 one trigger for the grid (top 85 %), below that each box on its
+         own. Figures use tabular digits at rest too and the counting box keeps the final width (no width jitter); screen readers get the final value only
+         (visually hidden copy, the counting copy is aria-hidden); the original text is restored when the box is done. ---- */
+      function sr(text) { var s = document.createElement('span'); s.className = 'sv-sr'; s.textContent = text; return s; }
+      function maskAround(el) { // block mask around an element; returns the undo
+        var m = document.createElement('div');
+        m.className = 'sv-mask';
+        el.parentNode.insertBefore(m, el);
+        m.appendChild(el);
+        return function () { if (m.parentNode) { m.parentNode.insertBefore(el, m); m.remove(); } };
+      }
+      function counter(el) {
+        var txt = el.textContent.trim(), m = txt.match(/^(\D*)(\d+(?:\.\d+)?)(.*)$/);
+        if (!m) return null;
+        var dec = (m[2].split('.')[1] || '').length, to = parseFloat(m[2]), o = { v: 0 };
+        var wrap = document.createElement('span'), num = document.createElement('span');
+        wrap.className = 'sv-count-mask';
+        wrap.setAttribute('aria-hidden', 'true');
+        num.className = 'sv-count';
+        function show() { num.textContent = m[1] + o.v.toFixed(dec) + m[3]; }
+        num.textContent = txt;
+        wrap.appendChild(num);
+        el.textContent = '';
+        el.appendChild(sr(txt));
+        el.appendChild(wrap);
+        num.style.minWidth = Math.ceil(num.getBoundingClientRect().width) + 'px'; // one read: the box keeps the final width while digits are added
+        show();
+        return { inner: num, tween: function () { return gsap.to(o, { v: to, duration: 1.4, ease: 'power3.out', onUpdate: show }); },
+          restore: function () { el.textContent = txt; } };
+      }
+      M.register('stats-in', function (root, p, q, rm) {
+        var cards = q('.grid__items > *');
+        q('.stat__value').forEach(function (v) { v.style.fontVariantNumeric = 'tabular-nums'; });
+        if (rm || !cards.length || !window.SplitText) return; // static, final figures
+        M.ready.then(function () {
+          var ORD = (p.order || '0,1,2,1,2,3').split(',').map(Number), desk = window.matchMedia('(min-width: 992px)').matches;
+          var master = desk ? gsap.timeline({ paused: true }) : null;
+          cards.forEach(function (card, i) {
+            var lines = [], undo = [], counts = [];
+            card.querySelectorAll('.stat__label, .card-quote__text').forEach(function (el) {
+              var s = SplitText.create(el, { type: 'lines', mask: 'lines', linesClass: 'sv-line', aria: 'auto' });
+              lines.push.apply(lines, s.lines);
+              undo.push(function () { s.revert(); });
+            });
+            card.querySelectorAll('.card-quote__footer, .card-video__badge > *').forEach(function (el) { undo.push(maskAround(el)); lines.push(el); });
+            card.querySelectorAll('.stat__value').forEach(function (el) { var c = counter(el); if (c) { counts.push(c); lines.push(c.inner); undo.push(c.restore); } });
+            if (!lines.length) return;
+            gsap.set(lines, { yPercent: 100, y: '0.7em' });
+            var at = desk ? (ORD[i] != null ? ORD[i] : i) * 0.11 : 0, tl = gsap.timeline({ paused: !desk,
+              onComplete: function () { undo.forEach(function (f) { f(); }); gsap.set(lines, { clearProps: 'transform' }); } });
+            tl.to(lines, { yPercent: 0, y: 0, duration: M.dur.reveal, ease: E.arrive, stagger: M.dur.stagger }, 0.25);
+            counts.forEach(function (c) { tl.add(c.tween(), 0.25); });
+            if (desk) master.add(tl, at);
+            else ScrollTrigger.create({ trigger: card, start: p.start || 'top 85%', once: true, onEnter: function () { tl.play(); } });
+          });
+          if (desk) ScrollTrigger.create({ trigger: root, start: p.start || 'top 85%', once: true, onEnter: function () { master.play(); } });
+        });
+      });
+
       /* ---- reveal: items rise 24 px and fade in once at 85 %, batched (data-motion-items / -from / -stagger / -start) ---- */
       M.register('reveal', function (root, p, q, rm) {
         var items = p.items ? q(p.items) : [root];
@@ -459,7 +542,8 @@
         fn(root, p, gsap.utils.selector(root), M.reduce ? (p.rm || 'static') : false);
       }
       /* DS 3.0 instances can't carry attributes: these hook classes (Custom style) name their effect (D-251) */
-      var HOOKS = { '.section.hero__primer': 'intro', '.sv-lines': 'lines' };
+      var HOOKS = { '.section.hero__primer': 'intro', '.sv-lines': 'lines', '.section__trusted .stats__grid': 'stats-in' };
+      if (!document.querySelector('.section.hero__primer')) unpend(); // D-276: pages without the hero intro
       Object.keys(HOOKS).forEach(function (s) { document.querySelectorAll(s).forEach(function (el) { if (!el.hasAttribute('data-motion')) el.setAttribute('data-motion', HOOKS[s]); }); });
       document.querySelectorAll('[data-motion]').forEach(function (root) {
         if (root.getAttribute('data-motion-init') === 'on') return;

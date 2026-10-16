@@ -6,7 +6,7 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 | Runtime | Global | Mounts on | Versioned file (load this) | Size (min / gzip) |
 |---|---|---|---|---|
 | Murmuration v2 (handoff flock) | `PrimerMurmuration` | `[data-murmuration-v2]` | `primer-murmuration.2.0.1.min.js` | 45.1 KB / 17.7 KB |
-| SV motion (core + GSAP effects library) | `SV.motion` | `[data-motion]` (needs Webflow's GSAP) | `sv-motion.1.0.0.min.js` | 18.4 KB / 6.5 KB |
+| SV motion (core + GSAP effects library) | `SV.motion` | `[data-motion]` (needs Webflow's GSAP) | `sv-motion.1.1.0.min.js` | 21.4 KB / 7.4 KB |
 | CTA texture | `PrimerCtaTexture` | `[data-cta-texture="auto"]` or `mount()` | `cta-texture.1.1.0.min.js` | 14.5 KB / 6.4 KB |
 | Murmuration v1 (WebGL shader) | `Murmuration` | `[data-murmuration]` | `murmuration.1.0.0.min.js` | 19.2 KB / 7.4 KB |
 
@@ -20,6 +20,7 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 | File | SRI |
 |---|---|
 | `primer-murmuration.2.0.1.min.js` | `sha384-SeTbO9msdyfO2OKlxwRr6ya9Nokqxyd0TAOZFpPbHKyCaRtSwxM6I7b9uu4NO+Nt` |
+| `sv-motion.1.1.0.min.js` | `sha384-9/47Wd/jv01GXNsUwTaNDquOdIO3v94vWEYSmJAVh7ueuQWNtRgrOZ8LsfbIqi1z` |
 | `sv-motion.1.0.0.min.js` | `sha384-FQDLbPFswVS5aEItOMOmKY4ViwsQspHBSXI3IMiFrklWF+Td1Pb3Yp1QpU5zQSDM` |
 | `primer-murmuration.2.0.0.min.js` (pause button throws: use 2.0.1) | `sha384-SnAOD4cnuX+OecjJyz56AVMX5t3ndFThnjmKERIR6kkgf3nw8DkHhWHxbPMh5xiZ` |
 | `cta-texture.1.1.0.min.js` | `sha384-m3apBjluA1TbjaYDw4vYpjr2NtIkroFV4MCd7BxEQ2o5hahAR1r9A/PjRhXvbSny` |
@@ -101,7 +102,7 @@ The runtime has **no scroll listeners**; GSAP (or the page) drives it. Events: `
 
 ## SV motion — `sv-motion.*`
 
-The StanVision motion core (`SV.motion`: tokens, eases, effect registry, debounced refresh, idle queue, `pauseWhenHidden`) and the GSAP effects library (`data-motion="btn-hover | nav-hover | menu-open | intro | lines | marquee | media-scale | modal-open | reveal"`), as one cached file instead of inline embeds. Source: Primer workspace `claude/scripts/sv-motion/sv-motion.src.js` (`build.sh <version> <embed dir> <terser>`, terser 5.31.6 `-c passes=2 -m`); `sv-motion.js` here is the readable build.
+The StanVision motion core (`SV.motion`: tokens, eases, effect registry, debounced refresh, idle queue, `pauseWhenHidden`) and the GSAP effects library (`data-motion="btn-hover | nav-hover | menu-open | intro | lines | marquee | media-scale | modal-open | reveal | stats-in"`), as one cached file instead of inline embeds. Source: Primer workspace `claude/scripts/sv-motion/sv-motion.src.js` (`build.sh <version> <embed dir> <terser>`, terser 5.31.6 `-c passes=2 -m`); `sv-motion.js` here is the readable build.
 
 - Needs GSAP + ScrollTrigger + CustomEase (+ SplitText, ScrollToPlugin) as globals (Webflow's GSAP integration). Load it `defer` after them; if it runs earlier it waits for the globals until `load`.
 - A page's inline widget code waits on `SV.motion.booted`. Put a stub before the widgets so the promise exists before the file runs, and fail open (minimal form below; Primer's js__motion stub also starts each `then` callback in its own task):
@@ -109,7 +110,7 @@ The StanVision motion core (`SV.motion`: tokens, eases, effect registry, debounc
 ```html
 <script>(function(w){w.SV=w.SV||{};if(w.SV.motion)return;var r,M=w.SV.motion={booted:new Promise(function(f){r=f;})};
 M.__boot=function(p){M.__boot=null;r(p);};M.__fail=function(){if(M.__boot)M.__boot(false);};w.addEventListener('load',M.__fail);})(window);</script>
-<script src="https://lab.stan.vision/embed/sv-motion.1.0.0.min.js" integrity="…" crossorigin="anonymous" defer onerror="SV.motion.__fail()"></script>
+<script src="https://lab.stan.vision/embed/sv-motion.1.1.0.min.js" integrity="…" crossorigin="anonymous" defer onerror="SV.motion.__fail()"></script>
 ```
 
 - Page-load work stays out of the DOMContentLoaded and load tasks: ScrollTrigger's `autoRefreshEvents` drop DOMContentLoaded and load; the file refreshes once after boot and once after load, each after the next frame in idle time. The library starts in its own task; menus, the modal and the nav pill initialise in idle slices (`SV.motion.idle`).
@@ -186,3 +187,5 @@ Colours are CSS colour strings (hex, `rgb()`, `var(--x)`, resolved in the elemen
 - `t.on('ready', fn)`, event `primer-cta-texture:ready` (bubbles, `detail.handle`), `PrimerCtaTexture.get(el)`, `PrimerCtaTexture.mountAll(root)`.
 - Declarative mount for the footer's top stage on every page: `<div data-cta-texture="auto" aria-hidden="true">`, colours from the CSS custom properties `--cta-tex-bg`, `--cta-tex-fg`, `--cta-tex-above-bg`, `--cta-tex-above-fg` on the element (Webflow variables), `data-split` (px, default 100000 = no swap), `data-extend-top`, `data-start-at`, `data-max-dpr`, `data-worker="off"`, `data-paused`; `prefers-reduced-motion` = paused (one still frame); `t.refreshColours()` re-reads the variables. An element with `data-cta-texture` and no value (Home's `css__cta`) is left for its own `mount()` call.
 - Same look: the core is unchanged (first frame pixel-identical to 1.0.0).
+
+sv-motion 1.1.0 (2026-10-16, Primer D-282..D-285): label slide with the CustomEases `sv-label-out` / `sv-label-in` on buttons and nav text links (hover-in exits left, hover-out exits right), hero bar label held back until the intro wipe (`html.sv-intro-pending`, set by the page stub), `stats-in` (Trusted By texts rise from masks, figures count up with tabular digits).
