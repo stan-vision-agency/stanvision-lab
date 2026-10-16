@@ -20,7 +20,7 @@
   var fontsReady = (d.fonts && d.fonts.ready) || Promise.resolve()
   var reg = {}, refreshT
   M.dur = { micro: 0.25, hover: 0.4, reveal: 0.65, move: 0.45, wipe: 0.77, texture: 1.6, stagger: 0.045, items: 0.08,
-    labelOut: 0.18, labelGap: 0.04, labelIn: 0.38 } // D-282 label slide: exit, empty beat, entry
+    labelOut: 0.18, labelGap: 0.04, labelIn: 0.38 } // D-288 label slide: exit, empty beat, entry
   M.ease = { house: 'power3.inOut', arrive: 'power3.out', cross: 'power2.inOut', wipe: 'power2.inOut', wipePhoto: 'power3.inOut', flock: 'expo.out', labelOut: 'power2.in', labelIn: 'expo.out' }
   M.reduce = w.matchMedia('(prefers-reduced-motion: reduce)').matches
   M.ready = Promise.all([dom, fontsReady])
@@ -65,7 +65,7 @@
       CustomEase.create('sv-wipe', '0.7,0,0.3,1')
       CustomEase.create('sv-wipe-photo', '0.7,0,0.1,1')
       CustomEase.create('sv-flock', '0.16,1,0.3,1')
-      /* D-282 label slide: the exit leans back ~7 % (anticipation) then accelerates away; the entry arrives fast and settles
+      /* D-288 label slide: the exit leans back ~7 % (anticipation) then accelerates away; the entry arrives fast and settles
          with a 1.5 % overshoot (soft landing), so the label never stops dead */
       CustomEase.create('sv-label-out', 'M0,0 C0.45,-0.25 0.7,0.15 1,1')
       CustomEase.create('sv-label-in', 'M0,0 C0.16,0.7 0.3,1.03 0.55,1.015 C0.75,1.005 0.85,1 1,1')
@@ -95,7 +95,7 @@
 
       /* ---- btn-hover: one delegated listener set, so Silktide's late buttons work too; built on first hover/focus.
          D-274: nav text links (.nav__links__child) take the label slide too, without the fill (the nav pill is their fill).
-         D-275/D-282: hover-in = label exits left and re-enters from the right, hover-out = exits right and re-enters from the
+         D-275/D-288: hover-in = label exits left and re-enters from the right, hover-out = exits right and re-enters from the
          left (Stan's video); a slide always finishes, a flick (leave during the slide) adds no second slide. ---- */
       var BTN = '.button:not([data-wf--button--button---variant="link"]):not([icon-only="yes"]):not([icon-only="true"]),' +
                 '#silktide-wrapper .st-button, .footer__newsletter-submit';
