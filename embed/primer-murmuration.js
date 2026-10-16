@@ -1,12 +1,12 @@
 /*!
- * Primer murmuration v2 runtime 2.0.0 (StanVision lab, made for Primer).
+ * Primer murmuration v2 runtime 2.0.1 (StanVision lab, made for Primer).
  * Inline repackage of the client handoff "primer-murmuration.html" (Primer Texture Motion export:
  * canvas-2D boids flock + Bayer 8x8 dither, 20 s seamless loop). No iframe, no dependencies.
  * The handoff code runs verbatim inside core() below; only two marked lines are added to it
  * (settings overrides, and an absolute "set" message for GSAP-driven values).
  *
  *   <div data-murmuration-v2 aria-hidden="true" style="position:relative;height:100svh;background:#ff540a"></div>
- *   <script src="https://lab.stan.vision/embed/primer-murmuration.2.0.0.min.js" defer></script>
+ *   <script src="https://lab.stan.vision/embed/primer-murmuration.2.0.1.min.js" defer></script>
  *
  *   var m = PrimerMurmuration.get(el);
  *   m.on('ready', fn); m.pan(dy, ms); m.panPx(px, ms); m.speed(to, ms); m.tween(key, to, ms);
@@ -17,7 +17,7 @@
  */
 ;(function () {
   if (typeof window === 'undefined' || window.PrimerMurmuration) return
-  var VERSION = '2.0.0'
+  var VERSION = '2.0.1'
   var SEL = '[data-murmuration-v2]'
   var DEFAULT_SCALE = 1.45 /* CONFIG.gen.scale in the handoff; used for px <-> Pan Y units */
 
@@ -3095,8 +3095,9 @@
     this.button = opts.pauseButton || this.findButton()
     if (this.button) {
       this.button.addEventListener('click', (this._btn = function () {
-        if (self.userPaused) self.play()
-        else self.pause()
+        /* 2.0.1: play/pause live on the public handle (2.0.0 called them on the instance and threw) */
+        if (self.userPaused) self.api.play()
+        else self.api.pause()
       }))
     }
     this.syncButton()

@@ -5,7 +5,8 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 
 | Runtime | Global | Mounts on | Versioned file (load this) | Size (min / gzip) |
 |---|---|---|---|---|
-| Murmuration v2 (handoff flock) | `PrimerMurmuration` | `[data-murmuration-v2]` | `primer-murmuration.2.0.0.min.js` | 45.0 KB / 17.7 KB |
+| Murmuration v2 (handoff flock) | `PrimerMurmuration` | `[data-murmuration-v2]` | `primer-murmuration.2.0.1.min.js` | 45.1 KB / 17.7 KB |
+| SV motion (core + GSAP effects library) | `SV.motion` | `[data-motion]` (needs Webflow's GSAP) | `sv-motion.1.0.0.min.js` | 18.4 KB / 6.5 KB |
 | CTA texture | `PrimerCtaTexture` | `[data-cta-texture="auto"]` or `mount()` | `cta-texture.1.1.0.min.js` | 14.5 KB / 6.4 KB |
 | Murmuration v1 (WebGL shader) | `Murmuration` | `[data-murmuration]` | `murmuration.1.0.0.min.js` | 19.2 KB / 7.4 KB |
 
@@ -18,7 +19,9 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 
 | File | SRI |
 |---|---|
-| `primer-murmuration.2.0.0.min.js` | `sha384-SnAOD4cnuX+OecjJyz56AVMX5t3ndFThnjmKERIR6kkgf3nw8DkHhWHxbPMh5xiZ` |
+| `primer-murmuration.2.0.1.min.js` | `sha384-SeTbO9msdyfO2OKlxwRr6ya9Nokqxyd0TAOZFpPbHKyCaRtSwxM6I7b9uu4NO+Nt` |
+| `sv-motion.1.0.0.min.js` | `sha384-FQDLbPFswVS5aEItOMOmKY4ViwsQspHBSXI3IMiFrklWF+Td1Pb3Yp1QpU5zQSDM` |
+| `primer-murmuration.2.0.0.min.js` (pause button throws: use 2.0.1) | `sha384-SnAOD4cnuX+OecjJyz56AVMX5t3ndFThnjmKERIR6kkgf3nw8DkHhWHxbPMh5xiZ` |
 | `cta-texture.1.1.0.min.js` | `sha384-m3apBjluA1TbjaYDw4vYpjr2NtIkroFV4MCd7BxEQ2o5hahAR1r9A/PjRhXvbSny` |
 | `cta-texture.1.0.0.min.js` | `sha384-vz5U9w29U4WQlduF/8zmEnND5boHMCEAkmpkAXbPiOQfD2rMGQLQMrgZJuhIJY4z` |
 | `murmuration.1.0.0.min.js` | `sha384-1KTJfG7KR98ReNp9J1mtXF1Dj9uuhFEZETqd1LVQeQl6q4wIZagL/FmVsp+3It1w` |
@@ -35,8 +38,8 @@ Inline runtime of the client handoff `primer-murmuration.html` (Primer Texture M
 <div class="hero__bg" data-murmuration-v2 aria-hidden="true"
      style="position:absolute;inset:0;background:var(--murmuration-bg)"></div>
 <button data-murmuration-pause hidden>Pause</button>   <!-- optional, sibling of the element -->
-<script src="https://lab.stan.vision/embed/primer-murmuration.2.0.0.min.js"
-        integrity="sha384-SnAOD4cnuX+OecjJyz56AVMX5t3ndFThnjmKERIR6kkgf3nw8DkHhWHxbPMh5xiZ" crossorigin="anonymous" defer></script>
+<script src="https://lab.stan.vision/embed/primer-murmuration.2.0.1.min.js"
+        integrity="sha384-SeTbO9msdyfO2OKlxwRr6ya9Nokqxyd0TAOZFpPbHKyCaRtSwxM6I7b9uu4NO+Nt" crossorigin="anonymous" defer></script>
 ```
 
 | Attribute / CSS | Values |
@@ -90,6 +93,27 @@ The runtime has **no scroll listeners**; GSAP (or the page) drives it. Events: `
 - Optional pause control: a `button[data-murmuration-pause]` next to the element is shown once it runs, toggles play/pause and keeps `aria-pressed` and `aria-label` in sync (WCAG 2.2.2, motion > 5 s). Keep `aria-hidden="true"` on the element.
 - Cost: the worker moves the work, it doesn't remove it (same CPU/battery). Measured (headless Chromium, software raster, 2 cores, 1440 × 900): worker main thread ~2% busy, 60 fps, 0 frames over 50 ms, no long task at start; main-thread fallback 100% busy, ~11 fps, a ~2 s long task before the first frame. On phones consider `data-max-dpr="1"` or the MP4 loop.
 - Rebuild: `build.mjs` (Primer workspace `claude/scripts/murmuration-v2/`) extracts the handoff's code block verbatim into `host.js`; then terser 5.31.6 `-c passes=2 -m --comments '/^!/'`.
+
+### Versions
+
+- 2.0.1: the optional pause button called `play()`/`pause()` on the internal instance (they live on the handle) and threw `TypeError: n.pause is not a function`; it now toggles. Nothing else changed.
+- 2.0.0: first release (kept in place for pages that pin it; don't use it for new pages).
+
+## SV motion — `sv-motion.*`
+
+The StanVision motion core (`SV.motion`: tokens, eases, effect registry, debounced refresh, idle queue, `pauseWhenHidden`) and the GSAP effects library (`data-motion="btn-hover | nav-hover | menu-open | intro | lines | marquee | media-scale | modal-open | reveal"`), as one cached file instead of inline embeds. Source: Primer workspace `claude/scripts/sv-motion/sv-motion.src.js` (`build.sh <version> <embed dir> <terser>`, terser 5.31.6 `-c passes=2 -m`); `sv-motion.js` here is the readable build.
+
+- Needs GSAP + ScrollTrigger + CustomEase (+ SplitText, ScrollToPlugin) as globals (Webflow's GSAP integration). Load it `defer` after them; if it runs earlier it waits for the globals until `load`.
+- A page's inline widget code waits on `SV.motion.booted`. Put a stub before the widgets so the promise exists before the file runs, and fail open (minimal form below; Primer's js__motion stub also starts each `then` callback in its own task):
+
+```html
+<script>(function(w){w.SV=w.SV||{};if(w.SV.motion)return;var r,M=w.SV.motion={booted:new Promise(function(f){r=f;})};
+M.__boot=function(p){M.__boot=null;r(p);};M.__fail=function(){if(M.__boot)M.__boot(false);};w.addEventListener('load',M.__fail);})(window);</script>
+<script src="https://lab.stan.vision/embed/sv-motion.1.0.0.min.js" integrity="…" crossorigin="anonymous" defer onerror="SV.motion.__fail()"></script>
+```
+
+- Page-load work stays out of the DOMContentLoaded and load tasks: ScrollTrigger's `autoRefreshEvents` drop DOMContentLoaded and load; the file refreshes once after boot and once after load, each after the next frame in idle time. The library starts in its own task; menus, the modal and the nav pill initialise in idle slices (`SV.motion.idle`).
+- File fails to load (host down, SRI mismatch): `booted` resolves `false`, widgets run without motion, nothing is hidden (the CSS fallbacks key off `html.sv-motion`).
 
 ## Murmuration v1 (WebGL shader) — `murmuration.*`
 
