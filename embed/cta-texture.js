@@ -9,8 +9,13 @@
  *   <div data-cta-texture aria-hidden="true" style="position:absolute;inset:auto 0 0 0;height:calc(100% + 700px)"></div>
  *   var t = PrimerCtaTexture.mount(el, { palette: [bg, fg], abovePalette: [bg, fg], extendTop: 700 });
  *   t.setSplit(px);   // CSS px from the canvas top: below it the colours swap
- *   t.setExtendTop(px); t.pause(); t.play(); t.still(true|false); t.destroy();
- * Colours are [r,g,b] arrays or CSS colour strings (rgb()/hex) resolved by the host.
+ *   t.setExtendTop(px); t.pause(); t.play(); t.destroy();
+ *   t.split = px; t.extendTop = px;   // same, as properties GSAP can tween: gsap.to(t, { split: 0, scrollTrigger: {...} })
+ *   t.on('ready', fn); PrimerCtaTexture.get(el);
+ * Declarative (footer top stage on every page): <div data-cta-texture="auto" data-extend-top="0" data-split="100000">,
+ * colours from --cta-tex-bg / --cta-tex-fg / --cta-tex-above-bg / --cta-tex-above-fg on the element, data-paused,
+ * prefers-reduced-motion = one still frame. No scroll listener: the page (GSAP) sets the split.
+ * Colours are [r,g,b] arrays or any CSS colour string (hex, rgb(), var(--x)), resolved in the element's context.
  * Draws in a Web Worker through an OffscreenCanvas when the browser can, else on the main thread.
  * Stops drawing when the tab is hidden or the element is off screen; paused / still = one frame,
  * redrawn only when the split, size or colours change.
@@ -282,16 +287,25 @@
   }
 
   /* ------------------------------------------------------------------ host */
-  function toRgb(c) {
+  function toRgb(c, el) {
     if (Array.isArray(c)) return c.slice(0, 3);
     c = String(c || '').trim();
+    if (!c) return null;
     var m = c.match(/^#([0-9a-f]{6})$/i);
     if (m) return [parseInt(m[1].slice(0, 2), 16), parseInt(m[1].slice(2, 4), 16), parseInt(m[1].slice(4, 6), 16)];
     m = c.match(/rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)/i);
     if (m) return [Math.round(+m[1]), Math.round(+m[2]), Math.round(+m[3])];
-    return null;
+    /* anything else (a name, #rgb, var(--x)): let the browser resolve it in the element's context */
+    if (/^--/.test(c)) c = 'var(' + c + ')';
+    var probe = document.createElement('i');
+    probe.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;visibility:hidden';
+    probe.style.color = c;
+    if (!probe.style.color) return null;
+    (el || document.body).appendChild(probe);
+    var rgb = getComputedStyle(probe).color; probe.remove();
+    return /^rgba?\(/i.test(rgb) ? toRgb(rgb) : null;
   }
-  function pal(p) { if (!p) return null; var a = toRgb(p[0]), b = toRgb(p[1]); return a && b ? [a, b] : null; }
+  function pal(p, el) { if (!p) return null; var a = toRgb(p[0], el), b = toRgb(p[1], el); return a && b ? [a, b] : null; }
 
   var WORKER_SRC = null;
   function workerUrl() {
@@ -308,8 +322,8 @@
     opts = opts || {};
     if (el.__ctaTexture) return el.__ctaTexture;
     var cfg = {};
-    if (opts.palette) cfg.palette = pal(opts.palette);
-    if (opts.abovePalette) cfg.abovePalette = pal(opts.abovePalette);
+    if (opts.palette) cfg.palette = pal(opts.palette, el);
+    if (opts.abovePalette) cfg.abovePalette = pal(opts.abovePalette, el);
     if (opts.extendTop != null) cfg.extendTop = +opts.extendTop || 0;
     if (opts.splitAt != null) cfg.splitAt = +opts.splitAt;
     if (opts.startAt != null) cfg.startAt = +opts.startAt;
@@ -322,7 +336,14 @@
     var send, worker = null, api = null, onScreen = true, pausedState = !!opts.paused;
     function size() { return [el.clientWidth || 1, el.clientHeight || 1, window.devicePixelRatio || 1]; }
     function isHidden() { return document.hidden || !onScreen; }
-    function ready() { el.setAttribute('data-cta-texture-state', 'ready'); if (opts.onReady) opts.onReady(); }
+    var isReady = false, readyFns = [];
+    function ready() {
+      if (isReady) return; isReady = true;
+      el.setAttribute('data-cta-texture-state', 'ready'); if (opts.onReady) opts.onReady();
+      for (var i = 0; i < readyFns.length; i++) try { readyFns[i].call(ctl, ctl); } catch (e) { setTimeout(function () { throw e; }); }
+      readyFns = [];
+      try { el.dispatchEvent(new CustomEvent('primer-cta-texture:ready', { bubbles: true, detail: { handle: ctl } })); } catch (e) {}
+    }
 
     var canWorker = opts.worker !== false && typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined' &&
       typeof canvas.transferControlToOffscreen === 'function';
@@ -360,20 +381,72 @@
 
     var lastSplit = null, ctl = {
       setSplit: function (px) { px = Math.round(px * 2) / 2; if (px !== lastSplit) { lastSplit = px; send('split', [px]); } },
-      setExtendTop: function (px) { send('ext', [Math.max(0, +px || 0)]); },
-      setColours: function (p, a) { send('colours', [pal(p), pal(a)]); },
+      setExtendTop: function (px) { extState = Math.max(0, +px || 0); send('ext', [extState]); },
+      setColours: function (p, a) { send('colours', [pal(p, el), pal(a, el)]); },
       pause: function () { pausedState = true; send('paused', [true]); },
       play: function () { pausedState = false; send('paused', [false]); },
       isPaused: function () { return pausedState; },
+      on: function (ev, fn) {
+        if (ev === 'ready' && typeof fn === 'function') { if (isReady) setTimeout(function () { fn.call(ctl, ctl); }); else readyFns.push(fn); }
+        return ctl;
+      },
       destroy: function () {
         send('stop', []); if (worker) worker.terminate(); if (ro) ro.disconnect(); if (io) io.disconnect();
         document.removeEventListener('visibilitychange', vis); canvas.remove(); el.__ctaTexture = null;
       }
     };
+    /* properties for a per-frame driver (GSAP tweens plain object properties) */
+    var extState = cfg.extendTop || 0;
+    Object.defineProperty(ctl, 'split', { enumerable: true,
+      get: function () { return lastSplit == null ? (cfg.splitAt != null ? cfg.splitAt : 100000) : lastSplit; },
+      set: function (v) { ctl.setSplit(+v || 0); } });
+    Object.defineProperty(ctl, 'extendTop', { enumerable: true,
+      get: function () { return extState; },
+      set: function (v) { ctl.setExtendTop(v); } });
     el.__ctaTexture = ctl;
     return ctl;
   }
 
-  window.PrimerCtaTexture = { mount: mount, version: '1.0.0' };
+  /* ------------------------------------------------------------------ declarative mount
+     <div data-cta-texture="auto"> (the footer's top stage on every page, D-232). Hosts that mount by
+     hand (Home css__cta) keep data-cta-texture with no value and are left alone. */
+  var mqReduce = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+  function attrNum(el, a) { var v = el.getAttribute(a); if (v == null || v === '') return undefined; v = parseFloat(v); return isFinite(v) ? v : undefined; }
+  function cssVar(el, n) { return getComputedStyle(el).getPropertyValue(n).trim(); }
+  function attrPaused(el) { var v = el.getAttribute('data-paused'); return v != null && v !== '0' && v !== 'false'; }
+  function autoMount(el) {
+    if (el.__ctaTexture) return el.__ctaTexture;
+    var bg = cssVar(el, '--cta-tex-bg'), fg = cssVar(el, '--cta-tex-fg'),
+      abg = cssVar(el, '--cta-tex-above-bg'), afg = cssVar(el, '--cta-tex-above-fg');
+    var o = { extendTop: attrNum(el, 'data-extend-top'), splitAt: attrNum(el, 'data-split'), startAt: attrNum(el, 'data-start-at'),
+      maxDpr: attrNum(el, 'data-max-dpr'), worker: el.getAttribute('data-worker') !== 'off',
+      paused: attrPaused(el) || !!mqReduce.matches };
+    if (bg && fg) o.palette = [bg, fg];
+    if (abg && afg) o.abovePalette = [abg, afg];
+    var t = mount(el, o);
+    function sync() { if (attrPaused(el) || mqReduce.matches) t.pause(); else t.play(); }
+    new MutationObserver(sync).observe(el, { attributes: true, attributeFilter: ['data-paused'] });
+    if (mqReduce.addEventListener) mqReduce.addEventListener('change', sync); else if (mqReduce.addListener) mqReduce.addListener(sync);
+    t.refreshColours = function () {
+      var p = [cssVar(el, '--cta-tex-bg'), cssVar(el, '--cta-tex-fg')], a = [cssVar(el, '--cta-tex-above-bg'), cssVar(el, '--cta-tex-above-fg')];
+      t.setColours(p[0] && p[1] ? p : null, a[0] && a[1] ? a : null); return t;
+    };
+    return t;
+  }
+  function mountAll(root) {
+    var els = (root || document).querySelectorAll('[data-cta-texture="auto"]'), out = [];
+    for (var i = 0; i < els.length; i++) out.push(autoMount(els[i]));
+    return out;
+  }
+  function get(el) {
+    if (typeof el === 'string') el = document.querySelector(el);
+    if (!el) return null;
+    if (el.__ctaTexture) return el.__ctaTexture;
+    return el.getAttribute('data-cta-texture') === 'auto' ? autoMount(el) : null;
+  }
+
+  window.PrimerCtaTexture = { mount: mount, get: get, mountAll: mountAll, version: '1.1.0' };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { mountAll(); }, { once: true });
+  else mountAll();
   try { window.dispatchEvent(new CustomEvent('primer-cta-texture-ready')); } catch (e) {}
 })();
