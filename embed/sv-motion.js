@@ -1,5 +1,5 @@
 /*!
- * sv-motion 1.2.0 (StanVision, made for Primer): SV.motion core + GSAP effects library (motion.md §5, motion-library.md).
+ * sv-motion 1.3.0 (StanVision, made for Primer): SV.motion core + GSAP effects library (motion.md §5, motion-library.md).
  * GSAP comes from Webflow's integration (Site settings > GSAP: Core, ScrollTrigger, CustomEase, ScrollToPlugin, SplitText).
  * Load it deferred after Webflow's GSAP scripts; it also waits for the GSAP globals if it runs earlier.
  */
@@ -11,7 +11,7 @@
   w.SV = w.SV || {}
   /* the inline stub (Webflow js__motion embed) may already hold SV.motion.booted for the page's widget embeds */
   var M = (SV.motion = SV.motion || {})
-  M.version = '1.2.0'
+  M.version = '1.3.0'
 
   /* ---- SV.motion core (D-234/D-246, D-249): eases, tokens, effect registry, one deferred ScrollTrigger refresh,
      pauseWhenHidden for loops. Under prefers-reduced-motion each effect sets its end state instead of moving. ---- */
@@ -102,8 +102,10 @@
 
       /* ---- btn-hover: one delegated listener set, so Silktide's late buttons work too; built on first hover/focus.
          D-274: nav text links (.nav__links__child) take the label slide too, without the fill (the nav pill is their fill).
-         D-275/D-288: hover-in = label exits left and re-enters from the right, hover-out = exits right and re-enters from the
-         left (Stan's video); a slide always finishes, a flick (leave during the slide) adds no second slide. ---- */
+         D-275/D-288: hover-in = label exits left and re-enters from the right. D-498 (Stan D-492, sv-motion 1.3.0): hover-out has
+         no swipe back: the label stays where it is (a running hover-in slide just finishes), the in-timeline re-arms from 0 on
+         the next hover-in / keyboard focus (label at rest at both ends, so the restart is invisible); the fill leaves with a
+         0.2 s fade (a colour change, like the text colour) and resets to scaleX 0 unseen. ---- */
       var BTN = '.button:not([data-wf--button--button---variant="link"]):not([icon-only="yes"]):not([icon-only="true"]),' +
                 '#silktide-wrapper .st-button, .footer__newsletter-submit';
       function btnOf(t) { return (t && t.closest && t.closest(BTN)) || null; }
@@ -136,37 +138,44 @@
           fill.className = 'sv-fill';
           fill.setAttribute('aria-hidden', 'true');
           el.insertBefore(fill, el.firstChild);
+          h.fillEl = fill;
           h.fill = M.reduce
             ? gsap.fromTo(fill, { scaleX: 1, autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2, ease: 'none', paused: true })
             : gsap.fromTo(fill, { scaleX: 0 }, { scaleX: 1, duration: M.dur.hover, ease: E.arrive, paused: true });
         }
         return (el.__svh = h);
       }
-      /* dir 1 = hover-in (out to the left, in from the right), -1 = hover-out (mirror); one timeline per direction, reused */
-      function slide(h, dir) {
+      /* hover-in only (D-498): out to the left, in from the right; one timeline, reused, never reversed */
+      function slide(h) {
         if (!h.label || M.reduce) return;
-        var k = dir > 0 ? 'tIn' : 'tOut';
-        if ((h.tIn && h.tIn.isActive()) || (h.tOut && h.tOut.isActive())) return;
-        if (!h[k]) h[k] = gsap.timeline({ paused: true })
-          .to(h.label, { xPercent: -110 * dir, duration: M.dur.labelOut, ease: E.labelOut })
-          .set(h.label, { xPercent: 110 * dir }, '+=' + M.dur.labelGap)
+        if (h.tIn && h.tIn.isActive()) return;
+        if (!h.tIn) h.tIn = gsap.timeline({ paused: true })
+          .to(h.label, { xPercent: -110, duration: M.dur.labelOut, ease: E.labelOut })
+          .set(h.label, { xPercent: 110 }, '+=' + M.dur.labelGap)
           .to(h.label, { xPercent: 0, duration: M.dur.labelIn, ease: E.labelIn });
-        h[k].restart();
+        h.tIn.restart();
       }
       function enter(el) {
         if (el.disabled || el.hasAttribute('data-cc-autofocus')) return;
         var h = setup(el);
         if (h.on) return;
         h.on = true;
-        if (h.fill) h.fill.play();
-        slide(h, 1);
+        if (h.fill) {
+          if (h.fade) { h.fade.kill(); h.fade = null; gsap.set(h.fillEl, { autoAlpha: 1 }); }
+          h.fill.play();
+        }
+        slide(h);
       }
       function leave(el) {
         var h = el.__svh;
         if (!h || !h.on) return;
         h.on = false;
-        if (h.fill) h.fill.reverse();
-        slide(h, -1);
+        if (!h.fill) return;
+        if (M.reduce) { h.fill.reverse(); return; }
+        h.fill.pause();
+        h.fade = gsap.to(h.fillEl, { autoAlpha: 0, duration: 0.2, ease: 'none', onComplete: function () {
+          h.fade = null; h.fill.pause(0); gsap.set(h.fillEl, { autoAlpha: 1 });
+        } });
       }
       document.addEventListener('pointerover', function (e) {
         if (touch(e)) return;

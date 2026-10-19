@@ -6,7 +6,7 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 | Runtime | Global | Mounts on | Versioned file (load this) | Size (min / gzip) |
 |---|---|---|---|---|
 | Murmuration v2 (handoff flock) | `PrimerMurmuration` | `[data-murmuration-v2]` | `primer-murmuration.2.0.1.min.js` | 45.1 KB / 17.7 KB |
-| SV motion (core + GSAP effects library) | `SV.motion` | `[data-motion]` (needs Webflow's GSAP) | `sv-motion.1.2.0.min.js` | 21.4 KB / 7.4 KB |
+| SV motion (core + GSAP effects library) | `SV.motion` | `[data-motion]` (needs Webflow's GSAP) | `sv-motion.1.3.0.min.js` | 21.6 KB / 7.4 KB |
 | CTA texture | `PrimerCtaTexture` | `[data-cta-texture="auto"]` or `mount()` | `cta-texture.1.1.0.min.js` | 14.5 KB / 6.4 KB |
 | Murmuration v1 (WebGL shader) | `Murmuration` | `[data-murmuration]` | `murmuration.1.0.0.min.js` | 19.2 KB / 7.4 KB |
 
@@ -20,6 +20,7 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 | File | SRI |
 |---|---|
 | `primer-murmuration.2.0.1.min.js` | `sha384-SeTbO9msdyfO2OKlxwRr6ya9Nokqxyd0TAOZFpPbHKyCaRtSwxM6I7b9uu4NO+Nt` |
+| `sv-motion.1.3.0.min.js` (button / nav label slide on hover-in only, no swipe back on hover-out; fill fades out; Primer D-498) | `sha384-ZC3xOzH6NBlhcXrdqnz6h9/dN9Wb8Wx4iMkOEBeqdV+PIbJoJUDAZgulUv+MYd40` |
 | `sv-motion.1.2.0.min.js` (site-wide pause: `SV.motion.paused` / `setPaused()`, event `sv:motion-pause`; marquee button removed; Primer D-412) | `sha384-UE17L7rSEXyR/WPakysajrdaS6WtoWGfUKCcalQ5CYxyAlCmUFr7t1Ezee+6IIbB` |
 | `sv-motion.1.1.0.min.js` | `sha384-9/47Wd/jv01GXNsUwTaNDquOdIO3v94vWEYSmJAVh7ueuQWNtRgrOZ8LsfbIqi1z` |
 | `sv-motion.1.0.0.min.js` | `sha384-FQDLbPFswVS5aEItOMOmKY4ViwsQspHBSXI3IMiFrklWF+Td1Pb3Yp1QpU5zQSDM` |
@@ -111,7 +112,7 @@ The StanVision motion core (`SV.motion`: tokens, eases, effect registry, debounc
 ```html
 <script>(function(w){w.SV=w.SV||{};if(w.SV.motion)return;var r,M=w.SV.motion={booted:new Promise(function(f){r=f;})};
 M.__boot=function(p){M.__boot=null;r(p);};M.__fail=function(){if(M.__boot)M.__boot(false);};w.addEventListener('load',M.__fail);})(window);</script>
-<script src="https://lab.stan.vision/embed/sv-motion.1.1.0.min.js" integrity="…" crossorigin="anonymous" defer onerror="SV.motion.__fail()"></script>
+<script src="https://lab.stan.vision/embed/sv-motion.1.3.0.min.js" integrity="…" crossorigin="anonymous" defer onerror="SV.motion.__fail()"></script>
 ```
 
 - Page-load work stays out of the DOMContentLoaded and load tasks: ScrollTrigger's `autoRefreshEvents` drop DOMContentLoaded and load; the file refreshes once after boot and once after load, each after the next frame in idle time. The library starts in its own task; menus, the modal and the nav pill initialise in idle slices (`SV.motion.idle`).
@@ -190,3 +191,5 @@ Colours are CSS colour strings (hex, `rgb()`, `var(--x)`, resolved in the elemen
 - Same look: the core is unchanged (first frame pixel-identical to 1.0.0).
 
 sv-motion 1.1.0 (2026-10-16, Primer D-287..D-291): label slide with the CustomEases `sv-label-out` / `sv-label-in` on buttons and nav text links (hover-in exits left, hover-out exits right), hero bar label held back until the intro wipe (`html.sv-intro-pending`, set by the page stub), `stats-in` (Trusted By texts rise from masks, figures count up with tabular digits).
+
+sv-motion 1.3.0 (2026-10-19, Primer D-498 / Stan D-492): `btn-hover` plays the label slide on hover-in and keyboard focus only; hover-out leaves the label at rest (no reverse slide) and the fill fades out in 0.2 s, then resets to scaleX 0 unseen. Nav text links follow the same rule.
