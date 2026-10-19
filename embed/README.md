@@ -6,7 +6,7 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 | Runtime | Global | Mounts on | Versioned file (load this) | Size (min / gzip) |
 |---|---|---|---|---|
 | Murmuration v2 (handoff flock) | `PrimerMurmuration` | `[data-murmuration-v2]` | `primer-murmuration.2.0.1.min.js` | 45.1 KB / 17.7 KB |
-| SV motion (core + GSAP effects library) | `SV.motion` | `[data-motion]` (needs Webflow's GSAP) | `sv-motion.1.1.0.min.js` | 21.4 KB / 7.4 KB |
+| SV motion (core + GSAP effects library) | `SV.motion` | `[data-motion]` (needs Webflow's GSAP) | `sv-motion.1.2.0.min.js` | 21.4 KB / 7.4 KB |
 | CTA texture | `PrimerCtaTexture` | `[data-cta-texture="auto"]` or `mount()` | `cta-texture.1.1.0.min.js` | 14.5 KB / 6.4 KB |
 | Murmuration v1 (WebGL shader) | `Murmuration` | `[data-murmuration]` | `murmuration.1.0.0.min.js` | 19.2 KB / 7.4 KB |
 
@@ -20,6 +20,7 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 | File | SRI |
 |---|---|
 | `primer-murmuration.2.0.1.min.js` | `sha384-SeTbO9msdyfO2OKlxwRr6ya9Nokqxyd0TAOZFpPbHKyCaRtSwxM6I7b9uu4NO+Nt` |
+| `sv-motion.1.2.0.min.js` (site-wide pause: `SV.motion.paused` / `setPaused()`, event `sv:motion-pause`; marquee button removed; Primer D-412) | `sha384-UE17L7rSEXyR/WPakysajrdaS6WtoWGfUKCcalQ5CYxyAlCmUFr7t1Ezee+6IIbB` |
 | `sv-motion.1.1.0.min.js` | `sha384-9/47Wd/jv01GXNsUwTaNDquOdIO3v94vWEYSmJAVh7ueuQWNtRgrOZ8LsfbIqi1z` |
 | `sv-motion.1.0.0.min.js` | `sha384-FQDLbPFswVS5aEItOMOmKY4ViwsQspHBSXI3IMiFrklWF+Td1Pb3Yp1QpU5zQSDM` |
 | `primer-murmuration.2.0.0.min.js` (pause button throws: use 2.0.1) | `sha384-SnAOD4cnuX+OecjJyz56AVMX5t3ndFThnjmKERIR6kkgf3nw8DkHhWHxbPMh5xiZ` |

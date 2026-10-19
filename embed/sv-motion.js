@@ -1,5 +1,5 @@
 /*!
- * sv-motion 1.1.0 (StanVision, made for Primer): SV.motion core + GSAP effects library (motion.md §5, motion-library.md).
+ * sv-motion 1.2.0 (StanVision, made for Primer): SV.motion core + GSAP effects library (motion.md §5, motion-library.md).
  * GSAP comes from Webflow's integration (Site settings > GSAP: Core, ScrollTrigger, CustomEase, ScrollToPlugin, SplitText).
  * Load it deferred after Webflow's GSAP scripts; it also waits for the GSAP globals if it runs earlier.
  */
@@ -11,7 +11,7 @@
   w.SV = w.SV || {}
   /* the inline stub (Webflow js__motion embed) may already hold SV.motion.booted for the page's widget embeds */
   var M = (SV.motion = SV.motion || {})
-  M.version = '1.1.0'
+  M.version = '1.2.0'
 
   /* ---- SV.motion core (D-234/D-246, D-249): eases, tokens, effect registry, one deferred ScrollTrigger refresh,
      pauseWhenHidden for loops. Under prefers-reduced-motion each effect sets its end state instead of moving. ---- */
@@ -37,10 +37,17 @@
     if (idleQ.length) ric(drain); else idleOn = false
   }
   M.idle = function (fn) { idleQ.push(fn); if (!idleOn) { idleOn = true; ric(drain) } }
-  /* loops and canvases: play only while on screen and with the tab visible; a user pause (tl.__user) wins */
+  /* 1.2.0 (Primer D-412): one site-wide pause (window.svPause, Footer "Pause animations"): M.paused holds every loop that runs
+     through pauseWhenHidden; the state arrives as the document event 'sv:motion-pause' {detail:{paused}} */
+  M.paused = !!(w.svPause && w.svPause.paused())
+  var syncs = []
+  M.setPaused = function (v) { M.paused = !!v; syncs.forEach(function (f) { f() }) }
+  d.addEventListener('sv:motion-pause', function (e) { M.setPaused(e.detail && e.detail.paused) })
+  /* loops and canvases: play only while on screen, with the tab visible and not paused site-wide; a local pause (tl.__user) wins */
   M.pauseWhenHidden = function (tl, trigger) {
     tl.__vis = !w.ScrollTrigger
-    function sync() { (tl.__vis && !d.hidden && !tl.__user) ? tl.play() : tl.pause(); if (tl.__onSync) tl.__onSync(!tl.paused()) }
+    function sync() { (tl.__vis && !d.hidden && !tl.__user && !M.paused) ? tl.play() : tl.pause(); if (tl.__onSync) tl.__onSync(!tl.paused()) }
+    syncs.push(sync)
     function vis(st) { tl.__vis = st.isActive; sync() } // onRefresh too: onToggle never fires for a trigger that starts off screen
     if (w.ScrollTrigger) vis(ScrollTrigger.create({ trigger: trigger, start: 'top bottom', end: 'bottom top', onToggle: vis, onRefresh: vis }))
     d.addEventListener('visibilitychange', sync)
@@ -378,11 +385,11 @@
 
       /* ---- marquee (D-252, F-03): the two tracks sit in one wrapper that moves one loop distance per cycle; --marquee-duration (s) on
          the root sets the speed per breakpoint (default data-motion-speed or 30). Pauses off screen, tab hidden, hover (>= 992 fine
-         pointer), focus inside, and with the .marquee__pause button (aria-pressed). Reduced motion: static row, no button. ---- */
+         pointer), focus inside and with the site-wide pause (M.paused, 1.2.0: no per-marquee button). Reduced motion: static row. ---- */
       M.register('marquee', function (root, p, q, rm) {
-        var tracks = q(':scope > .marquee__container'), btn = q('.marquee__pause')[0];
+        var tracks = q(':scope > .marquee__container');
         if (!tracks.length) return;
-        if (rm) { if (btn) btn.hidden = true; return; }
+        if (rm) return;
         /* F-03: both tracks move inside one wrapper, so each frame writes one transform on one element; the loop distance is
            the second track's offset (track + gap), read at init and on resize, never per frame */
         var wrap = document.createElement('div');
@@ -406,20 +413,13 @@
         function remeasure() { clearTimeout(rt); rt = setTimeout(function () { var old = dist; measure(); speed(); if (dist !== old) { var pr = tl.progress(); tl.invalidate().progress(pr); } }, 100); }
         if ('ResizeObserver' in window) { var ro = new ResizeObserver(remeasure); ro.observe(tracks[0]); ro.observe(root); }
         else window.addEventListener('resize', remeasure);
-        var st = { user: false, hover: false, focus: false }, fine = window.matchMedia('(min-width: 992px) and (hover: hover) and (pointer: fine)');
+        var st = { hover: false, focus: false }, fine = window.matchMedia('(min-width: 992px) and (hover: hover) and (pointer: fine)');
         var sync = M.pauseWhenHidden(tl, root);
-        function upd() { tl.__user = st.user || st.hover || st.focus; sync(); }
+        function upd() { tl.__user = st.hover || st.focus; sync(); }
         root.addEventListener('pointerenter', function (e) { if (!touch(e) && fine.matches) { st.hover = true; upd(); } });
         root.addEventListener('pointerleave', function () { st.hover = false; upd(); });
         root.addEventListener('focusin', function () { st.focus = true; upd(); });
         root.addEventListener('focusout', function (e) { if (!root.contains(e.relatedTarget)) { st.focus = false; upd(); } });
-        if (btn) btn.addEventListener('click', function () {
-          st.user = !st.user;
-          btn.setAttribute('aria-pressed', String(st.user));
-          btn.setAttribute('aria-label', (st.user ? 'Play' : 'Pause') + ' logo animation');
-          root.classList.toggle('is--paused', st.user);
-          upd();
-        });
         upd();
       });
 
