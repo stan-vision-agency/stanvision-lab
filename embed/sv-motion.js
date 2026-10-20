@@ -1,5 +1,5 @@
 /*!
- * sv-motion 1.3.0 (StanVision, made for Primer): SV.motion core + GSAP effects library (motion.md §5, motion-library.md).
+ * sv-motion 1.4.0 (StanVision, made for Primer): SV.motion core + GSAP effects library (motion.md §5, motion-library.md).
  * GSAP comes from Webflow's integration (Site settings > GSAP: Core, ScrollTrigger, CustomEase, ScrollToPlugin, SplitText).
  * Load it deferred after Webflow's GSAP scripts; it also waits for the GSAP globals if it runs earlier.
  */
@@ -11,7 +11,7 @@
   w.SV = w.SV || {}
   /* the inline stub (Webflow js__motion embed) may already hold SV.motion.booted for the page's widget embeds */
   var M = (SV.motion = SV.motion || {})
-  M.version = '1.3.0'
+  M.version = '1.4.0'
 
   /* ---- SV.motion core (D-234/D-246, D-249): eases, tokens, effect registry, one deferred ScrollTrigger refresh,
      pauseWhenHidden for loops. Under prefers-reduced-motion each effect sets its end state instead of moving. ---- */
@@ -20,8 +20,10 @@
   var fontsReady = (d.fonts && d.fonts.ready) || Promise.resolve()
   var reg = {}, refreshT
   M.dur = { micro: 0.25, hover: 0.4, reveal: 0.65, move: 0.45, wipe: 0.77, texture: 1.6, stagger: 0.045, items: 0.08,
-    labelOut: 0.18, labelGap: 0.04, labelIn: 0.38 } // D-288 label slide: exit, empty beat, entry
-  M.ease = { house: 'power3.inOut', arrive: 'power3.out', cross: 'power2.inOut', wipe: 'power2.inOut', wipePhoto: 'power3.inOut', flock: 'expo.out', labelOut: 'power2.in', labelIn: 'expo.out' }
+    labelOut: 0.18, labelGap: 0.04, labelIn: 0.38, // D-288 label slide: exit, empty beat, entry (unused since 1.4.0)
+    roll: 0.35, swap: 0.7, swapHold: 4, cover: 0.6 } // 1.4.0 (Primer R1, D-760..): reference hero-trusted timings
+  M.ease = { house: 'power3.inOut', arrive: 'power3.out', cross: 'power2.inOut', wipe: 'power2.inOut', wipePhoto: 'power3.inOut', flock: 'expo.out', labelOut: 'power2.in', labelIn: 'expo.out',
+    rollOut: 'power1.in', rollIn: 'power1.out', rollFill: 'power2.inOut', swap: 'power3.out' }
   M.reduce = w.matchMedia('(prefers-reduced-motion: reduce)').matches
   M.ready = Promise.all([dom, fontsReady])
   M.register = function (name, fn) { reg[name] = fn }
@@ -76,7 +78,14 @@
          with a 1.5 % overshoot (soft landing), so the label never stops dead */
       CustomEase.create('sv-label-out', 'M0,0 C0.45,-0.25 0.7,0.15 1,1')
       CustomEase.create('sv-label-in', 'M0,0 C0.16,0.7 0.3,1.03 0.55,1.015 C0.75,1.005 0.85,1 1,1')
-      M.ease = { house: 'customEase', arrive: 'sv-arrive', cross: 'sv-cross', wipe: 'sv-wipe', wipePhoto: 'sv-wipe-photo', flock: 'sv-flock', labelOut: 'sv-label-out', labelIn: 'sv-label-in' }
+      /* 1.4.0 (Primer R1, reference hero-trusted): the CTA roll = CSS ease-in out, ease-out in; fill = cubic-bezier(.65,0,.35,1);
+         Trusted face swap = cubic-bezier(.29,0,.12,1) */
+      CustomEase.create('sv-roll-out', '0.42,0,1,1')
+      CustomEase.create('sv-roll-in', '0,0,0.58,1')
+      CustomEase.create('sv-roll-fill', '0.65,0,0.35,1')
+      CustomEase.create('sv-swap', '0.29,0,0.12,1')
+      M.ease = { house: 'customEase', arrive: 'sv-arrive', cross: 'sv-cross', wipe: 'sv-wipe', wipePhoto: 'sv-wipe-photo', flock: 'sv-flock', labelOut: 'sv-label-out', labelIn: 'sv-label-in',
+        rollOut: 'sv-roll-out', rollIn: 'sv-roll-in', rollFill: 'sv-roll-fill', swap: 'sv-swap' }
     }
     M.mm = gsap.matchMedia()
     gsap.defaults({ ease: M.ease.arrive, duration: M.dur.reveal })
@@ -100,12 +109,13 @@
       function touch(e) { return e.pointerType === 'touch'; }
       function fv(el) { try { return el.matches(':focus-visible') || el.matches(':has(:focus-visible)'); } catch (x) { return false; } }
 
-      /* ---- btn-hover: one delegated listener set, so Silktide's late buttons work too; built on first hover/focus.
-         D-274: nav text links (.nav__links__child) take the label slide too, without the fill (the nav pill is their fill).
-         D-275/D-288: hover-in = label exits left and re-enters from the right. D-498 (Stan D-492, sv-motion 1.3.0): hover-out has
-         no swipe back: the label stays where it is (a running hover-in slide just finishes), the in-timeline re-arms from 0 on
-         the next hover-in / keyboard focus (label at rest at both ends, so the restart is invisible); the fill leaves with a
-         0.2 s fade (a colour change, like the text colour) and resets to scaleX 0 unseen. ---- */
+      /* ---- btn-hover 1.4.0 (Primer R1 D-742, supersedes D-498/D-492): the reference CTA roll on hover-in AND hover-out.
+         In: label and arrow each leave to the right (0.175 s ease-in) and come back from the left (0.175 s ease-out); out: mirrored
+         (leave left, back from the right). The fill (span.sv-fill) slides in from the left over 0.35 s (cubic-bezier(.65,0,.35,1))
+         and slides back out to the left on leave. The text colour flips at the roll's midpoint (.sv-hot, css__looks), like the
+         reference's tint. Each change restarts the roll from rest, as the reference's class restart does. Keyboard focus-visible =
+         hover. Nav text links (.nav__links__child) roll without a fill. Reduced motion: no roll, fill and colour change at once.
+         One delegated listener set, so Silktide's late buttons work too; built on first hover/focus. ---- */
       var BTN = '.button:not([data-wf--button--button---variant="link"]):not([icon-only="yes"]):not([icon-only="true"]),' +
                 '#silktide-wrapper .st-button, .footer__newsletter-submit';
       function btnOf(t) { return (t && t.closest && t.closest(BTN)) || null; }
@@ -119,63 +129,63 @@
         host.classList.add('sv-mask');
         return s;
       }
-      function labelOf(el) {
+      function rollers(el) { // the label (masked by its host) + the arrow (masked by its trailing-icon box)
         var arrow = el.querySelector('.footer__newsletter-arrow');
-        if (arrow) { // icon only: a mask span around the arrow
+        if (arrow) {
           if (!arrow.parentNode.classList.contains('sv-mask')) { var m = document.createElement('span'); m.className = 'sv-mask'; arrow.parentNode.insertBefore(m, arrow); m.appendChild(arrow); }
-          return arrow;
+          return [arrow];
         }
-        var host = el.querySelector('.st-button__label, .btn-link');
-        return host && host.firstChild ? wrapIn(host) : null;
+        var host = el.querySelector('.st-button__label, .btn-link'), out = [];
+        if (host && host.firstChild) out.push(wrapIn(host));
+        var ic = el.querySelector('.button__trailing-icon');
+        if (ic && ic.firstElementChild) { ic.classList.add('sv-mask-x'); out.push(ic.firstElementChild); }
+        return out;
       }
       function setup(el) {
         if (el.__svh) return el.__svh;
         el.setAttribute('data-motion', 'btn-hover');
         el.setAttribute('data-motion-init', 'on');
-        var h = { on: false, label: labelOf(el) }, label = h.label;
+        var h = { on: false, roll: rollers(el) };
         if (!el.matches('.footer__newsletter-submit') && !el.closest('.nav__links__child')) {
           var fill = document.createElement('span');
           fill.className = 'sv-fill';
           fill.setAttribute('aria-hidden', 'true');
           el.insertBefore(fill, el.firstChild);
           h.fillEl = fill;
-          h.fill = M.reduce
-            ? gsap.fromTo(fill, { scaleX: 1, autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2, ease: 'none', paused: true })
-            : gsap.fromTo(fill, { scaleX: 0 }, { scaleX: 1, duration: M.dur.hover, ease: E.arrive, paused: true });
+          gsap.set(fill, M.reduce ? { x: 0, xPercent: 0, scaleX: 1, autoAlpha: 0 } : { x: 0, xPercent: -100, scaleX: 1 }); // explicit: css__animations' scaleX(0) rest is overridden
         }
         return (el.__svh = h);
       }
-      /* hover-in only (D-498): out to the left, in from the right; one timeline, reused, never reversed */
-      function slide(h) {
-        if (!h.label || M.reduce) return;
-        if (h.tIn && h.tIn.isActive()) return;
-        if (!h.tIn) h.tIn = gsap.timeline({ paused: true })
-          .to(h.label, { xPercent: -110, duration: M.dur.labelOut, ease: E.labelOut })
-          .set(h.label, { xPercent: 110 }, '+=' + M.dur.labelGap)
-          .to(h.label, { xPercent: 0, duration: M.dur.labelIn, ease: E.labelIn });
-        h.tIn.restart();
+      function roll(el, h, dir) { // dir 1 = in (exit right, enter from left), -1 = out
+        if (h.tl) h.tl.kill();
+        var hot = function () { el.classList.toggle('sv-hot', dir > 0); };
+        if (M.reduce || !h.roll.length) { gsap.set(h.roll, { xPercent: 0 }); hot(); return; }
+        h.tl = gsap.timeline()
+          .set(h.roll, { xPercent: 0 })
+          .to(h.roll, { xPercent: 100 * dir, duration: M.dur.roll / 2, ease: E.rollOut })
+          .call(hot)
+          .set(h.roll, { xPercent: -100 * dir })
+          .to(h.roll, { xPercent: 0, duration: M.dur.roll / 2, ease: E.rollIn, clearProps: 'transform' });
+      }
+      function fill(h, on) {
+        if (!h.fillEl) return;
+        if (M.reduce) gsap.set(h.fillEl, { autoAlpha: on ? 1 : 0 });
+        else gsap.to(h.fillEl, { xPercent: on ? 0 : -100, duration: M.dur.roll, ease: E.rollFill, overwrite: true });
       }
       function enter(el) {
         if (el.disabled || el.hasAttribute('data-cc-autofocus')) return;
         var h = setup(el);
         if (h.on) return;
         h.on = true;
-        if (h.fill) {
-          if (h.fade) { h.fade.kill(); h.fade = null; gsap.set(h.fillEl, { autoAlpha: 1 }); }
-          h.fill.play();
-        }
-        slide(h);
+        fill(h, true);
+        roll(el, h, 1);
       }
       function leave(el) {
         var h = el.__svh;
         if (!h || !h.on) return;
         h.on = false;
-        if (!h.fill) return;
-        if (M.reduce) { h.fill.reverse(); return; }
-        h.fill.pause();
-        h.fade = gsap.to(h.fillEl, { autoAlpha: 0, duration: 0.2, ease: 'none', onComplete: function () {
-          h.fade = null; h.fill.pause(0); gsap.set(h.fillEl, { autoAlpha: 1 });
-        } });
+        fill(h, false);
+        roll(el, h, -1);
       }
       document.addEventListener('pointerover', function (e) {
         if (touch(e)) return;
@@ -195,43 +205,9 @@
         if (el && !el.contains(e.relatedTarget) && !el.matches(':hover')) leave(el);
       });
 
-      /* ---- nav-hover (D-240 option A): one pill glides to the hovered / focused item; the labels slide with btn-hover (D-274) ---- */
-      M.register('nav-hover', function (root) {
-        M.mm.add({ desk: '(min-width: 992px) and (hover: hover) and (pointer: fine)', rm: '(prefers-reduced-motion: reduce)' }, function (ctx) {
-          if (!ctx.conditions.desk) return;
-          var rm = ctx.conditions.rm, d = rm ? 0 : 0.35, cur = null, shown = false, offs = [];
-          var pill = document.createElement('span');
-          pill.className = 'sv-pill';
-          pill.setAttribute('aria-hidden', 'true');
-          root.insertBefore(pill, root.firstChild);
-          gsap.set(pill, { autoAlpha: 0, x: 0, width: 0 });
-          var toX = gsap.quickTo(pill, 'x', { duration: d, ease: E.arrive }), toW = gsap.quickTo(pill, 'width', { duration: d, ease: E.arrive });
-          var items = [].slice.call(root.children).map(function (c) { return c.matches('.nav__dropdown') ? c.querySelector('.nav__dropdown-toggle') : c.matches('.button') ? c : null; }).filter(Boolean);
-          function show(el) {
-            if (cur === el && shown) return;
-            var r = el.getBoundingClientRect(), b = root.getBoundingClientRect(), x = r.left - b.left; // one read per item change, never per frame
-            if (rm || !shown) gsap.set(pill, { x: x, width: r.width }); else { toX(x); toW(r.width); }
-            cur = el;
-            if (!shown) { shown = true; gsap.to(pill, { autoAlpha: 1, duration: rm ? 0 : 0.2, overwrite: 'auto' }); }
-          }
-          function hide() {
-            var open = root.querySelector('.nav__dropdown-menu[data-sv-open="true"]');
-            if (open) { show(open.closest('.nav__dropdown').querySelector('.nav__dropdown-toggle')); return; }
-            if (root.matches(':hover')) return;
-            shown = false;
-            gsap.to(pill, { autoAlpha: 0, duration: rm ? 0 : 0.25, overwrite: 'auto' });
-          }
-          function on(t, type, fn) { t.addEventListener(type, fn); offs.push(function () { t.removeEventListener(type, fn); }); }
-          items.forEach(function (el) {
-            on(el, 'pointerenter', function (e) { if (!touch(e)) show(el); });
-            on(el, 'focusin', function () { if (fv(el)) show(el); });
-          });
-          on(root, 'pointerleave', function () { setTimeout(hide, 0); });
-          on(root, 'focusout', function (e) { if (!root.contains(e.relatedTarget)) hide(); });
-          on(document, 'sv:menu', function (e) { if (e.detail.open) show(e.detail.dd.querySelector('.nav__dropdown-toggle')); else hide(); });
-          return function () { offs.forEach(function (f) { f(); }); pill.remove(); };
-        });
-      });
+      /* ---- nav-hover 1.4.0 (Primer R1 D-741): no follow pill and no highlight; the nav links only roll (btn-hover), as the
+         reference. Kept registered so existing data-motion="nav-hover" roots stay valid. ---- */
+      M.register('nav-hover', function () {});
 
       /* ---- menu-open: mega-menus (desktop: hover, click, Enter; Escape dismisses), accordion + drawer + burger (<= 991) ---- */
       M.register('menu-open', function (nav) {
@@ -337,13 +313,20 @@
         });
         M.ready.then(function () {
           var now = t0 = performance.now(), fcp = (performance.getEntriesByType ? performance.getEntriesByType('paint') : []).filter(function (e) { return e.name === 'first-contentful-paint'; })[0];
-          if ((fcp && now - fcp.startTime > LATE) || window.scrollY > 40 || !window.SplitText) return unpend(); // skipped: final state at once
+          /* 1.4.0 (Primer R1 D-760): the opening "sheet": while html.sv-intro-pending is set, css__looks paints Primer Orange over the
+             paper above the band (.hero__cta::before, the bar row's top edge = the band's top edge; scaleY(var(--sv-cover))); nothing under it
+             has been seen, so the late-start skip does not apply while it covers */
+          var band = q('.hero__cta')[0], covered = !!band && document.documentElement.classList.contains('sv-intro-pending');
+          if ((!covered && fcp && now - fcp.startTime > LATE) || window.scrollY > 40 || !window.SplitText) return unpend(); // skipped: final state at once
           var nav = document.querySelector('.navigation'), h1 = q('h1')[0], eyebrow = q('.hero__eyebrow .button')[0], lead = q('.hero__lead')[0];
           var bar = q('.hero__cta .button')[0], ST = +p.stagger || M.dur.stagger;
           /* label + icon move inside their button (the mask); the label text moves in span.sv-label so the .btn-link::after hit area keeps its box */
           function inner(btn) { var l = btn.querySelector('.btn-link'); return [l && l.firstChild ? wrapIn(l) : null, btn.querySelector('.button__trailing-icon')].filter(Boolean); }
           var barIn = bar && inner(bar);
           var tl = gsap.timeline({ defaults: { ease: E.arrive, duration: M.dur.reveal } }), splits = [], tidy = [];
+          /* the sheet closes down onto the band's top edge: scaleY 1 -> 0 from the bottom, 0.6 s sv-cross at 0.05 s (reference .cover);
+             the headline rises under it */
+          if (covered) { gsap.set(band, { '--sv-cover': 1 }); tl.to(band, { '--sv-cover': 0, duration: M.dur.cover, ease: E.cross, clearProps: '--sv-cover' }, p.cover != null ? +p.cover : 0.05); }
           if (nav) tl.from(nav, { yPercent: -100, y: -16, duration: M.dur.move, clearProps: 'transform' }, +p.nav || 0.25);
           if (h1) { var s1 = split(h1); splits.push(s1); tl.from(s1.lines, { yPercent: 100, y: '0.7em', stagger: ST }, +p.headline || 0.25); }
           var at = +p.rest || 0.65;
@@ -524,6 +507,101 @@
         });
       });
 
+      /* ---- face-swap 1.4.0 (Primer R1 D-744): Trusted By tiles swap to a second set, all six at once, as the reference
+         (trusted-*.js): first swap 4 s after the grid is 35 % on screen, then every 4 s + 0.7 s; the incoming face slides in from the
+         right over the old one (0.7 s sv-swap), its photo settles 1.8 -> 1 and its figure rises from its mask. The second set comes
+         from JSON (script#sv-trusted-swap, Home page code): stat / quote / photo faces are clones of the first set's own tiles with
+         the new content. Built at the first swap (after stats-in has restored its splits). Stops off screen, with the tab hidden,
+         under the site-wide pause (svPause) and below 768 px; reduced motion = the first set, static. Hidden faces: aria-hidden +
+         inert. ---- */
+      M.register('face-swap', function (root, p, q, rm) {
+        var data = null, src = document.getElementById(p.data || 'sv-trusted-swap');
+        try { data = src ? JSON.parse(src.textContent) : null; } catch (e) { data = null; }
+        var items = q(':scope > .grid__items > *');
+        if (rm || !data || items.length !== data.length) return;
+        var mq = window.matchMedia(p.min || '(min-width: 768px)'), built = false, slots = [], cur = 0, timer = 0, vis = false;
+        var HOLD = (+p.hold || M.dur.swapHold) * 1000, D = +p.dur || M.dur.swap;
+        function first(sel) { return items.filter(function (x) { return x.matches(sel); })[0]; }
+        function img(el, url, alt) { if (!el) return; if (url) { el.src = url; el.removeAttribute('srcset'); el.removeAttribute('sizes'); el.alt = alt || ''; } else el.remove(); }
+        function fig(v) { if (!v || v.querySelector('.sv-fig')) return; var t = v.textContent.trim(); v.textContent = ''; var m = document.createElement('span'), f = document.createElement('span'); m.className = 'sv-fig-mask'; f.className = 'sv-fig'; f.textContent = t; m.appendChild(f); v.appendChild(m); }
+        function face(sp) {
+          var t;
+          if (sp.type === 'stat') {
+            t = first('.card').cloneNode(true);
+            t.classList.add('sv-face-stat'); if (sp.figTop) t.classList.add('is--fig-top');
+            if (sp.tone) t.setAttribute('data-tone', sp.tone);
+            var l = t.querySelector('.stat__label'); l.classList.remove('is--volume', 'is--uptime'); l.removeAttribute('aria-label'); l.textContent = sp.label;
+            t.querySelector('.stat__value').textContent = sp.value;
+          } else if (sp.type === 'quote') {
+            t = first('.card-quote').cloneNode(true);
+            var tx = t.querySelector('.card-quote__text'); tx.removeAttribute('aria-label'); tx.textContent = sp.text;
+            img(t.querySelector('.card-quote__avatar'), sp.avatar, '');
+            img(t.querySelector('.card-quote__logo'), sp.logo, sp.logoAlt);
+            var lb = t.querySelectorAll('.card-quote__meta .card-label'); if (lb[0]) lb[0].textContent = sp.name; if (lb[1]) lb[1].textContent = sp.role;
+          } else {
+            t = (first('.card-video:has(.card-video__logo)') || first('.card-video')).cloneNode(true);
+            t.classList.add('sv-face-photo');
+            t.querySelectorAll('video, button, .w-embed, script, style').forEach(function (x) { x.remove(); });
+            img(t.querySelector('.card-video__poster'), sp.src, sp.alt);
+            img(t.querySelector('.card-video__logo'), sp.logo, sp.logoAlt);
+            var bd = t.querySelector('.card-video__badge'); if (bd) { var st = bd.querySelector('.subtitle'); if (sp.tag && st) st.textContent = sp.tag; else bd.remove(); }
+          }
+          [t].concat([].slice.call(t.querySelectorAll('[data-motion],[id]'))).forEach(function (x) { x.removeAttribute('data-motion'); x.removeAttribute('data-motion-init'); x.removeAttribute('id'); });
+          t.querySelectorAll('.stat__value').forEach(fig);
+          return t;
+        }
+        function hide(f, h) { if (h) f.setAttribute('aria-hidden', 'true'); else f.removeAttribute('aria-hidden'); f.inert = h; f.querySelectorAll('video').forEach(function (v) { if (h) v.pause(); else if (v.autoplay && !M.paused) { var r = v.play(); if (r && r.catch) r.catch(function () {}); } }); }
+        function build() {
+          built = true;
+          items.forEach(function (a, i) {
+            var playing = [].slice.call(a.querySelectorAll('video')).filter(function (v) { return !v.paused; });
+            var sl = document.createElement('div'); sl.className = 'sv-swap-slot';
+            a.parentNode.insertBefore(sl, a); sl.appendChild(a); // moving a playing video pauses it: resume below
+            playing.forEach(function (v) { var r = v.play(); if (r && r.catch) r.catch(function () {}); });
+            a.querySelectorAll('.stat__value').forEach(fig);
+            var b = face(data[i]); sl.appendChild(b); gsap.set(b, { xPercent: 100, zIndex: 1 }); hide(b, true);
+            sl.__f = [a, b]; slots.push(sl);
+          });
+        }
+        function swap() {
+          timer = 0;
+          if (!vis || M.paused || document.hidden || !mq.matches) return;
+          if (!built) build();
+          var nx = 1 - cur;
+          slots.forEach(function (sl) {
+            var a = sl.__f[nx], o = sl.__f[cur];
+            gsap.set(o, { zIndex: 1 }); gsap.set(a, { zIndex: 2 });
+            gsap.fromTo(a, { xPercent: 100 }, { xPercent: 0, duration: D, ease: E.swap, overwrite: true });
+            var ph = a.querySelector('.card-video__poster'); if (ph && a.classList.contains('sv-face-photo')) gsap.fromTo(ph, { scale: 1.8 }, { scale: 1, duration: D, ease: E.swap, overwrite: true });
+            var fg = a.querySelector('.sv-fig'); if (fg) gsap.fromTo(fg, { yPercent: 100 }, { yPercent: 0, duration: D, ease: E.swap, overwrite: true });
+            hide(a, false); hide(o, true);
+          });
+          cur = nx;
+          plan(HOLD + D * 1000);
+        }
+        function plan(ms) { clearTimeout(timer); timer = 0; if (vis && !M.paused && !document.hidden && mq.matches) timer = setTimeout(swap, ms); }
+        new IntersectionObserver(function (es) { vis = !!(es[0] && es[0].isIntersecting); vis ? plan(HOLD) : (clearTimeout(timer), timer = 0); }, { threshold: +p.threshold || 0.35 }).observe(root);
+        document.addEventListener('visibilitychange', function () { document.hidden ? (clearTimeout(timer), timer = 0) : plan(HOLD); });
+        document.addEventListener('sv:motion-pause', function () { M.paused ? (clearTimeout(timer), timer = 0) : plan(HOLD); });
+      });
+
+      /* ---- badge-in 1.4.0 (Primer R1 D-745): the footer badges (PCI-1 & GDPR, 24/7, SOC2) rise out of their masks as soon as the
+         band enters the viewport (top of the band at the viewport bottom), 0.06 s apart. Replaces the Home-only scroll hand-off rise
+         (Texture bleed is off everywhere). Reduced motion: static. ---- */
+      M.register('badge-in', function (root, p, q, rm) {
+        if (rm || document.documentElement.classList.contains('cta-live')) return;
+        var lis = q('.footer__compliance-item');
+        if (!lis.length) return;
+        var kids = lis.map(function (li) { li.classList.add('sv-badge-mask'); return [].slice.call(li.children); });
+        gsap.set([].concat.apply([], kids), { yPercent: 100, y: '0.7em' });
+        ScrollTrigger.create({ trigger: root, start: p.start || 'top bottom', once: true, onEnter: function () {
+          kids.forEach(function (k, i) {
+            gsap.to(k, { yPercent: 0, y: 0, duration: M.dur.reveal, ease: E.arrive, delay: i * (+p.stagger || 0.06), clearProps: 'transform',
+              onComplete: function () { lis[i].classList.remove('sv-badge-mask'); } });
+          });
+        } });
+      });
+
       /* ---- reveal: items rise 24 px and fade in once at 85 %, batched (data-motion-items / -from / -stagger / -start) ---- */
       M.register('reveal', function (root, p, q, rm) {
         var items = p.items ? q(p.items) : [root];
@@ -551,7 +629,8 @@
         fn(root, p, gsap.utils.selector(root), M.reduce ? (p.rm || 'static') : false);
       }
       /* DS 3.0 instances can't carry attributes: these hook classes (Custom style) name their effect (D-251) */
-      var HOOKS = { '.section.hero__primer': 'intro', '.sv-lines': 'lines', '.section__trusted .stats__grid': 'stats-in' };
+      var HOOKS = { '.section.hero__primer': 'intro', '.sv-lines': 'lines', '.section__trusted .stats__grid': 'stats-in',
+        '.section__trusted .stats__grid > .grid__list': 'face-swap', 'footer.section__footer .footer__compliance': 'badge-in' }; // 1.4.0
       if (!document.querySelector('.section.hero__primer')) unpend(); // D-276: pages without the hero intro
       Object.keys(HOOKS).forEach(function (s) { document.querySelectorAll(s).forEach(function (el) { if (!el.hasAttribute('data-motion')) el.setAttribute('data-motion', HOOKS[s]); }); });
       document.querySelectorAll('[data-motion]').forEach(function (root) {
