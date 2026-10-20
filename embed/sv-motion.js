@@ -1,5 +1,5 @@
 /*!
- * sv-motion 1.4.0 (StanVision, made for Primer): SV.motion core + GSAP effects library (motion.md §5, motion-library.md).
+ * sv-motion 1.4.1 (StanVision, made for Primer): SV.motion core + GSAP effects library (motion.md §5, motion-library.md).
  * GSAP comes from Webflow's integration (Site settings > GSAP: Core, ScrollTrigger, CustomEase, ScrollToPlugin, SplitText).
  * Load it deferred after Webflow's GSAP scripts; it also waits for the GSAP globals if it runs earlier.
  */
@@ -11,7 +11,7 @@
   w.SV = w.SV || {}
   /* the inline stub (Webflow js__motion embed) may already hold SV.motion.booted for the page's widget embeds */
   var M = (SV.motion = SV.motion || {})
-  M.version = '1.4.0'
+  M.version = '1.4.1'
 
   /* ---- SV.motion core (D-234/D-246, D-249): eases, tokens, effect registry, one deferred ScrollTrigger refresh,
      pauseWhenHidden for loops. Under prefers-reduced-motion each effect sets its end state instead of moving. ---- */
@@ -547,6 +547,7 @@
             var bd = t.querySelector('.card-video__badge'); if (bd) { var st = bd.querySelector('.subtitle'); if (sp.tag && st) st.textContent = sp.tag; else bd.remove(); }
           }
           [t].concat([].slice.call(t.querySelectorAll('[data-motion],[id]'))).forEach(function (x) { x.removeAttribute('data-motion'); x.removeAttribute('data-motion-init'); x.removeAttribute('id'); });
+          [t].concat([].slice.call(t.querySelectorAll('[style]'))).forEach(function (x) { x.removeAttribute('style'); }); // no GSAP leftovers from the source tile
           t.querySelectorAll('.stat__value').forEach(fig);
           return t;
         }
@@ -566,6 +567,8 @@
         function swap() {
           timer = 0;
           if (!vis || M.paused || document.hidden || !mq.matches) return;
+          /* stats-in still counting or splitting the first set (slow device, background tab): wait for its clean markup */
+          if (!built && root.querySelector('.sv-count, .sv-line')) return plan(500);
           if (!built) build();
           var nx = 1 - cur;
           slots.forEach(function (sl) {
