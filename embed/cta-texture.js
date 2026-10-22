@@ -19,6 +19,9 @@
  * Draws in a Web Worker through an OffscreenCanvas when the browser can, else on the main thread.
  * Stops drawing when the tab is hidden or the element is off screen; paused / still = one frame,
  * redrawn only when the split, size or colours change.
+ * 1.2.0: the split edge is composited from cached tiles (a split move repaints only the band it crossed) and
+ * the field is computed over several frames within a time budget, so the edge follows scroll at the frame rate.
+ * Main thread fallback: mount option mainThreadBudget (ms per frame, default 4); mainThreadMs (min ms between frames) now defaults to 0.
  */
 (function () {
   'use strict';
@@ -69,7 +72,8 @@
       if (AR >= 1) { gw = Math.round(Math.sqrt(base * AR)); gh = Math.round(gw / AR); }
       else { gh = Math.round(Math.sqrt(base / AR)); gw = Math.round(gh * AR); }
       gw = Math.max(8, gw); gh = Math.max(8, gh);
-      if (gw !== GW || gh !== GH) { GW = gw; GH = gh; genC.width = GW; genC.height = GH; genImg = genX.createImageData(GW, GH); }
+      if (gw !== GW || gh !== GH) { GW = gw; GH = gh; genC.width = GW; genC.height = GH; genImg = genX.createImageData(GW, GH); return true; }
+      return false;
     }
     var ss = function (x) { return x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x); };
     function hash2(x, y) {
@@ -101,8 +105,11 @@
       var pt = ss((bd * 0.65 + ct * 0.35 - 0.36) / 0.24);
       return clamp(pt * (0.6 + 0.5 * fb) + 0.15 * pt * pt, 0, 1);
     }
-    /* the vignette generator: luminance into genC (white = paper, dark = ink) */
-    function vignette(t) {
+    /* the vignette generator: luminance into genC (white = paper, dark = ink).
+       1.2.0: rows j0..j1-1 only (all when omitted), so a field can be spread over frames; genC is updated
+       once the last row is done */
+    function vignette(t, j0, j1) {
+      if (j0 == null) { j0 = 0; j1 = GH; }
       var ext = Math.max(0, C.extendTop * dpr), top = H > ext ? ext / (H - ext) : 0;
       var d = genImg.data, sp = C.speed * 0.25, AR = (GW / GH) * (1 + top);
       var reach = clamp(C.vigSize, 0, 1), soft = clamp(C.vigSoft, 0.05, 1), wob = clamp(C.vigEdge, 0, 0.5);
@@ -129,7 +136,7 @@
       var maxR = Math.hypot(AR / 2, 0.5);
       var hole = Math.max(0, (1 - reach) * maxR * 1.13), band = Math.max(0.03, soft * 0.45);
       var pulse = 1 + 0.07 * Math.sin(breath);
-      for (var j = 0; j < GH; j++) {
+      for (var j = j0; j < j1; j++) {
         var ny = (j / GH) * (1 + top) - top, dy = ny - 0.5;
         for (var i = 0; i < GW; i++) {
           var nx = i / GW, dx = (nx - 0.5) * AR, ang = Math.atan2(dy, dx), p = (j * GW + i) * 4, inf = 0;
@@ -156,11 +163,10 @@
           d[p] = d[p + 1] = d[p + 2] = c; d[p + 3] = 255;
         }
       }
-      genX.putImageData(genImg, 0, 0);
+      if (j1 >= GH) genX.putImageData(genImg, 0, 0);
     }
 
     var gridC = env.mk(8, 8), gridX = gridC.getContext('2d', { willReadFrequently: true });
-    var cellC = env.mk(8, 8), cellX = cellC.getContext('2d');
     var prevL = null, frameDt = 1 / 60;
     function lumaGrid(cols, rows) {
       gridC.width = cols; gridC.height = rows;
@@ -200,40 +206,83 @@
         img.data[p] = c[0]; img.data[p + 1] = c[1]; img.data[p + 2] = c[2]; img.data[p + 3] = 255;
       }
     }
-    function drawCells(idx, cols, rows, cellPx) {
-      cellC.width = cols; cellC.height = rows;
-      var im = cellX.createImageData(cols, rows), P = C.palette, A = C.abovePalette;
-      paint(im, idx, P); cellX.putImageData(im, 0, 0);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(cellC, 0, 0, cols * cellPx, rows * cellPx);
-      var sy = Math.max(0, Math.round(C.splitAt * dpr));
-      if (sy < H) {
-        paint(im, idx, [P[1], P[0]]); cellX.putImageData(im, 0, 0);
-        ctx.save(); ctx.beginPath(); ctx.rect(0, sy, W, H - sy); ctx.clip();
-        ctx.drawImage(cellC, 0, 0, cols * cellPx, rows * cellPx); ctx.restore();
-      }
-      var ty = Math.round(C.extendTop * dpr);
-      if (ty > 0 && A && A.length === 2) {
-        paint(im, idx, A); cellX.putImageData(im, 0, 0);
-        ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, Math.min(ty, sy)); ctx.clip();
-        ctx.drawImage(cellC, 0, 0, cols * cellPx, rows * cellPx); ctx.restore();
-      }
-    }
+
+    /* 1.2.0: the field (vignette + tone + dither, slow) and the composite (cheap) are separate.
+       The finished grid is kept as three tiny tiles (palette, swapped palette, above palette); the visible
+       canvas is drawn from them. A split move only repaints the band between the old and the new split,
+       and the next field is spread over frames within a time budget, so scrolling never waits on it. */
+    var tileP = env.mk(8, 8), tilePX = tileP.getContext('2d');
+    var tileS = env.mk(8, 8), tileSX = tileS.getContext('2d');
+    var tileA = env.mk(8, 8), tileAX = tileA.getContext('2d');
+    var cols = 0, rows = 0, cellPx = 1;      /* dither grid of the current layout */
+    var idx = null, tilesDirty = false;     /* last finished grid; tiles need a rebuild (colours changed) */
+    var job = null, lastField = 0, lastSplit = -1;
+    var clock = typeof performance !== 'undefined' && performance.now ? function () { return performance.now(); } : function () { return Date.now(); };
 
     var W = 0, H = 0, dpr = 1, cssW = 1, cssH = 1, rawDpr = 1;
-    function resize() {
+    /* canvas, field and grid sizes; true when any changed (canvas cleared or grid stale): draw a full field now */
+    function layout() {
       dpr = Math.min(env.maxDpr || 2, rawDpr || 1);
       W = Math.max(16, Math.round(cssW * dpr)); H = Math.max(16, Math.round(cssH * dpr));
-      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; prevL = null; }
-      ensureGen(W, H);
+      var changed = false;
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; prevL = null; changed = true; }
+      if (ensureGen(W, H)) changed = true;
+      var px = Math.max(1, C.pixel * (W / 1000));
+      var cs = clamp(Math.ceil(W / px), 2, 900), rs = clamp(Math.ceil(H / px), 2, 1400);
+      var needed = Math.max(W / cs, H / rs);
+      if (needed > px) { px = needed; cs = clamp(Math.ceil(W / px), 2, 900); rs = clamp(Math.ceil(H / px), 2, 1400); }
+      if (cs !== cols || rs !== rows || px !== cellPx) { cols = cs; rows = rs; cellPx = px; changed = true; }
+      if (changed) job = null;
+      return changed;
     }
-    var hidden = false, paused = false, dirty = true, t0 = 0, held = 0, lastNow = 0, frozenT = C.startAt, warmed = false, announced = false, alive = true;
-    function render(t) {
-      resize();
-      var cellPx = Math.max(1, C.pixel * (W / 1000));
-      var cols = clamp(Math.ceil(W / cellPx), 2, 900), rows = clamp(Math.ceil(H / cellPx), 2, 1400);
-      var needed = Math.max(W / cols, H / rows);
-      if (needed > cellPx) { cellPx = needed; cols = clamp(Math.ceil(W / cellPx), 2, 900); rows = clamp(Math.ceil(H / cellPx), 2, 1400); }
+    function buildTiles() {
+      if (!idx) return;
+      tilesDirty = false;
+      var P = C.palette, A = C.abovePalette;
+      tileP.width = tileS.width = tileA.width = cols; tileP.height = tileS.height = tileA.height = rows;
+      var im = tilePX.createImageData(cols, rows);
+      paint(im, idx, P); tilePX.putImageData(im, 0, 0);
+      paint(im, idx, [P[1], P[0]]); tileSX.putImageData(im, 0, 0);
+      if (A && A.length === 2) { paint(im, idx, A); tileAX.putImageData(im, 0, 0); }
+    }
+    function band(src, a0, a1, y0, y1) {
+      a0 = Math.max(a0, y0); a1 = Math.min(a1, y1);
+      if (a1 <= a0) return;
+      ctx.save(); ctx.beginPath(); ctx.rect(0, a0, W, a1 - a0); ctx.clip();
+      ctx.drawImage(src, 0, 0, cols * cellPx, rows * cellPx); ctx.restore();
+    }
+    /* same picture as 1.1.0 (palette; swapped below the split; above palette over the extended strip).
+       composite() repaints the canvas, composite(y0, y1) only device rows y0..y1 */
+    function composite(y0, y1) {
+      if (!idx) return;
+      if (tilesDirty) buildTiles();
+      if (y0 == null) { y0 = 0; y1 = H; }
+      y0 = Math.max(0, y0); y1 = Math.min(H, y1);
+      var sy = Math.max(0, Math.round(C.splitAt * dpr)), ty = Math.round(C.extendTop * dpr), A = C.abovePalette;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      band(tileP, 0, Math.min(sy, H), y0, y1);
+      band(tileS, sy, H, y0, y1);
+      if (ty > 0 && A && A.length === 2) band(tileA, 0, Math.min(ty, sy), y0, y1);
+      lastSplit = sy;
+      if (!announced) { announced = true; env.ready(); }
+    }
+    function compositeSplit() {
+      var sy = Math.max(0, Math.round(C.splitAt * dpr));
+      if (lastSplit < 0 || tilesDirty) composite();
+      else if (sy !== lastSplit) composite(Math.min(lastSplit, sy), Math.max(lastSplit, sy));
+    }
+    /* the rows in genC are done: tone (stabilize uses the real time between fields), dither, tiles */
+    function finish() {
+      var n = clock();
+      frameDt = lastField ? clamp((n - lastField) / 1000, 1 / 120, 0.5) : 1 / 60;
+      lastField = n;
+      idx = indexMap(lumaGrid(cols, rows), cols, rows);
+      buildTiles();
+    }
+    /* whole field at once: first frame, after a resize, while paused. Stabilize pre-roll as in 1.1.0 */
+    function fullField(t) {
+      job = null;
       if (!warmed || !prevL) {
         warmed = true;
         var sa = clamp(C.stabilize || 0, 0, 0.95);
@@ -247,45 +296,64 @@
           }
           frameDt = 1 / 60;
         }
+        lastField = 0;
       }
       vignette(t);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      var L = lumaGrid(cols, rows);
-      drawCells(indexMap(L, cols, rows), cols, rows, cellPx);
-      if (!announced) { announced = true; env.ready(); }
+      finish();
     }
+    /* part of the next field within `budget` ms; true when it finished in this call.
+       Rows and the finishing pass run in different frames, so no frame does both. */
+    function stepField(t, budget) {
+      if (job && job.row >= GH) { job = null; finish(); return true; }
+      var start = clock();
+      if (!job) job = { t: t, row: 0 };
+      while (job.row < GH) {
+        var r1 = Math.min(GH, job.row + 4);
+        vignette(job.t, job.row, r1); job.row = r1;
+        if (clock() - start > budget) break;
+      }
+      return false;
+    }
+
+    var hidden = false, paused = false, dirty = true, splitMoved = false, t0 = 0, held = 0, frozenT = C.startAt, warmed = false, announced = false, alive = true;
     var lastRender = 0;
     function frame(now) {
       if (!alive) return;
       env.raf(frame);
       if (env.minMs && now - lastRender < env.minMs) return;
       lastRender = now;
-      if (hidden) { if (!held) held = now; lastNow = 0; return; }
+      if (hidden) { if (!held) held = now; return; }
       if (paused) {
         if (!held) held = now;
-        if (dirty) { dirty = false; frameDt = 1 / 60; render(frozenT); }
-        lastNow = 0; return;
+        if (dirty) {
+          dirty = splitMoved = false;
+          if (layout() || !idx || !prevL) { lastField = 0; fullField(frozenT); }
+          composite();
+        } else if (splitMoved) { splitMoved = false; compositeSplit(); }
+        return;
       }
       if (held) { if (t0) t0 += now - held; held = 0; }
       if (!t0) t0 = now;
       var t = C.startAt + (now - t0) / 1000;
-      frameDt = lastNow ? (now - lastNow) / 1000 : 1 / 60; lastNow = now;
       if (C.loop && C.period > 0.01) t = t % C.period;
-      frozenT = t; dirty = false;
-      render(t);
+      frozenT = t;
+      if (layout() || !idx || !warmed || !prevL) { dirty = splitMoved = false; fullField(t); composite(); return; }
+      /* while the split moves (the page scrolls) the field gets a small budget so the edge keeps the frame rate */
+      var moving = splitMoved, done = stepField(t, moving ? 2 : env.budget || 6);
+      if (done || dirty) { dirty = splitMoved = false; composite(); }
+      else if (moving) { splitMoved = false; compositeSplit(); }
     }
     env.raf(frame);
     return {
       size: function (w, h, r) { cssW = w; cssH = h; rawDpr = r; dirty = true; },
       hidden: function (v) { hidden = !!v; dirty = true; },
       paused: function (v) { paused = !!v; dirty = true; },
-      split: function (px) { if (px !== C.splitAt) { C.splitAt = px; dirty = true; } },
+      split: function (px) { if (px !== C.splitAt) { C.splitAt = px; splitMoved = true; } },
       ext: function (px) { if (px !== C.extendTop) { C.extendTop = px; dirty = true; prevL = null; } },
-      colours: function (p, a) { if (p) C.palette = p; if (a) C.abovePalette = a; dirty = true; },
+      colours: function (p, a) { if (p) C.palette = p; if (a) C.abovePalette = a; dirty = true; tilesDirty = true; },
       stop: function () { alive = false; }
     };
   }
-
   /* ------------------------------------------------------------------ host */
   function toRgb(c, el) {
     if (Array.isArray(c)) return c.slice(0, 3);
@@ -312,7 +380,7 @@
     if (WORKER_SRC) return WORKER_SRC;
     var src = 'var core=' + core.toString() + ';var api=null,cv=null;' +
       'var raf=typeof requestAnimationFrame==="function"?function(f){return requestAnimationFrame(f)}:function(f){return setTimeout(function(){f(performance.now())},1000/60)};' +
-      'self.onmessage=function(e){var m=e.data;if(m.k==="init"){cv=m.canvas;api=core({canvas:cv,cfg:m.cfg,maxDpr:m.maxDpr,mk:function(w,h){return new OffscreenCanvas(w,h)},raf:raf,ready:function(){self.postMessage({k:"ready"})}});' +
+      'self.onmessage=function(e){var m=e.data;if(m.k==="init"){cv=m.canvas;api=core({canvas:cv,cfg:m.cfg,maxDpr:m.maxDpr,mk:function(w,h){return new OffscreenCanvas(w,h)},raf:raf,budget:8,ready:function(){self.postMessage({k:"ready"})}});' +
       'api.size(m.w,m.h,m.dpr);api.hidden(m.hidden);api.paused(m.paused);return}if(!api)return;if(m.k==="stop"){api.stop();self.close();return}api[m.k].apply(null,m.a)};';
     WORKER_SRC = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
     return WORKER_SRC;
@@ -349,7 +417,8 @@
       typeof canvas.transferControlToOffscreen === 'function';
     function runHere(cvs) {
       api = core({ canvas: cvs, cfg: cfg, maxDpr: maxDpr, mk: function (w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; },
-        raf: function (f) { return requestAnimationFrame(f); }, ready: ready, minMs: opts.mainThreadMs || 50 });
+        raf: function (f) { return requestAnimationFrame(f); }, ready: ready,
+        minMs: opts.mainThreadMs || 0, budget: opts.mainThreadBudget || 4 });
       var s = size(); api.size(s[0], s[1], s[2]); api.hidden(isHidden()); api.paused(pausedState);
       send = function (k, a) { api[k].apply(null, a); };
     }
@@ -445,7 +514,7 @@
     return el.getAttribute('data-cta-texture') === 'auto' ? autoMount(el) : null;
   }
 
-  window.PrimerCtaTexture = { mount: mount, get: get, mountAll: mountAll, version: '1.1.0' };
+  window.PrimerCtaTexture = { mount: mount, get: get, mountAll: mountAll, version: '1.2.0' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { mountAll(); }, { once: true });
   else mountAll();
   try { window.dispatchEvent(new CustomEvent('primer-cta-texture-ready')); } catch (e) {}

@@ -7,7 +7,7 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 |---|---|---|---|---|
 | Murmuration v2 (handoff flock) | `PrimerMurmuration` | `[data-murmuration-v2]` | `primer-murmuration.2.0.1.min.js` | 45.1 KB / 17.7 KB |
 | SV motion (core + GSAP effects library) | `SV.motion` | `[data-motion]` (needs Webflow's GSAP) | `sv-motion.1.4.1.min.js` | 25.5 KB / 8.5 KB |
-| CTA texture | `PrimerCtaTexture` | `[data-cta-texture="auto"]` or `mount()` | `cta-texture.1.1.0.min.js` | 14.5 KB / 6.4 KB |
+| CTA texture | `PrimerCtaTexture` | `[data-cta-texture="auto"]` or `mount()` | `cta-texture.1.2.0.min.js` | 15.9 KB / 7.1 KB |
 | Murmuration v1 (WebGL shader) | `Murmuration` | `[data-murmuration]` | `murmuration.1.0.0.min.js` | 19.2 KB / 7.4 KB |
 
 ## Hosting rules
@@ -27,6 +27,7 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 | `sv-motion.1.1.0.min.js` | `sha384-9/47Wd/jv01GXNsUwTaNDquOdIO3v94vWEYSmJAVh7ueuQWNtRgrOZ8LsfbIqi1z` |
 | `sv-motion.1.0.0.min.js` | `sha384-FQDLbPFswVS5aEItOMOmKY4ViwsQspHBSXI3IMiFrklWF+Td1Pb3Yp1QpU5zQSDM` |
 | `primer-murmuration.2.0.0.min.js` (pause button throws: use 2.0.1) | `sha384-SnAOD4cnuX+OecjJyz56AVMX5t3ndFThnjmKERIR6kkgf3nw8DkHhWHxbPMh5xiZ` |
+| `cta-texture.1.2.0.min.js` (split edge composited from cached tiles, field spread over frames: the edge follows scroll at the frame rate; Primer) | `sha384-lAM2aTLssjl45yRhWcGdxLxSH9nKa4dftNbyoI7Q6ObmulutZcWYeEhVg3HTuvPg` |
 | `cta-texture.1.1.0.min.js` | `sha384-m3apBjluA1TbjaYDw4vYpjr2NtIkroFV4MCd7BxEQ2o5hahAR1r9A/PjRhXvbSny` |
 | `cta-texture.1.0.0.min.js` | `sha384-vz5U9w29U4WQlduF/8zmEnND5boHMCEAkmpkAXbPiOQfD2rMGQLQMrgZJuhIJY4z` |
 | `murmuration.1.0.0.min.js` | `sha384-1KTJfG7KR98ReNp9J1mtXF1Dj9uuhFEZETqd1LVQeQl6q4wIZagL/FmVsp+3It1w` |
@@ -172,7 +173,7 @@ Sites load the file only after `window.load` + `requestIdleCallback`, and only o
 
 ## CTA texture — `cta-texture.*`
 
-`cta-texture.js` / `cta-texture.min.js` (about 11 KB, 5.3 KB gzipped): port of Primer's prototype background "primer-vignette-background" (Primer Texture Motion export used on the CTA + footer prototype): a looping corner-vignette swirl (top right + bottom left), Bayer 8x8 ordered dither in two colours, a split line below which the colours swap, and an optional strip above the frame in a second palette. Canvas 2D, no iframe; draws in a Web Worker through an OffscreenCanvas when the browser can (main thread fallback capped at 20 fps). Stops when the tab is hidden or the element is off screen.
+`cta-texture.js` / `cta-texture.min.js` (about 11 KB, 5.3 KB gzipped): port of Primer's prototype background "primer-vignette-background" (Primer Texture Motion export used on the CTA + footer prototype): a looping corner-vignette swirl (top right + bottom left), Bayer 8x8 ordered dither in two colours, a split line below which the colours swap, and an optional strip above the frame in a second palette. Canvas 2D, no iframe; draws in a Web Worker through an OffscreenCanvas when the browser can (main thread fallback: about 4 ms of field work per frame since 1.2.0; 1.1.0 capped it at 20 fps). Stops when the tab is hidden or the element is off screen.
 
 ```html
 <div data-cta-texture aria-hidden="true" style="position:absolute;inset:auto 0 0 0;height:calc(100% + 700px)"></div>
@@ -191,6 +192,13 @@ Colours are CSS colour strings (hex, `rgb()`, `var(--x)`, resolved in the elemen
 - `t.on('ready', fn)`, event `primer-cta-texture:ready` (bubbles, `detail.handle`), `PrimerCtaTexture.get(el)`, `PrimerCtaTexture.mountAll(root)`.
 - Declarative mount for the footer's top stage on every page: `<div data-cta-texture="auto" aria-hidden="true">`, colours from the CSS custom properties `--cta-tex-bg`, `--cta-tex-fg`, `--cta-tex-above-bg`, `--cta-tex-above-fg` on the element (Webflow variables), `data-split` (px, default 100000 = no swap), `data-extend-top`, `data-start-at`, `data-max-dpr`, `data-worker="off"`, `data-paused`; `prefers-reduced-motion` = paused (one still frame); `t.refreshColours()` re-reads the variables. An element with `data-cta-texture` and no value (Home's `css__cta`) is left for its own `mount()` call.
 - Same look: the core is unchanged (first frame pixel-identical to 1.0.0).
+
+### 1.2.0: smooth split edge (2026-10-22)
+
+- 1.1.0 recomputed the whole field (vignette, tone, dither, three palette passes) on every frame and on every split change, so the moving edge only advanced when a field was done (about 36 fps in the worker on a 1440 px screen, 20 fps on the main thread) and looked stepped while scrolling.
+- 1.2.0 keeps the last dithered grid as three small tiles (palette, swapped palette, above palette) and draws the canvas from them. A split change repaints only the band between the old and the new split, in the same frame. The next field is computed a few rows at a time within a time budget (worker 8 ms, main thread 4 ms, 2 ms while the split moves) and swapped in when done; the stabilize blend uses the real time between fields.
+- Same picture: the split edge drawn from the tiles is pixel-identical to a freshly drawn frame at every split position; against 1.1.0 a still frame differs in under 0.1% of cells (stabilize blend timing). Measured on the Primer staging home page: 59 fps vs 36 fps for 1.1.0 while scrolling over the edge.
+- New mount option `mainThreadBudget` (ms per frame on the main thread, default 4); `mainThreadMs` (minimum ms between main thread frames) now defaults to 0. A colour or `extendTop` change while paused redraws correctly. API unchanged; 1.0.0 and 1.1.0 stay in place.
 
 sv-motion 1.1.0 (2026-10-16, Primer D-287..D-291): label slide with the CustomEases `sv-label-out` / `sv-label-in` on buttons and nav text links (hover-in exits left, hover-out exits right), hero bar label held back until the intro wipe (`html.sv-intro-pending`, set by the page stub), `stats-in` (Trusted By texts rise from masks, figures count up with tabular digits).
 
