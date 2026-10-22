@@ -22,6 +22,8 @@
  * 1.2.0: the split edge is composited from cached tiles (a split move repaints only the band it crossed) and
  * the field is computed over several frames within a time budget, so the edge follows scroll at the frame rate.
  * Main thread fallback: mount option mainThreadBudget (ms per frame, default 4); mainThreadMs (min ms between frames) now defaults to 0.
+ * 1.2.1: the visible canvas is drawn on the main thread from tiles the worker sends (ImageBitmaps); setSplit paints
+ * synchronously, so the split edge moves in the same frame as the page instead of one frame behind.
  */
 (function () {
   'use strict';
@@ -41,7 +43,6 @@
     var k0;
     for (k0 in env.cfg) if (env.cfg[k0] != null) C[k0] = env.cfg[k0];
 
-    var cv = env.canvas, ctx = cv.getContext('2d');
     function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
     function loopedPhase(t, freq, period, on) {
       if (!on || !period || period <= 0.01) return t * freq;
@@ -207,25 +208,26 @@
       }
     }
 
-    /* 1.2.0: the field (vignette + tone + dither, slow) and the composite (cheap) are separate.
-       The finished grid is kept as three tiny tiles (palette, swapped palette, above palette); the visible
-       canvas is drawn from them. A split move only repaints the band between the old and the new split,
-       and the next field is spread over frames within a time budget, so scrolling never waits on it. */
+    /* 1.2.0: the field (vignette + tone + dither, slow) is computed over several frames within a time budget.
+       1.2.1: the core no longer draws the visible canvas. Each finished grid goes out as three tiny tiles
+       (palette, swapped palette, above palette) to env.sink; the page draws the canvas from them on the main
+       thread, so a split change is painted in the same frame as the scroll update that set it (with the
+       worker, 1.2.0 painted it a frame later, and the edge trailed the page). */
     var tileP = env.mk(8, 8), tilePX = tileP.getContext('2d');
     var tileS = env.mk(8, 8), tileSX = tileS.getContext('2d');
     var tileA = env.mk(8, 8), tileAX = tileA.getContext('2d');
     var cols = 0, rows = 0, cellPx = 1;      /* dither grid of the current layout */
     var idx = null, tilesDirty = false;     /* last finished grid; tiles need a rebuild (colours changed) */
-    var job = null, lastField = 0, lastSplit = -1;
+    var job = null, lastField = 0;
     var clock = typeof performance !== 'undefined' && performance.now ? function () { return performance.now(); } : function () { return Date.now(); };
 
     var W = 0, H = 0, dpr = 1, cssW = 1, cssH = 1, rawDpr = 1;
-    /* canvas, field and grid sizes; true when any changed (canvas cleared or grid stale): draw a full field now */
+    /* canvas, field and grid sizes; true when any changed: compute a full field now */
     function layout() {
       dpr = Math.min(env.maxDpr || 2, rawDpr || 1);
-      W = Math.max(16, Math.round(cssW * dpr)); H = Math.max(16, Math.round(cssH * dpr));
+      var w = Math.max(16, Math.round(cssW * dpr)), h = Math.max(16, Math.round(cssH * dpr));
       var changed = false;
-      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; prevL = null; changed = true; }
+      if (w !== W || h !== H) { W = w; H = h; prevL = null; changed = true; }
       if (ensureGen(W, H)) changed = true;
       var px = Math.max(1, C.pixel * (W / 1000));
       var cs = clamp(Math.ceil(W / px), 2, 900), rs = clamp(Math.ceil(H / px), 2, 1400);
@@ -238,39 +240,13 @@
     function buildTiles() {
       if (!idx) return;
       tilesDirty = false;
-      var P = C.palette, A = C.abovePalette;
+      var P = C.palette, A = C.abovePalette, above = !!(A && A.length === 2);
       tileP.width = tileS.width = tileA.width = cols; tileP.height = tileS.height = tileA.height = rows;
       var im = tilePX.createImageData(cols, rows);
       paint(im, idx, P); tilePX.putImageData(im, 0, 0);
       paint(im, idx, [P[1], P[0]]); tileSX.putImageData(im, 0, 0);
-      if (A && A.length === 2) { paint(im, idx, A); tileAX.putImageData(im, 0, 0); }
-    }
-    function band(src, a0, a1, y0, y1) {
-      a0 = Math.max(a0, y0); a1 = Math.min(a1, y1);
-      if (a1 <= a0) return;
-      ctx.save(); ctx.beginPath(); ctx.rect(0, a0, W, a1 - a0); ctx.clip();
-      ctx.drawImage(src, 0, 0, cols * cellPx, rows * cellPx); ctx.restore();
-    }
-    /* same picture as 1.1.0 (palette; swapped below the split; above palette over the extended strip).
-       composite() repaints the canvas, composite(y0, y1) only device rows y0..y1 */
-    function composite(y0, y1) {
-      if (!idx) return;
-      if (tilesDirty) buildTiles();
-      if (y0 == null) { y0 = 0; y1 = H; }
-      y0 = Math.max(0, y0); y1 = Math.min(H, y1);
-      var sy = Math.max(0, Math.round(C.splitAt * dpr)), ty = Math.round(C.extendTop * dpr), A = C.abovePalette;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.imageSmoothingEnabled = false;
-      band(tileP, 0, Math.min(sy, H), y0, y1);
-      band(tileS, sy, H, y0, y1);
-      if (ty > 0 && A && A.length === 2) band(tileA, 0, Math.min(ty, sy), y0, y1);
-      lastSplit = sy;
-      if (!announced) { announced = true; env.ready(); }
-    }
-    function compositeSplit() {
-      var sy = Math.max(0, Math.round(C.splitAt * dpr));
-      if (lastSplit < 0 || tilesDirty) composite();
-      else if (sy !== lastSplit) composite(Math.min(lastSplit, sy), Math.max(lastSplit, sy));
+      if (above) { paint(im, idx, A); tileAX.putImageData(im, 0, 0); }
+      env.sink({ P: tileP, S: tileS, A: above ? tileA : null, cols: cols, rows: rows, cellPx: cellPx, W: W, H: H, dpr: dpr });
     }
     /* the rows in genC are done: tone (stabilize uses the real time between fields), dither, tiles */
     function finish() {
@@ -315,7 +291,7 @@
       return false;
     }
 
-    var hidden = false, paused = false, dirty = true, splitMoved = false, t0 = 0, held = 0, frozenT = C.startAt, warmed = false, announced = false, alive = true;
+    var hidden = false, paused = false, dirty = true, t0 = 0, held = 0, frozenT = C.startAt, warmed = false, alive = true;
     var lastRender = 0;
     function frame(now) {
       if (!alive) return;
@@ -326,10 +302,10 @@
       if (paused) {
         if (!held) held = now;
         if (dirty) {
-          dirty = splitMoved = false;
+          dirty = false;
           if (layout() || !idx || !prevL) { lastField = 0; fullField(frozenT); }
-          composite();
-        } else if (splitMoved) { splitMoved = false; compositeSplit(); }
+          else if (tilesDirty) buildTiles();
+        }
         return;
       }
       if (held) { if (t0) t0 += now - held; held = 0; }
@@ -337,23 +313,65 @@
       var t = C.startAt + (now - t0) / 1000;
       if (C.loop && C.period > 0.01) t = t % C.period;
       frozenT = t;
-      if (layout() || !idx || !warmed || !prevL) { dirty = splitMoved = false; fullField(t); composite(); return; }
-      /* while the split moves (the page scrolls) the field gets a small budget so the edge keeps the frame rate */
-      var moving = splitMoved, done = stepField(t, moving ? 2 : env.budget || 6);
-      if (done || dirty) { dirty = splitMoved = false; composite(); }
-      else if (moving) { splitMoved = false; compositeSplit(); }
+      if (layout() || !idx || !warmed || !prevL) { dirty = false; fullField(t); return; }
+      if (tilesDirty) buildTiles();
+      dirty = false;
+      stepField(t, env.budget || 6);
     }
     env.raf(frame);
     return {
       size: function (w, h, r) { cssW = w; cssH = h; rawDpr = r; dirty = true; },
       hidden: function (v) { hidden = !!v; dirty = true; },
       paused: function (v) { paused = !!v; dirty = true; },
-      split: function (px) { if (px !== C.splitAt) { C.splitAt = px; splitMoved = true; } },
       ext: function (px) { if (px !== C.extendTop) { C.extendTop = px; dirty = true; prevL = null; } },
       colours: function (p, a) { if (p) C.palette = p; if (a) C.abovePalette = a; dirty = true; tilesDirty = true; },
       stop: function () { alive = false; }
     };
   }
+
+  /* ------------------------------------------------------------------ view
+     Draws the visible canvas on the main thread from the core's tiles: palette; swapped palette below the
+     split; above palette over the extended strip (same picture as 1.1.0 / 1.2.0). A split change repaints
+     only the band between the old and the new split, synchronously, inside the caller's update. */
+  function view(canvas, onFirst) {
+    var ctx = canvas.getContext('2d'), t = null, splitAt = 100000, extendTop = 0, last = -1, first = true;
+    function band(src, a0, a1, y0, y1) {
+      a0 = Math.max(a0, y0); a1 = Math.min(a1, y1);
+      if (a1 <= a0) return;
+      ctx.save(); ctx.beginPath(); ctx.rect(0, a0, t.W, a1 - a0); ctx.clip();
+      ctx.drawImage(src, 0, 0, t.cols * t.cellPx, t.rows * t.cellPx); ctx.restore();
+    }
+    function draw(y0, y1) {
+      if (!t) return;
+      if (y0 == null) { y0 = 0; y1 = t.H; }
+      y0 = Math.max(0, y0); y1 = Math.min(t.H, y1);
+      var sy = Math.max(0, Math.round(splitAt * t.dpr)), ty = Math.round(extendTop * t.dpr);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      band(t.P, 0, Math.min(sy, t.H), y0, y1);
+      band(t.S, sy, t.H, y0, y1);
+      if (ty > 0 && t.A) band(t.A, 0, Math.min(ty, sy), y0, y1);
+      last = sy;
+      if (first) { first = false; onFirst(); }
+    }
+    function free(o) { if (!o) return; ['P', 'S', 'A'].forEach(function (k) { if (o[k] && o[k].close && (!t || o[k] !== t[k])) o[k].close(); }); }
+    return {
+      tiles: function (m) {
+        var old = t; t = m; free(old);
+        if (canvas.width !== m.W || canvas.height !== m.H) { canvas.width = m.W; canvas.height = m.H; }
+        draw();
+      },
+      split: function (px) {
+        splitAt = px;
+        if (!t) return;
+        var sy = Math.max(0, Math.round(px * t.dpr));
+        if (last < 0) draw(); else if (sy !== last) draw(Math.min(last, sy), Math.max(last, sy));
+      },
+      ext: function (px) { extendTop = px; draw(); },
+      free: function () { var o = t; t = null; free(o); }
+    };
+  }
+
   /* ------------------------------------------------------------------ host */
   function toRgb(c, el) {
     if (Array.isArray(c)) return c.slice(0, 3);
@@ -378,9 +396,12 @@
   var WORKER_SRC = null;
   function workerUrl() {
     if (WORKER_SRC) return WORKER_SRC;
-    var src = 'var core=' + core.toString() + ';var api=null,cv=null;' +
+    /* the worker sends each set of tiles as ImageBitmaps (transferred, no copy) */
+    var src = 'var core=' + core.toString() + ';var api=null;' +
       'var raf=typeof requestAnimationFrame==="function"?function(f){return requestAnimationFrame(f)}:function(f){return setTimeout(function(){f(performance.now())},1000/60)};' +
-      'self.onmessage=function(e){var m=e.data;if(m.k==="init"){cv=m.canvas;api=core({canvas:cv,cfg:m.cfg,maxDpr:m.maxDpr,mk:function(w,h){return new OffscreenCanvas(w,h)},raf:raf,budget:8,ready:function(){self.postMessage({k:"ready"})}});' +
+      'function sink(m){var P=m.P.transferToImageBitmap(),S=m.S.transferToImageBitmap(),A=m.A?m.A.transferToImageBitmap():null,tr=A?[P,S,A]:[P,S];' +
+      'self.postMessage({k:"tiles",m:{P:P,S:S,A:A,cols:m.cols,rows:m.rows,cellPx:m.cellPx,W:m.W,H:m.H,dpr:m.dpr}},tr)}' +
+      'self.onmessage=function(e){var m=e.data;if(m.k==="init"){api=core({cfg:m.cfg,maxDpr:m.maxDpr,mk:function(w,h){return new OffscreenCanvas(w,h)},raf:raf,budget:8,sink:sink});' +
       'api.size(m.w,m.h,m.dpr);api.hidden(m.hidden);api.paused(m.paused);return}if(!api)return;if(m.k==="stop"){api.stop();self.close();return}api[m.k].apply(null,m.a)};';
     WORKER_SRC = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
     return WORKER_SRC;
@@ -413,11 +434,13 @@
       try { el.dispatchEvent(new CustomEvent('primer-cta-texture:ready', { bubbles: true, detail: { handle: ctl } })); } catch (e) {}
     }
 
+    var vw = view(canvas, ready), splitState = cfg.splitAt != null ? cfg.splitAt : 100000;
+    vw.split(splitState); vw.ext(cfg.extendTop || 0);
     var canWorker = opts.worker !== false && typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined' &&
-      typeof canvas.transferControlToOffscreen === 'function';
-    function runHere(cvs) {
-      api = core({ canvas: cvs, cfg: cfg, maxDpr: maxDpr, mk: function (w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; },
-        raf: function (f) { return requestAnimationFrame(f); }, ready: ready,
+      typeof OffscreenCanvas.prototype.transferToImageBitmap === 'function';
+    function runHere() {
+      api = core({ cfg: cfg, maxDpr: maxDpr, mk: function (w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; },
+        raf: function (f) { return requestAnimationFrame(f); }, sink: vw.tiles,
         minMs: opts.mainThreadMs || 0, budget: opts.mainThreadBudget || 4 });
       var s = size(); api.size(s[0], s[1], s[2]); api.hidden(isHidden()); api.paused(pausedState);
       send = function (k, a) { api[k].apply(null, a); };
@@ -425,18 +448,17 @@
     if (canWorker) {
       try {
         worker = new Worker(workerUrl());
-        var off = canvas.transferControlToOffscreen(), s0 = size();
-        worker.postMessage({ k: 'init', canvas: off, cfg: cfg, maxDpr: maxDpr, w: s0[0], h: s0[1], dpr: s0[2], hidden: isHidden(), paused: pausedState }, [off]);
-        var gotReady = false;
-        worker.onmessage = function (e) { if (e.data && e.data.k === 'ready') { gotReady = true; ready(); } };
+        var s0 = size();
+        worker.postMessage({ k: 'init', cfg: cfg, maxDpr: maxDpr, w: s0[0], h: s0[1], dpr: s0[2], hidden: isHidden(), paused: pausedState });
+        var gotTiles = false;
+        worker.onmessage = function (e) { if (e.data && e.data.k === 'tiles') { gotTiles = true; vw.tiles(e.data.m); } };
         worker.onerror = function () {
-          if (gotReady) return;
-          worker.terminate(); worker = null;
-          var fresh = canvas.cloneNode(false); canvas.replaceWith(fresh); canvas = fresh; runHere(fresh);
+          if (gotTiles) return;
+          worker.terminate(); worker = null; runHere();
         };
         send = function (k, a) { if (worker) worker.postMessage({ k: k, a: a }); else if (api) api[k].apply(null, a); };
-      } catch (err) { worker = null; runHere(canvas); }
-    } else runHere(canvas);
+      } catch (err) { worker = null; runHere(); }
+    } else runHere();
     el.setAttribute('data-cta-texture-state', 'running');
 
     var ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(function () { send('size', size()); }) : null;
@@ -449,8 +471,8 @@
     document.addEventListener('visibilitychange', vis);
 
     var lastSplit = null, ctl = {
-      setSplit: function (px) { px = Math.round(px * 2) / 2; if (px !== lastSplit) { lastSplit = px; send('split', [px]); } },
-      setExtendTop: function (px) { extState = Math.max(0, +px || 0); send('ext', [extState]); },
+      setSplit: function (px) { px = Math.round(px * 2) / 2; if (px !== lastSplit) { lastSplit = px; vw.split(px); } },
+      setExtendTop: function (px) { extState = Math.max(0, +px || 0); vw.ext(extState); send('ext', [extState]); },
       setColours: function (p, a) { send('colours', [pal(p, el), pal(a, el)]); },
       pause: function () { pausedState = true; send('paused', [true]); },
       play: function () { pausedState = false; send('paused', [false]); },
@@ -461,7 +483,7 @@
       },
       destroy: function () {
         send('stop', []); if (worker) worker.terminate(); if (ro) ro.disconnect(); if (io) io.disconnect();
-        document.removeEventListener('visibilitychange', vis); canvas.remove(); el.__ctaTexture = null;
+        document.removeEventListener('visibilitychange', vis); vw.free(); canvas.remove(); el.__ctaTexture = null;
       }
     };
     /* properties for a per-frame driver (GSAP tweens plain object properties) */
@@ -514,7 +536,7 @@
     return el.getAttribute('data-cta-texture') === 'auto' ? autoMount(el) : null;
   }
 
-  window.PrimerCtaTexture = { mount: mount, get: get, mountAll: mountAll, version: '1.2.0' };
+  window.PrimerCtaTexture = { mount: mount, get: get, mountAll: mountAll, version: '1.2.1' };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { mountAll(); }, { once: true });
   else mountAll();
   try { window.dispatchEvent(new CustomEvent('primer-cta-texture-ready')); } catch (e) {}

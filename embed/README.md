@@ -7,7 +7,7 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 |---|---|---|---|---|
 | Murmuration v2 (handoff flock) | `PrimerMurmuration` | `[data-murmuration-v2]` | `primer-murmuration.2.0.1.min.js` | 45.1 KB / 17.7 KB |
 | SV motion (core + GSAP effects library) | `SV.motion` | `[data-motion]` (needs Webflow's GSAP) | `sv-motion.1.4.1.min.js` | 25.5 KB / 8.5 KB |
-| CTA texture | `PrimerCtaTexture` | `[data-cta-texture="auto"]` or `mount()` | `cta-texture.1.2.0.min.js` | 15.9 KB / 7.1 KB |
+| CTA texture | `PrimerCtaTexture` | `[data-cta-texture="auto"]` or `mount()` | `cta-texture.1.2.1.min.js` | 16.5 KB / 7.4 KB |
 | Murmuration v1 (WebGL shader) | `Murmuration` | `[data-murmuration]` | `murmuration.1.0.0.min.js` | 19.2 KB / 7.4 KB |
 
 ## Hosting rules
@@ -27,6 +27,7 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 | `sv-motion.1.1.0.min.js` | `sha384-9/47Wd/jv01GXNsUwTaNDquOdIO3v94vWEYSmJAVh7ueuQWNtRgrOZ8LsfbIqi1z` |
 | `sv-motion.1.0.0.min.js` | `sha384-FQDLbPFswVS5aEItOMOmKY4ViwsQspHBSXI3IMiFrklWF+Td1Pb3Yp1QpU5zQSDM` |
 | `primer-murmuration.2.0.0.min.js` (pause button throws: use 2.0.1) | `sha384-SnAOD4cnuX+OecjJyz56AVMX5t3ndFThnjmKERIR6kkgf3nw8DkHhWHxbPMh5xiZ` |
+| `cta-texture.1.2.1.min.js` (canvas drawn on the main thread from the worker's tiles: the split edge moves in the same frame as the page; Primer) | `sha384-9lmJ8XJ5O8p//fPPloB0m2v+dh0FpUoYwGx3qTJAB6oXZnVFWiMC8pU7Th7FilJj` |
 | `cta-texture.1.2.0.min.js` (split edge composited from cached tiles, field spread over frames: the edge follows scroll at the frame rate; Primer) | `sha384-lAM2aTLssjl45yRhWcGdxLxSH9nKa4dftNbyoI7Q6ObmulutZcWYeEhVg3HTuvPg` |
 | `cta-texture.1.1.0.min.js` | `sha384-m3apBjluA1TbjaYDw4vYpjr2NtIkroFV4MCd7BxEQ2o5hahAR1r9A/PjRhXvbSny` |
 | `cta-texture.1.0.0.min.js` | `sha384-vz5U9w29U4WQlduF/8zmEnND5boHMCEAkmpkAXbPiOQfD2rMGQLQMrgZJuhIJY4z` |
@@ -199,6 +200,12 @@ Colours are CSS colour strings (hex, `rgb()`, `var(--x)`, resolved in the elemen
 - 1.2.0 keeps the last dithered grid as three small tiles (palette, swapped palette, above palette) and draws the canvas from them. A split change repaints only the band between the old and the new split, in the same frame. The next field is computed a few rows at a time within a time budget (worker 8 ms, main thread 4 ms, 2 ms while the split moves) and swapped in when done; the stabilize blend uses the real time between fields.
 - Same picture: the split edge drawn from the tiles is pixel-identical to a freshly drawn frame at every split position; against 1.1.0 a still frame differs in under 0.1% of cells (stabilize blend timing). Measured on the Primer staging home page: 59 fps vs 36 fps for 1.1.0 while scrolling over the edge.
 - New mount option `mainThreadBudget` (ms per frame on the main thread, default 4); `mainThreadMs` (minimum ms between main thread frames) now defaults to 0. A colour or `extendTop` change while paused redraws correctly. API unchanged; 1.0.0 and 1.1.0 stay in place.
+
+### 1.2.1: split edge in step with the page (2026-10-22)
+
+- In 1.2.0 the worker drew the visible canvas, so a split set during a scroll update reached the screen a frame later (measured: the edge trailed the page by one frame, about 14 px at 14 px per frame), and the orange area below the edge looked like it stretched and caught up instead of moving with the footer.
+- 1.2.1 keeps the field in the worker but draws the canvas on the main thread: the worker sends each finished grid as three tiny ImageBitmaps (palette, swapped palette, above palette), and `setSplit` / `t.split = px` repaints the band at once, inside the caller's update (the GSAP scroll update), so the edge moves in the same frame as the DOM.
+- Same picture as 1.2.0 (pixel-identical at every split, after colour and extendTop changes, worker and main thread). The canvas is no longer transferred to the worker. API unchanged; 1.0.0..1.2.0 stay in place.
 
 sv-motion 1.1.0 (2026-10-16, Primer D-287..D-291): label slide with the CustomEases `sv-label-out` / `sv-label-in` on buttons and nav text links (hover-in exits left, hover-out exits right), hero bar label held back until the intro wipe (`html.sv-intro-pending`, set by the page stub), `stats-in` (Trusted By texts rise from masks, figures count up with tabular digits).
 
