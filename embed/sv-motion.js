@@ -1,5 +1,5 @@
 /*!
- * sv-motion 1.4.1 (StanVision, made for Primer): SV.motion core + GSAP effects library (motion.md §5, motion-library.md).
+ * sv-motion 1.4.2 (StanVision, made for Primer): SV.motion core + GSAP effects library (motion.md §5, motion-library.md).
  * GSAP comes from Webflow's integration (Site settings > GSAP: Core, ScrollTrigger, CustomEase, ScrollToPlugin, SplitText).
  * Load it deferred after Webflow's GSAP scripts; it also waits for the GSAP globals if it runs earlier.
  */
@@ -11,7 +11,7 @@
   w.SV = w.SV || {}
   /* the inline stub (Webflow js__motion embed) may already hold SV.motion.booted for the page's widget embeds */
   var M = (SV.motion = SV.motion || {})
-  M.version = '1.4.1'
+  M.version = '1.4.2'
 
   /* ---- SV.motion core (D-234/D-246, D-249): eases, tokens, effect registry, one deferred ScrollTrigger refresh,
      pauseWhenHidden for loops. Under prefers-reduced-motion each effect sets its end state instead of moving. ---- */
@@ -605,18 +605,28 @@
         } });
       });
 
-      /* ---- reveal: items rise 24 px and fade in once at 85 %, batched (data-motion-items / -from / -stagger / -start) ---- */
+      /* ---- reveal: items rise 24 px and fade in once at 85 %, batched (data-motion-items / -from / -stagger / -start / -together) ---- */
       M.register('reveal', function (root, p, q, rm) {
         var items = p.items ? q(p.items) : [root];
         if (rm || !items.length) return; // nothing was hidden: content stays as laid out
         var from = {}, to = {};
         (p.from || 'y:24').split(/[;,]/).forEach(function (kv) { var m = kv.split(':'); if (m.length === 2) { var k = m[0].trim(), v = parseFloat(m[1]); from[k] = v; to[k] = k === 'scale' ? 1 : 0; } });
         gsap.set(items, Object.assign({ autoAlpha: 0 }, from));
-        ScrollTrigger.batch(items, { start: p.start || 'top 85%', once: true, interval: 0.1,
-          onEnter: function (batch) {
-            gsap.to(batch, Object.assign({ autoAlpha: 1, duration: +p.dur || M.dur.reveal, ease: E.house, stagger: { each: +p.stagger || M.dur.items, from: 'start' },
-              overwrite: 'auto', clearProps: 'transform,opacity,visibility' }, to));
+        function show(batch) {
+          gsap.to(batch, Object.assign({ autoAlpha: 1, duration: +p.dur || M.dur.reveal, ease: E.house, stagger: { each: +p.stagger || M.dur.items, from: 'start' },
+            overwrite: 'auto', clearProps: 'transform,opacity,visibility' }, to));
+        }
+        /* 1.4.2 data-motion-together: one trigger on the root, every item in one stagger in visual order (column by column,
+           top to bottom), so a multi-row carousel shows all its rows at once instead of each row waiting for its own 85 % */
+        if (p.together != null) {
+          ScrollTrigger.create({ trigger: root, start: p.start || 'top 85%', once: true, onEnter: function () {
+            show(items.map(function (el) { return { el: el, r: el.getBoundingClientRect() }; })
+              .sort(function (a, b) { return Math.round(a.r.left - b.r.left) || Math.round(a.r.top - b.r.top); })
+              .map(function (x) { return x.el; }));
           } });
+          return;
+        }
+        ScrollTrigger.batch(items, { start: p.start || 'top 85%', once: true, interval: 0.1, onEnter: show });
       });
 
       /* ---- runner: [data-motion] roots, once each; eager effects now, the rest when within one viewport ---- */

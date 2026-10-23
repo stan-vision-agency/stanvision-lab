@@ -6,7 +6,7 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 | Runtime | Global | Mounts on | Versioned file (load this) | Size (min / gzip) |
 |---|---|---|---|---|
 | Murmuration v2 (handoff flock) | `PrimerMurmuration` | `[data-murmuration-v2]` | `primer-murmuration.2.0.1.min.js` | 45.1 KB / 17.7 KB |
-| SV motion (core + GSAP effects library) | `SV.motion` | `[data-motion]` (needs Webflow's GSAP) | `sv-motion.1.4.1.min.js` | 25.5 KB / 8.5 KB |
+| SV motion (core + GSAP effects library) | `SV.motion` | `[data-motion]` (needs Webflow's GSAP) | `sv-motion.1.4.2.min.js` | 25.8 KB / 8.6 KB |
 | CTA texture | `PrimerCtaTexture` | `[data-cta-texture="auto"]` or `mount()` | `cta-texture.1.2.1.min.js` | 16.5 KB / 7.4 KB |
 | Murmuration v1 (WebGL shader) | `Murmuration` | `[data-murmuration]` | `murmuration.1.0.0.min.js` | 19.2 KB / 7.4 KB |
 
@@ -23,6 +23,7 @@ Served by Vercel from this repo's `main` branch at `https://lab.stan.vision/embe
 | `sv-motion.1.3.0.min.js` (button / nav label slide on hover-in only, no swipe back on hover-out; fill fades out; Primer D-498) | `sha384-ZC3xOzH6NBlhcXrdqnz6h9/dN9Wb8Wx4iMkOEBeqdV+PIbJoJUDAZgulUv+MYd40` |
 | `sv-motion.1.4.0.min.js` (reference hero-trusted: CTA roll on hover-in and hover-out with fill slide and midpoint tint, no nav pill, hero opening sheet, Trusted By face-swap, footer badge-in; Primer D-760..D-767) | `sha384-JrdM1eXtHXfhdn1aA+sws52OmFqysZLleOzceDSt3NltiLqLzSEOnf/bZhm7GjsH` |
 | `sv-motion.1.4.1.min.js` (1.4.0 + face-swap waits for stats-in's clean markup and strips inline styles from cloned tiles; Primer D-764) | `sha384-7kPjtEvJXOhSaj2uXea+Jl8GEIyEM2YwrvDOuc9hja/YsI1AfdLza3ZZGW/Zxsaf` |
+| `sv-motion.1.4.2.min.js` (1.4.1 + `reveal` option `data-motion-together`: one trigger on the root, all items in one stagger in visual order, for multi-row carousels) | `sha384-l/uuKYdt2i8LQtQHNBkHRujmzJ3byR0VcbGYcxtQU2KZ0rIqs559H0esJ3JRva4J` |
 | `sv-motion.1.2.0.min.js` (site-wide pause: `SV.motion.paused` / `setPaused()`, event `sv:motion-pause`; marquee button removed; Primer D-412) | `sha384-UE17L7rSEXyR/WPakysajrdaS6WtoWGfUKCcalQ5CYxyAlCmUFr7t1Ezee+6IIbB` |
 | `sv-motion.1.1.0.min.js` | `sha384-9/47Wd/jv01GXNsUwTaNDquOdIO3v94vWEYSmJAVh7ueuQWNtRgrOZ8LsfbIqi1z` |
 | `sv-motion.1.0.0.min.js` | `sha384-FQDLbPFswVS5aEItOMOmKY4ViwsQspHBSXI3IMiFrklWF+Td1Pb3Yp1QpU5zQSDM` |
@@ -116,7 +117,7 @@ The StanVision motion core (`SV.motion`: tokens, eases, effect registry, debounc
 ```html
 <script>(function(w){w.SV=w.SV||{};if(w.SV.motion)return;var r,M=w.SV.motion={booted:new Promise(function(f){r=f;})};
 M.__boot=function(p){M.__boot=null;r(p);};M.__fail=function(){if(M.__boot)M.__boot(false);};w.addEventListener('load',M.__fail);})(window);</script>
-<script src="https://lab.stan.vision/embed/sv-motion.1.4.1.min.js" integrity="…" crossorigin="anonymous" defer onerror="SV.motion.__fail()"></script>
+<script src="https://lab.stan.vision/embed/sv-motion.1.4.2.min.js" integrity="…" crossorigin="anonymous" defer onerror="SV.motion.__fail()"></script>
 ```
 
 - Page-load work stays out of the DOMContentLoaded and load tasks: ScrollTrigger's `autoRefreshEvents` drop DOMContentLoaded and load; the file refreshes once after boot and once after load, each after the next frame in idle time. The library starts in its own task; menus, the modal and the nav pill initialise in idle slices (`SV.motion.idle`).
@@ -214,3 +215,5 @@ sv-motion 1.3.0 (2026-10-19, Primer D-498 / Stan D-492): `btn-hover` plays the l
 sv-motion 1.4.0 (2026-10-20, Primer review round R1, D-760..D-767 / Stan D-740..D-745): `btn-hover` = the reference CTA roll (label and arrow leave right 0.175 s ease-in, return from the left 0.175 s ease-out; hover-out mirrored; fill slides from the left 0.35 s cubic-bezier(.65,0,.35,1) and back; text colour flips at the midpoint via `.sv-hot`); `nav-hover` no longer draws a pill; `intro` closes an orange opening sheet (`--sv-cover` on `.hero__cta`, 0.6 s sv-cross at 0.05 s); new `face-swap` (Trusted By second set from `script#sv-trusted-swap`, 4 s hold, 0.7 s cubic-bezier(.29,0,.12,1)) and `badge-in` (footer badges rise as the band enters). 1.0.0..1.3.0 stay in place.
 
 sv-motion 1.4.1 (2026-10-20, Primer D-764): `face-swap` builds the second set only after `stats-in` has restored the first set (no `.sv-count` / `.sv-line` left), and removes inline styles from the cloned tiles. 1.4.0 stays in place.
+
+sv-motion 1.4.2 (2026-10-23, Primer): `reveal` takes `data-motion-together` (no value). With it the effect makes one ScrollTrigger on the root (`data-motion-start`, default `top 85%`) and reveals every item in one stagger, sorted column by column, top to bottom; without it `reveal` batches per item as before. Used on the home carousels (`.carousel__track`, two rows, column flow) so the bottom row no longer waits for its own 85 %. 1.4.1 stays in place.
