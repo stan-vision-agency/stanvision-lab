@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>014 · Colour Field — StanVision Lab</title>
-<meta name="description" content="Two colours meeting on an angle, with bent speed streaks, sheen and grain. Set the angle, split, softness, lightness and colours, preview a glass card on top, export a PNG, copy your settings. A StanVision Lab experiment.">
+<meta name="description" content="The grainy colour field from the stan.vision home page: elongated blobs smeared along a diagonal, light streaks, a hint of iridescence and film grain. Six palettes, live controls, PNG export.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   :root{
@@ -263,40 +263,35 @@
 <div id="toast">Copied to clipboard</div>
 
 <script type="x-shader/x-fragment" id="fs">
-precision highp float;
-uniform vec2 R; uniform float T;
-uniform vec3 A0, A1, B0, B1, HL;
-uniform float uL, uV, uAng, uShare, uSoft, uWave, uStreak, uScale, uBend, uSA, uSheen, uGrain;
-float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+precision highp float;uniform vec2 R;uniform float T;
+uniform vec3 C0;uniform vec3 C1;uniform vec3 C2;uniform vec3 C3;
+uniform float uAng;uniform float uSmear;uniform float uBlob;uniform float uStreak;uniform float uIri;uniform float uSat;uniform float uGrain;
+/* The stan.vision Home "Five ways" field (sv-rooms 1.5.2), with its constants exposed as uniforms. Defaults reproduce the site. */
+float h(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
 float n(vec2 p){vec2 i=floor(p),f=fract(p),u=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),u.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),u.x),u.y);}
-float fb(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*n(p);p=p*2.02+vec2(3.1,1.7);a*=.5;}return v;}
+float fb(vec2 p){return .6*n(p)+.3*n(p*2.1+3.7)+.1*n(p*4.3+1.3);}
+vec2 DIR;
+float blob(vec2 p,vec2 c,float r){r*=uBlob;vec2 d=p-c;d=vec2(dot(d,DIR),dot(d,vec2(-DIR.y,DIR.x))*2.1);return exp(-dot(d,d)/(r*r));}
 void main(){
-  float ar=R.x/R.y;
-  vec2 q=(gl_FragCoord.xy/R-.5)*vec2(ar,1.);
-  /* bent streak coordinates: lines radiate from a focus outside the frame, along the streak angle */
-  float sa=radians(uSA); vec2 sd=vec2(cos(sa),sin(sa));
-  vec2 d=q+sd*(.5+(1.-uBend)*3.5);
-  d=vec2(dot(d,sd),dot(d,vec2(-sd.y,sd.x)));
-  float u=log(length(d))*1.6*uScale-T*.015;
-  float v=atan(d.y,d.x)*7.*uScale+.2*sin(u*1.5+T*.02);
-  /* the split: colour A above a line at angle uAng, colour B below, with a soft bent edge */
-  float ba=radians(uAng); vec2 nn=vec2(-sin(ba),cos(ba));
-  float ext=.5*(abs(nn.x)*ar+abs(nn.y));
-  float k=(.5-uShare)*1.25*ext;
-  float y=dot(q,nn)-k;
-  float w=uWave*(.05*sin(dot(q,vec2(nn.y,-nn.x))*2.6+T*.03)+.08*(fb(vec2(u*.3+1.,v*.1+T*.004))-.5));
-  float g=smoothstep(-uSoft,uSoft,y+w);
-  /* tone inside each colour: lightness sets the base, variation adds slow low-frequency shading */
-  float t=smoothstep(.3,.72,fb(vec2(u*.4,v*.2)+T*.003));
-  float b=.2+uL*.9+uV*(t-.5)*1.2;
-  vec3 A=mix(A0,A1,clamp(b+.15*clamp(y*2.,0.,1.),0.,1.));
-  vec3 B=mix(B0,B1,clamp(b-.05+.1*clamp(1.+y*2.,0.,1.),0.,1.));
-  vec3 col=mix(B,A,g);
-  float f=fb(vec2(u*1.1,v*1.5)); col*=1.+uStreak*.75*(f-.5);
-  float s=pow(fb(vec2(u*.7-T*.012,v*4.5)),3.)*1.6; col=mix(col,HL,clamp(s*uSheen,0.,1.));
-  col+=(h(gl_FragCoord.xy+fract(T*13.))-.5)*uGrain;
-  gl_FragColor=vec4(col,1.);
-}
+ vec2 uv=gl_FragCoord.xy/R;float ar=R.x/R.y;vec2 p=(uv-.5)*vec2(ar,1.);
+ float t=T*.06;
+ float a=radians(uAng);vec2 dir=vec2(cos(a),sin(a));DIR=dir;
+ float w1=fb(p*1.1+vec2(t*.7,-t*.4))-.5,w2=fb(p*.8+vec2(-t*.5,t*.6)+7.3)-.5;
+ p+=(dir*w1*.9+vec2(-dir.y,dir.x)*w2*.35)*uSmear;
+ vec3 col=C1;
+ col=mix(col,C2,blob(p,vec2(.35*sin(t*.7)+.3,.3*cos(t*.5)-.3),.6));
+ col=mix(col,C3,blob(p,vec2(.3*cos(t*.6)-.25,.3*sin(t*.8)+.3),.5)*.9);
+ col=mix(col,C2,blob(p,vec2(.3*sin(t*.5+4.)+.35,.3*cos(t*.4+1.)+.45),.34)*.8);
+ col=mix(col,C0*mix(vec3(1.),C1*1.4,.35),blob(p,vec2(.25*sin(t*.9+2.)-.15,.2*cos(t*.7)-.3),.36)*.92);
+ vec2 nr=vec2(-dir.y,dir.x);
+ float s=exp(-pow((dot(p,nr)-.12-.08*sin(t*.4))*3.4,2.));
+ float s2=exp(-pow((dot(p,nr)+.42+.06*cos(t*.5))*5.,2.))*.6;
+ col=mix(col,C3,clamp((s*.6+s2*.5)*uStreak,0.,1.)*(.6+.4*w1+.4));
+ vec3 ir=.5+.5*cos(6.2832*(dot(p,dir)*1.2+t*.1+vec3(0.,.33,.67)));
+ col=mix(col,ir,uIri*s);
+ col=mix(vec3(dot(col,vec3(.299,.587,.114))),col,uSat);
+ col+=(h(gl_FragCoord.xy*1.37+fract(T*3.7)*97.)-.5)*uGrain;
+ gl_FragColor=vec4(col,1.);}
 </script>
 
 <script>
@@ -304,19 +299,18 @@ const IS_EMBED = document.documentElement.classList.contains('embed');
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const S = {
-  a0: '#26549f', a1: '#a3c7ed', b0: '#295c29', b1: '#a8c78f', sheen: '#f5f7f7',
-  light: 0.4, vary: 0.5,
-  angle: 18, share: 0.5, soft: 0.17, wave: 1,
-  streak: 0.75, scale: 1, bend: 0.8, streakAngle: 48, sheenAmt: 0.1, grain: 0.035,
+  deep: '#2a1459', main: '#4dcfff', second: '#b8ffe9', light: '#f5f5f5',
+  angle: 28.8, smear: 1, blob: 1, streak: 1, iri: 0.06, sat: 1.25, grain: 0.12,
   speed: 1, card: true, frame: 'Full', render: 0.75,
 };
+/* The five palettes of the Home "Five ways" rows on stan.vision (design system colours), plus a neutral one. */
 const PRESETS = {
-  'Five Ways': { ...S },
-  'Sea Glass': { ...S, a0: '#1d5f73', a1: '#9fd8d6', b0: '#24476b', b1: '#8fb2d9', angle: -24, light: 0.5, streak: 0.6, streakAngle: 30 },
-  'Dusk':      { ...S, a0: '#3c2f8f', a1: '#b8b0fb', b0: '#b8431a', b1: '#ffb58f', angle: 12, light: 0.45, share: 0.55, streak: 0.7, sheenAmt: 0.08 },
-  'Lime':      { ...S, a0: '#1a1d14', a1: '#4a5530', b0: '#7d9a14', b1: '#d8ff43', angle: -16, light: 0.35, share: 0.6, soft: 0.22, streak: 0.9, sheen: '#ffffff', sheenAmt: 0.06 },
-  'Ember':     { ...S, a0: '#5a1a08', a1: '#ff8a4c', b0: '#2b1b12', b1: '#a8794a', angle: 28, light: 0.45, soft: 0.25, streak: 0.85, streakAngle: 60 },
-  'Paper':     { ...S, a0: '#c9d7e8', a1: '#f4f7fb', b0: '#d9e3c9', b1: '#f6f8ef', angle: 10, light: 0.6, vary: 0.35, streak: 0.4, sheenAmt: 0.05, grain: 0.025, card: false },
+  'Brand':   { ...S },
+  'Design':  { ...S, main: '#9b5cff', light: '#e5e5e5' },
+  'Build':   { ...S, main: '#ffc7d1', second: '#b8ffb0' },
+  'Agents':  { ...S, deep: '#0e572c', main: '#d8ff43', second: '#ff4d6d' },
+  'Search':  { ...S, deep: '#0a0a0a', main: '#ff4d6d', second: '#ff4d6d', light: '#e5e5e5' },
+  'Mono':    { ...S, deep: '#0e0e0e', main: '#3a3a3a', second: '#8e8981', light: '#e5e5e5', sat: 1, iri: 0.02 },
 };
 const clone = o => JSON.parse(JSON.stringify(o));
 const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
@@ -336,7 +330,7 @@ if (gl) {
   const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
   const a = gl.getAttribLocation(p, 'a'); gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
-  ['R', 'T', 'A0', 'A1', 'B0', 'B1', 'HL', 'uL', 'uV', 'uAng', 'uShare', 'uSoft', 'uWave', 'uStreak', 'uScale', 'uBend', 'uSA', 'uSheen', 'uGrain']
+  ['R', 'T', 'C0', 'C1', 'C2', 'C3', 'uAng', 'uSmear', 'uBlob', 'uStreak', 'uIri', 'uSat', 'uGrain']
     .forEach(k => U[k] = gl.getUniformLocation(p, k));
 }
 function resize(){
@@ -349,34 +343,23 @@ new ResizeObserver(resize).observe(stage);
 function draw(){
   if (!gl) return;
   gl.uniform2f(U.R, cv.width, cv.height); gl.uniform1f(U.T, T);
-  gl.uniform3fv(U.A0, hex(S.a0)); gl.uniform3fv(U.A1, hex(S.a1));
-  gl.uniform3fv(U.B0, hex(S.b0)); gl.uniform3fv(U.B1, hex(S.b1)); gl.uniform3fv(U.HL, hex(S.sheen));
-  gl.uniform1f(U.uL, S.light); gl.uniform1f(U.uV, S.vary);
-  gl.uniform1f(U.uAng, S.angle); gl.uniform1f(U.uShare, S.share); gl.uniform1f(U.uSoft, S.soft); gl.uniform1f(U.uWave, S.wave);
-  gl.uniform1f(U.uStreak, S.streak); gl.uniform1f(U.uScale, S.scale); gl.uniform1f(U.uBend, S.bend); gl.uniform1f(U.uSA, S.streakAngle);
-  gl.uniform1f(U.uSheen, S.sheenAmt); gl.uniform1f(U.uGrain, S.grain);
+  gl.uniform3fv(U.C0, hex(S.deep)); gl.uniform3fv(U.C1, hex(S.main)); gl.uniform3fv(U.C2, hex(S.second)); gl.uniform3fv(U.C3, hex(S.light));
+  gl.uniform1f(U.uAng, S.angle); gl.uniform1f(U.uSmear, S.smear); gl.uniform1f(U.uBlob, S.blob); gl.uniform1f(U.uStreak, S.streak);
+  gl.uniform1f(U.uIri, S.iri); gl.uniform1f(U.uSat, S.sat); gl.uniform1f(U.uGrain, S.grain);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
 
-/* mean luminance and the share of colour A, measured from the frame */
-let meas = { lum: 0, a: 0 };
+/* mean luminance, measured from the frame */
+let meas = { lum: 0 };
 function measure(){
   if (!gl) return;
   const w = cv.width, h = cv.height, px = new Uint8Array(w * h * 4);
   gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
-  const A = [hex(S.a0), hex(S.a1)].map(c => c.map(x => x * 255)), B = [hex(S.b0), hex(S.b1)].map(c => c.map(x => x * 255));
-  const mid = (c, e) => [(c[0][0] + c[1][0]) / 2, (c[0][1] + c[1][1]) / 2, (c[0][2] + c[1][2]) / 2];
-  const ma = mid(A), mb = mid(B);
-  const dist = (p, m) => (p[0] - m[0]) ** 2 + (p[1] - m[1]) ** 2 + (p[2] - m[2]) ** 2;
-  let lum = 0, na = 0, n = 0;
-  for (let i = 0; i < px.length; i += 4 * 11) {
-    const p = [px[i], px[i + 1], px[i + 2]];
-    lum += (.2126 * p[0] + .7152 * p[1] + .0722 * p[2]) / 255;
-    if (dist(p, ma) < dist(p, mb)) na++; n++;
-  }
-  meas = { lum: lum / n, a: na / n };
+  let lum = 0, n = 0;
+  for (let i = 0; i < px.length; i += 4 * 11) { lum += (.2126 * px[i] + .7152 * px[i + 1] + .0722 * px[i + 2]) / 255; n++; }
+  meas = { lum: lum / n };
   const el = document.getElementById('meas');
-  if (el) el.innerHTML = 'Mean luminance <b>' + meas.lum.toFixed(2) + '</b> · colour A <b>' + Math.round(meas.a * 100) + '%</b>';
+  if (el) el.innerHTML = 'Mean luminance <b>' + meas.lum.toFixed(2) + '</b>';
   document.documentElement.style.setProperty('--pagefg', meas.lum > 0.6 && S.frame === 'Full' ? '#14161a' : '#e6ebf2');
 }
 
@@ -466,7 +449,7 @@ function group(title, items, open = true) {
   det.append(sum, grp);
   groupsEl.appendChild(det);
 }
-const SW = ['#26549f', '#a3c7ed', '#295c29', '#a8c78f', '#4e99fb', '#cde3ff', '#86f3c3', '#a098fd', '#ff540a', '#fff0e4', '#d8ff43', '#f9faf7', '#0d0d0d'];
+const SW = ['#2a1459', '#0e572c', '#0a0a0a', '#4dcfff', '#9b5cff', '#ffc7d1', '#d8ff43', '#ff4d6d', '#b8ffe9', '#b8ffb0', '#f5f5f5', '#e5e5e5', '#3a3a3a'];
 function swatches(key){
   const row = document.createElement('div'); row.className = 'swatches';
   SW.forEach(c => {
@@ -477,7 +460,7 @@ function swatches(key){
   return row;
 }
 function flip(){
-  [S.a0, S.b0] = [S.b0, S.a0]; [S.a1, S.b1] = [S.b1, S.a1];
+  [S.main, S.second] = [S.second, S.main];
   refreshUi(); live(); clearPresetActive();
 }
 function applyFrame(){
@@ -487,34 +470,27 @@ function applyFrame(){
 }
 function applyCard(){ document.getElementById('card').hidden = !S.card; }
 
-group('Split', [
-  slider('angle', 'Angle', -60, 60, 1, v => Math.round(v) + '°'),
-  slider('share', 'Colour A share', 0.2, 0.8, 0.01, v => Math.round(v * 100) + '%'),
-  slider('soft', 'Softness', 0.02, 0.5, 0.01),
-  slider('wave', 'Edge wave', 0, 3, 0.05),
-  buttons([['FLIP COLOURS', flip]]),
-], true);
 group('Colour', [
-  colorCtl('a0', 'A shadow'), swatches('a0'),
-  colorCtl('a1', 'A light'), swatches('a1'),
-  colorCtl('b0', 'B shadow'), swatches('b0'),
-  colorCtl('b1', 'B light'), swatches('b1'),
-  slider('light', 'Lightness', 0, 1, 0.01),
-  slider('vary', 'Tone variation', 0, 1, 0.01),
+  colorCtl('main', 'Main'), swatches('main'),
+  colorCtl('second', 'Second'), swatches('second'),
+  colorCtl('light', 'Light'), swatches('light'),
+  colorCtl('deep', 'Deep'), swatches('deep'),
+  buttons([['SWAP MAIN / SECOND', flip]]),
   note('', 'meas'),
 ], true);
-group('Streaks', [
-  slider('streak', 'Streaks', 0, 1.5, 0.01),
-  slider('scale', 'Streak scale', 0.4, 2.5, 0.01),
-  slider('streakAngle', 'Streak angle', -180, 180, 1, v => Math.round(v) + '°'),
-  slider('bend', 'Bend', 0, 1, 0.01),
-  colorCtl('sheen', 'Sheen'),
-  slider('sheenAmt', 'Sheen amount', 0, 0.5, 0.01),
-  slider('grain', 'Grain', 0, 0.12, 0.005),
-], false);
+group('Field', [
+  slider('angle', 'Direction', -90, 90, 0.1, v => (+v).toFixed(1) + '°'),
+  slider('smear', 'Smear', 0, 2, 0.01),
+  slider('blob', 'Blob size', 0.5, 2, 0.01),
+  slider('streak', 'Light streaks', 0, 2, 0.01),
+  slider('iri', 'Iridescence', 0, 0.3, 0.01),
+  slider('sat', 'Saturation', 0.6, 1.6, 0.01),
+  slider('grain', 'Grain', 0, 0.2, 0.005),
+  note('Defaults are the values on stan.vision Home: direction 28.8°, smear 1, blob 1, streaks 1, iridescence 0.06, saturation 1.25, grain 0.12.'),
+], true);
 group('Motion', [
   slider('speed', 'Speed', 0, 4, 0.05, v => (+v).toFixed(2) + '×', () => {}),
-  note('The field drifts slowly and keeps the same look over time. Reduced motion shows a still frame.'),
+  note('The field drifts slowly; each moment is a different composition. Reduced motion shows a still frame.'),
 ], false);
 group('Preview', [
   modes('frame', ['Full', 'Column'], applyFrame),
@@ -555,16 +531,10 @@ function applyPreset(name) {
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 function randomise() {
-  const pairs = [
-    ['#26549f', '#a3c7ed'], ['#295c29', '#a8c78f'], ['#1d5f73', '#9fd8d6'], ['#3c2f8f', '#b8b0fb'], ['#b8431a', '#ffb58f'],
-    ['#7d9a14', '#d8ff43'], ['#24476b', '#8fb2d9'], ['#0f5a46', '#86f3c3'], ['#5a1a08', '#ff8a4c'], ['#2b2b2b', '#bfc3c7'],
-  ];
-  let a = pick(pairs), b = pick(pairs); while (b === a) b = pick(pairs);
-  [S.a0, S.a1] = a; [S.b0, S.b1] = b;
-  S.angle = Math.round(rnd(-40, 40)); S.share = +rnd(.35, .65).toFixed(2); S.soft = +rnd(.08, .3).toFixed(2); S.wave = +rnd(.3, 1.6).toFixed(2);
-  S.light = +rnd(.3, .65).toFixed(2); S.vary = +rnd(.3, .8).toFixed(2);
-  S.streak = +rnd(.3, 1.1).toFixed(2); S.scale = +rnd(.7, 1.6).toFixed(2); S.streakAngle = Math.round(rnd(-180, 180)); S.bend = +rnd(.4, 1).toFixed(2);
-  S.sheenAmt = +rnd(0, .18).toFixed(2);
+  const base = clone(PRESETS[pick(Object.keys(PRESETS))]);
+  Object.assign(S, base, { frame: S.frame, render: S.render, card: S.card });
+  S.angle = +rnd(-50, 50).toFixed(1); S.smear = +rnd(.7, 1.4).toFixed(2); S.blob = +rnd(.8, 1.3).toFixed(2); S.streak = +rnd(.5, 1.4).toFixed(2);
+  T = rnd(0, 900);
   refreshUi(); applyAll(); clearPresetActive();
 }
 
@@ -577,7 +547,7 @@ document.getElementById('exportBtn').addEventListener('click', () => exportPNG(2
 const toast = document.getElementById('toast');
 function showToast(msg) { toast.textContent = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1800); }
 document.getElementById('copyBtn').addEventListener('click', async () => {
-  const json = JSON.stringify(S, null, 2);
+  const json = JSON.stringify({ ...S, t: +T.toFixed(1) }, null, 2);
   try { await navigator.clipboard.writeText(json); showToast('Settings copied as JSON'); }
   catch (e) { showToast('Clipboard blocked by the browser'); }
 });
@@ -592,7 +562,8 @@ addEventListener('keydown', e => {
 const q = new URLSearchParams(location.search);
 if (!gl) showToast('WebGL is off in this browser');
 if (q.get('frame') === 'column') S.frame = 'Column';
-applyPreset(q.get('preset') && PRESETS[q.get('preset')] ? q.get('preset') : 'Five Ways');
+applyPreset(q.get('preset') && PRESETS[q.get('preset')] ? q.get('preset') : 'Brand');
+if (q.get('t')) T = +q.get('t') || T;
 requestAnimationFrame(frame);
 </script>
 </body>
