@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>015 · Glass Shapes — StanVision Lab</title>
+<meta name="description" content="Abstract frosted glass shapes, generated. Slabs, pills, discs, petals, arches, rings and the StanVision + stacked in depth, with lips that catch the light, soft shadows, frost blur and depth of field. Four arrangements, eight presets, PNG export. A StanVision Lab experiment.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ink:#0a0a0b;
+    --panel:rgba(13,17,23,.86);
+    --line:rgba(148,163,184,.16);
+    --text:#e6ebf2;
+    --mute:#8a94a3;
+    --accent:#d8ff43;
+    --radius:10px;
+  }
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--ink); color:var(--text);
+    font-family:"Archivo",system-ui,-apple-system,sans-serif;
+    overflow:hidden; -webkit-font-smoothing:antialiased;
+  }
+  header{position:fixed; top:20px; left:24px; z-index:5; pointer-events:none; color:var(--pagefg,#e6ebf2);}
+  header p{
+    margin:4px 0 0; font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:11px; letter-spacing:.04em; opacity:.55;
+  }
+
+  #panel{
+    position:fixed; top:16px; right:16px; bottom:16px; width:288px; z-index:6;
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    display:flex; flex-direction:column; overflow:hidden;
+    transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .28s;
+  }
+  #panel.hidden{transform:translateX(calc(100% + 24px)); opacity:0; pointer-events:none;}
+  #panel .head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px 12px; border-bottom:1px solid var(--line);
+  }
+  #panel .head span{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--mute);
+  }
+  #panel .body{overflow-y:auto; padding:6px 16px 16px; flex:1; scrollbar-width:thin; scrollbar-color:rgba(148,163,184,.3) transparent;}
+  #panel .body::-webkit-scrollbar{width:6px;}
+  #panel .body::-webkit-scrollbar-thumb{background:rgba(148,163,184,.25); border-radius:3px;}
+
+  .presets{display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:14px 0 4px;}
+  .presets button{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:8px 6px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .presets button:hover{border-color:rgba(148,163,184,.45);}
+  .presets button.active{border-color:var(--accent); background:rgba(216,255,67,.14);}
+
+  details{border-bottom:1px solid var(--line); padding:2px 0;}
+  details:last-of-type{border-bottom:none;}
+  summary{
+    list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+    padding:12px 2px; font-size:12px; font-weight:600; letter-spacing:.02em; user-select:none;
+  }
+  summary::-webkit-details-marker{display:none;}
+  summary::after{content:""; width:7px; height:7px; border-right:1.4px solid var(--mute);
+    border-bottom:1.4px solid var(--mute); transform:rotate(45deg); transition:transform .18s; margin-right:3px;}
+  details[open] summary::after{transform:rotate(-135deg); margin-top:4px;}
+  .grp{padding:0 2px 14px; display:flex; flex-direction:column; gap:11px;}
+
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:22px;}
+  .row label{font-size:12px; color:var(--mute); flex:0 0 auto;}
+  .slider-row{display:flex; flex-direction:column; gap:6px;}
+  .slider-row .top{display:flex; justify-content:space-between; align-items:baseline;}
+  .slider-row .top label{font-size:12px; color:var(--mute);}
+  .slider-row .top .val{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; color:var(--text);
+    font-variant-numeric:tabular-nums;
+  }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:18px; background:transparent; cursor:pointer; margin:0;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
+    background:var(--text); margin-top:-5px; border:none;
+    transition:transform .12s; box-shadow:0 0 0 3px rgba(5,7,11,.6);
+  }
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+  input[type=range]::-moz-range-track{height:2px; background:rgba(148,163,184,.28); border-radius:1px;}
+  input[type=range]::-moz-range-thumb{width:12px; height:12px; border-radius:50%; background:var(--text); border:none;}
+
+  input[type=color]{
+    -webkit-appearance:none; appearance:none; width:44px; height:22px; border:1px solid var(--line);
+    border-radius:6px; background:none; padding:0; cursor:pointer;
+  }
+  input[type=color]::-webkit-color-swatch-wrapper{padding:2px;}
+  input[type=color]::-webkit-color-swatch{border:none; border-radius:4px;}
+  input[type=color]::-moz-color-swatch{border:none; border-radius:4px;}
+
+  .switch{position:relative; width:32px; height:18px; flex:0 0 auto;}
+  .switch input{position:absolute; opacity:0; inset:0; margin:0; cursor:pointer;}
+  .switch i{
+    position:absolute; inset:0; border-radius:9px; background:rgba(148,163,184,.25);
+    transition:background .18s; pointer-events:none;
+  }
+  .switch i::after{
+    content:""; position:absolute; left:2px; top:2px; width:14px; height:14px; border-radius:50%;
+    background:var(--text); transition:transform .18s, background .18s;
+  }
+  .switch input:checked + i{background:var(--accent);}
+  .switch input:checked + i::after{transform:translateX(14px); background:#0f1409;}
+
+  .footbar{border-top:1px solid var(--line); padding:12px 16px; display:flex; gap:8px;}
+  .footbar button{
+    flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10px; letter-spacing:0; white-space:nowrap;
+    color:#0a0605; background:var(--text); border:none; border-radius:8px; padding:9px 0; cursor:pointer;
+    transition:opacity .15s;
+  }
+  .footbar button:hover{opacity:.85;}
+
+  #toggleUi{
+    position:fixed; top:24px; right:16px; z-index:7; width:34px; height:34px;
+    border-radius:9px; border:1px solid var(--line); background:var(--panel);
+    backdrop-filter:blur(14px); color:var(--mute); cursor:pointer; font-size:15px; line-height:1;
+    display:none; align-items:center; justify-content:center;
+  }
+  #panel.hidden ~ #toggleUi{display:flex;}
+
+  #toast{
+    position:fixed; left:50%; bottom:28px; transform:translate(-50%,12px); z-index:9;
+    background:var(--text); color:#0a0605; font-size:12px; font-weight:500;
+    padding:8px 14px; border-radius:8px; opacity:0; transition:opacity .2s, transform .2s;
+    pointer-events:none;
+  }
+  #toast.show{opacity:1; transform:translate(-50%,0);}
+
+  .hidebtn{background:none; border:none; color:var(--mute); font-size:15px; cursor:pointer; padding:2px 4px; line-height:1;}
+  .hidebtn:hover{color:var(--text);}
+
+  @media (max-width:720px){
+    #panel{top:auto; left:12px; right:12px; bottom:12px; width:auto; max-height:46vh;}
+    #panel.hidden{transform:translateY(calc(100% + 20px));}
+    header{left:16px; top:16px;}
+    #toggleUi{top:auto; bottom:20px;}
+  }
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
+
+  /* lab header conventions */
+  header a.lab-back{
+    pointer-events:auto; color:var(--pagefg,#e6ebf2); text-decoration:none;
+    display:flex; align-items:center; gap:10px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; letter-spacing:.04em;
+  }
+  header a.lab-back .idx{color:var(--pageidx,#d8ff43);}
+  header a.lab-back:hover .lbl{text-decoration:underline; text-underline-offset:3px;}
+  html.embed header, html.embed #panel, html.embed #toggleUi, html.embed #toast, html.embed #hint{display:none !important;}
+
+  /* glass shapes additions */
+  #cv{position:fixed; inset:0; width:100vw; height:100vh; display:block;}
+  .sect{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--mute); padding:4px 2px 0;
+  }
+  .modes{display:grid; grid-template-columns:repeat(2,1fr); gap:6px; padding:4px 0;}
+  .modes.c4{grid-template-columns:repeat(4,1fr);}
+  .modes button{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:7px 4px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .modes.c4 button{font-size:10px; letter-spacing:0; padding:7px 0;}
+  .modes button:hover{border-color:rgba(148,163,184,.45);}
+  .modes button.active{border-color:var(--accent); background:rgba(216,255,67,.14);}
+  .btnrow{display:flex; gap:8px;}
+  .btnrow button{
+    flex:1; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
+    color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
+    border-radius:8px; padding:8px 6px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .btnrow button:hover{border-color:rgba(148,163,184,.45);}
+  .btnrow button:active{background:rgba(216,255,67,.14); border-color:var(--accent);}
+  .note{margin:0; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; line-height:1.5; color:var(--mute);}
+  #hint{
+    position:fixed; left:24px; bottom:22px; z-index:5; pointer-events:none;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.04em;
+    color:var(--pagefg,#e6ebf2); opacity:.5;
+  }
+  @media (max-width:720px){ #hint{display:none;} }
+</style>
+</head>
+<body>
+<script>if(location.search.indexOf('embed')>-1)document.documentElement.classList.add('embed');</script>
+<canvas id="cv"></canvas>
+
+<header>
+  <a class="lab-back" href="/"><span class="idx">015</span><span class="lbl">Glass Shapes</span></a>
+  <p>StanVision Lab — WebGL / frosted glass</p>
+</header>
+<div id="hint">move the cursor · space = new shapes · r = random · h = hide panel</div>
+
+<aside id="panel">
+  <div class="head">
+    <span>Controls</span>
+    <button class="hidebtn" id="hideUi" title="Hide panel" aria-label="Hide panel">&times;</button>
+  </div>
+  <div class="body">
+    <div class="presets" id="presets"></div>
+    <div id="groups"></div>
+  </div>
+  <div class="footbar">
+    <button id="exportBtn">EXPORT PNG</button>
+    <button id="randomBtn">RANDOMISE</button>
+    <button id="copyBtn">COPY SETTINGS</button>
+  </div>
+</aside>
+<button id="toggleUi" title="Show controls" aria-label="Show controls">☰</button>
+
+<div id="toast">Copied to clipboard</div>
+
+<script type="x-shader/x-fragment" id="fs">
+precision highp float;
+#define N 10
+uniform vec2 R; uniform float T;
+uniform vec3 uC[N], uU[N], uV[N], uNn[N];
+uniform vec4 uD[N], uRr[N], uM[N];
+uniform float uN;
+uniform vec3 cA, cB, cAcc, cDeep, cBg0, cBg1, cLight;
+uniform vec3 uRo, uCu, uCv, uCw, uL;
+uniform vec2 uOff;
+uniform float uFl, uOp, uFrost, uLip, uLipAmt, uGloss, uIrid, uGlow, uRefr, uSh, uShSoft, uGrad, uDof, uFocus, uGrain, uVig, uBgZ;
+
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float bx(vec2 p, vec2 b){vec2 q=abs(p)-b; return min(max(q.x,q.y),0.)+length(max(q,0.));}
+/* rounded box with a radius per corner: r = top-right, bottom-right, top-left, bottom-left */
+float rb(vec2 p, vec2 b, vec4 r){
+  r.xy=(p.x>0.)?r.xy:r.zw; r.x=(p.y>0.)?r.x:r.y;
+  vec2 q=abs(p)-b+r.x; return min(max(q.x,q.y),0.)+length(max(q,0.))-r.x;
+}
+/* the StanVision +: arms a third of the width, square hole in the centre */
+float plus(vec2 p, float a){
+  float w=a/3., rr=a*.05;
+  float c=min(bx(p,vec2(a-rr,w-rr)),bx(p,vec2(w-rr,a-rr)))-rr;
+  return max(c,-(bx(p,vec2(w*.75-rr))-rr));
+}
+/* D = half width, half height, ring width (large = solid), plus amount */
+float sd(vec2 p, vec4 D, vec4 r){
+  float d=rb(p,D.xy,r);
+  d=max(d,-d-D.z);
+  if(D.w>.002) d=mix(d,plus(p,min(D.x,D.y)),D.w);
+  return d;
+}
+/* how much of the light reaching P is blocked by the other shapes */
+float shadow(vec3 P, float self){
+  float s=0.;
+  for(int j=0;j<N;j++){
+    if(float(j)>=uN) break;
+    if(abs(float(j)-self)<.5) continue;
+    vec3 n=uNn[j];
+    float dn=dot(uL,n); if(abs(dn)<.02) continue;
+    float t=dot(uC[j]-P,n)/dn; if(t<=.002) continue;
+    vec3 Q=P+uL*t-uC[j];
+    float d=sd(vec2(dot(Q,uU[j]),dot(Q,uV[j])),uD[j],uRr[j]);
+    float pen=.012+t*uShSoft;
+    float o=smoothstep(pen,-pen,d)*(.45+.55*uM[j].y)/(1.+t*.55);
+    s=s+o-s*o;
+  }
+  return s;
+}
+void main(){
+  vec2 uv0=(gl_FragCoord.xy-.5*R)/R.y*2.;
+  vec2 uv=uv0+uOff;
+  vec3 rd=normalize(uCu*uv.x+uCv*uv.y+uCw*uFl), ro=uRo;
+  float pxa=2.2/(R.y*uFl);
+  vec3 Lf=normalize(uCu*(-dot(uL,uCu))+uCv*.35-uCw*.6);
+  vec3 col=vec3(0.), bend=vec3(0.); float tr=1., fr=0., tF=0., tB=0.;
+
+  /* planes are picked nearest first for every pixel, so tilted shapes cross each other correctly */
+  float lastT=0., lastI=-1.;
+  for(int pass=0;pass<N;pass++){
+    if(float(pass)>=uN||tr<.012) break;
+    float t=1e9, fi=-1.; vec3 C, Uu, Vv, n; vec4 D, rr, m;
+    for(int j=0;j<N;j++){
+      if(float(j)>=uN) break;
+      vec3 nj=uNn[j]; float dj=dot(rd,nj);
+      if(abs(dj)<.001) continue;
+      float tj=dot(uC[j]-ro,nj)/dj;
+      if((tj>lastT||(tj==lastT&&float(j)>lastI))&&tj<t){t=tj; fi=float(j); n=nj; C=uC[j]; Uu=uU[j]; Vv=uV[j]; D=uD[j]; rr=uRr[j]; m=uM[j];}
+    }
+    if(fi<0.) break;
+    lastT=t; lastI=fi;
+    float dn=dot(rd,n);
+    vec3 P=ro+rd*t+bend*max(t-tB,0.), Pl=P-C;
+    vec2 q=vec2(dot(Pl,Uu),dot(Pl,Vv));
+    float d=sd(q,D,rr);
+    float px=t*pxa/sqrt(max(abs(dn),.15));
+    float bl=fr*(.02+max(t-tF,0.)*.4)+uDof*abs(dot(P-uRo,uCw)-uFocus);
+    float w=max(px,bl);
+    float cov=smoothstep(w,-w,d);
+    if(cov<.002) continue;
+
+    vec3 Nf=n*(dn>0.?-1.:1.);
+    float bw=min(min(uLip*m.w,D.z*.45),min(D.x,D.y)*mix(.7,.1,D.w))+.0005;
+    float e=max(px,.004);
+    vec2 g=vec2(sd(q+vec2(e,0.),D,rr)-sd(q-vec2(e,0.),D,rr),sd(q+vec2(0.,e),D,rr)-sd(q-vec2(0.,e),D,rr));
+    g/=max(length(g),1e-5);
+    vec3 G=Uu*g.x+Vv*g.y;
+    float det=smoothstep(bw*1.6,bw*.15,bl);
+    float k=clamp(1.+d/bw,0.,1.);
+    float ang=k*k*1.42;
+    vec3 Nb=normalize(Nf*cos(ang)+G*sin(ang));
+    float gL=dot(G,uL);
+
+    float sh=uSh>0.?shadow(P+Nf*.002,fi):0.;
+    vec3 base=mix(mix(cA,cB,m.x),cAcc,m.z);
+    vec3 dark=mix(base*.62,cDeep,.3), lit=mix(base,cLight,.55);
+    vec2 lq=vec2(dot(uL,Uu),dot(uL,Vv));
+    float gt=dot(q,lq)/max(D.x,D.y);
+    float face=pow(max(dot(reflect(rd,Nf),uL),0.),3.);
+    float s=.5+.34*gt*uGrad+.3*(dot(Nf,uL)-.62)+.22*face*uGloss-sh*uSh*.5;
+    vec3 c=s<.5?mix(dark,base,smoothstep(0.,.5,s)):mix(base,lit,smoothstep(.5,1.1,s)*.85);
+
+    /* the lip: a band along the edge, light where it faces the lamp, dark on the far side */
+    vec3 band=mix(mix(c,dark,.55),lit,clamp(.58+.7*gL-sh*uSh*.3,0.,1.));
+    c=mix(c,band,smoothstep(0.,.55,k)*uLipAmt*det*.85);
+    c+=lit*exp(min(d,0.)/(bw*1.6+.012))*smoothstep(-bw*2.6,-bw*.8,d)*max(gL,0.)*uGlow*.3;
+    float l2=exp(-pow((d+bw)/(px*1.6),2.))*det*uLipAmt;
+    c=mix(c,gL<0.?lit:dark,l2*.3);
+
+    vec3 rf=reflect(rd,Nb);
+    float rl=max(dot(rf,uL),0.);
+    float sp=pow(rl,70.)*1.5+pow(rl,9.)*.2+pow(max(dot(rf,Lf),0.),16.)*.22;
+    float F=pow(1.-max(dot(-rd,Nb),0.),3.);
+    vec3 ir=.5+.5*cos(6.2832*(k*1.15+gL*.55+vec3(0.,.33,.67)));
+    c+=cLight*mix(vec3(1.),ir*1.5,uIrid)*sp*uGloss*(.15+.85*k)*det;
+    c+=(ir-.5)*uIrid*k*det*.3;
+    c+=cLight*smoothstep(px*2.6,0.,-d)*(.18+.55*max(gL,0.))*det*uLipAmt;
+    c=mix(c,mix(cBg0,cLight,.5),F*.25*det);
+
+    float a=cov*clamp(uOp*m.y+(k*.45+F*.4)*det*uLipAmt,0.,1.);
+    col+=tr*a*c; tr*=1.-a;
+    float f=cov*uFrost;
+    tF=mix(tF,t,f/(fr+f+1e-4)); fr+=f;
+    float bk=k*k*uRefr*.22*det*cov;
+    tB=mix(tB,t,bk/(length(bend)+bk+1e-4)); bend-=G*bk;
+  }
+
+  /* backdrop */
+  vec3 bg=mix(cBg1,cBg0,smoothstep(-1.15,1.1,uv0.y+.18*uv0.x));
+  vec2 lp=vec2(dot(uL,uCu),dot(uL,uCv));
+  bg+=cLight*.1*exp(-dot(uv0-lp*1.2,uv0-lp*1.2)*.5);
+  if(tr>.012&&uSh>0.){
+    float tb=(uBgZ-dot(ro-uRo,uCw))/dot(rd,uCw);
+    float sh=shadow(ro+rd*tb+bend*max(tb-tB,0.),-1.);
+    bg=mix(bg,mix(bg*.62,cDeep,.22),sh*uSh*.8);
+  }
+  col+=tr*bg;
+  col*=1.-uVig*dot(uv0*vec2(.55,.75),uv0*vec2(.55,.75))*.4;
+  col+=(hash(gl_FragCoord.xy+fract(T)*61.)-.5)*uGrain;
+  gl_FragColor=vec4(col,1.);
+}
+</script>
+
+<script>
+const IS_EMBED = document.documentElement.classList.contains('embed');
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MAXN = 10;
+const STILL = location.search.indexOf('still') > -1;
+
+const S = {
+  mode: 'Cascade', family: 'Slabs', count: 5, size: 1, gap: 0.3, rotation: 38, twist: 0, tilt: 6, disorder: 0.15, posX: 0, posY: 0, seed: 7,
+  opacity: 0.8, frost: 0.7, lip: 0.085, lipAmt: 1, gloss: 0.9, glow: 0.6, irid: 0, refract: 0.5,
+  follow: true, lightAngle: 125, lightHeight: 48, shadow: 0.75, shadowSoft: 0.22, gradient: 1,
+  bg0: '#c3d1e3', bg1: '#7f96b3', glassA: '#e4ecf6', glassB: '#a3b9d4', accent: '#3d6fe0', accentShare: 0, deep: '#22395a', light: '#ffffff',
+  zoom: 1, lens: 30, yaw: -16, pitch: 24, parallax: 0.6, dof: 0, focus: 0,
+  speed: 1, float: 0.5, breathe: 0.5,
+  grain: 0.022, vignette: 0.25, render: 1,
+};
+const PRESETS = {
+  'Frost':   { ...S },
+  'Fan':     { ...S, mode: 'Stack', family: 'Petals', count: 7, size: 1.05, gap: 0.2, rotation: -8, twist: 5, tilt: 3, posX: -0.25, posY: -0.3, seed: 3,
+               opacity: 0.95, frost: 0.3, lip: 0.06, gloss: 1, glow: 0.4, shadow: 0.9, shadowSoft: 0.16,
+               bg0: '#d9dcdf', bg1: '#a9adb2', glassA: '#f1f3f5', glassB: '#dfe4ea', deep: '#4b5f7a', yaw: -10, pitch: 16 },
+  'Depth':   { ...S, mode: 'Scatter', family: 'Mix', count: 6, size: 1.25, gap: 0.55, rotation: 30, tilt: 22, disorder: 0.6, seed: 33,
+               opacity: 0.7, frost: 1, lip: 0.05, gloss: 0.8, shadow: 0.6, shadowSoft: 0.4,
+               bg0: '#b4b6cf', bg1: '#8f93b3', glassA: '#e9eaf4', glassB: '#a9aecd', accent: '#27437e', accentShare: 0.25, deep: '#1d2b52',
+               zoom: 1.1, yaw: 8, pitch: 10, dof: 0.075, focus: 1.3 },
+  'Sky':     { ...S, mode: 'Fan', family: 'Pills', count: 5, size: 1.15, gap: 0.24, rotation: 62, twist: 13, tilt: 5, posX: -0.2, posY: -0.5, seed: 12,
+               opacity: 0.78, frost: 0.6, lip: 0.1, glow: 0.9, shadow: 0.7,
+               bg0: '#93aef2', bg1: '#5a7fe6', glassA: '#b9cdfb', glassB: '#3e6cea', accent: '#1f3fd6', accentShare: 0.2, deep: '#1730a8', yaw: -8, pitch: 14 },
+  'Mint':    { ...S, mode: 'Scatter', family: 'Discs', count: 6, size: 0.95, gap: 0.42, rotation: 0, tilt: 30, disorder: 0.5, seed: 44,
+               opacity: 0.72, frost: 0.8, lip: 0.07, glow: 0.8, shadow: 0.85, shadowSoft: 0.3,
+               bg0: '#e3dfe6', bg1: '#c9c7cf', glassA: '#cfe6d6', glassB: '#5fae79', accent: '#1f6b3c', accentShare: 0.2, deep: '#12452a', yaw: -14, pitch: 26 },
+  'Lime':    { ...S, mode: 'Cascade', family: 'Arches', count: 5, size: 0.95, gap: 0.3, rotation: -32, twist: 4, tilt: 8, seed: 5,
+               opacity: 0.6, frost: 0.9, lip: 0.07, gloss: 1.1, glow: 1, irid: 0.15, shadow: 0.9,
+               bg0: '#1a1d21', bg1: '#08090a', glassA: '#59616b', glassB: '#20242a', accent: '#d8ff43', accentShare: 0.3, deep: '#050607', light: '#f6ffd9', yaw: 14, pitch: 20, vignette: 0.5 },
+  'Plus':    { ...S, mode: 'Cascade', family: 'Plus', count: 3, size: 1, gap: 0.4, rotation: 18, twist: 8, tilt: 4, seed: 9,
+               opacity: 0.7, frost: 0.75, lip: 0.045, gloss: 1, glow: 0.8, shadow: 0.9, shadowSoft: 0.2,
+               bg0: '#16181c', bg1: '#060708', glassA: '#8e99a8', glassB: '#2b3038', accent: '#d8ff43', accentShare: 0.3, deep: '#040506', light: '#f6ffd9', yaw: -20, pitch: 22, vignette: 0.5 },
+  'Prism':   { ...S, mode: 'Scatter', family: 'Rings', count: 5, size: 1.1, gap: 0.4, rotation: 20, tilt: 26, disorder: 0.7, seed: 31,
+               opacity: 0.55, frost: 0.5, lip: 0.09, gloss: 1.2, glow: 0.7, irid: 0.85, refract: 1, shadow: 0.5, shadowSoft: 0.35,
+               bg0: '#f0eff2', bg1: '#d5d6dd', glassA: '#f7f7fa', glassB: '#d7dbe6', accent: '#b9b4f5', accentShare: 0.2, deep: '#5a5f7a', yaw: -12, pitch: 18 },
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
+const rad = d => d * Math.PI / 180;
+
+/* ============================== shapes ============================== */
+function rng(seed){ let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const SOLID = 9;
+/* half width, half height, four corner radii, ring width, plus amount */
+function family(kind, s, a, b, c){
+  if (kind === 'Mix') kind = ['Slabs', 'Pills', 'Discs', 'Petals', 'Arches', c > 0.8 ? 'Rings' : 'Slabs'][Math.floor(a * 5.999)];
+  const sm = 0.05 * s;
+  if (kind === 'Pills')  { const hy = s * (0.3 + b * 0.14); return [s * 1.15, hy, hy, hy, hy, hy, SOLID, 0]; }
+  if (kind === 'Discs')  { const h = s * 0.78; return [h, h, h, h, h, h, SOLID, 0]; }
+  if (kind === 'Petals') { const h = s * 0.82; return [h, h, h, sm, sm, h, SOLID, 0]; }
+  if (kind === 'Arches') { const hx = s * 0.56; return [hx, s * 0.9, hx, sm, hx, sm, SOLID, 0]; }
+  if (kind === 'Rings')  { const h = s * 0.8, r = b > 0.45 ? h : h * 0.42; return [h, h, r, r, r, r, s * (0.16 + c * 0.14), 0]; }
+  if (kind === 'Plus')   { const h = s * 0.85; return [h, h, sm, sm, sm, sm, SOLID, 1]; }
+  const hy = s * (0.62 + b * 0.3), r = Math.min(s, hy) * (0.3 + c * 0.25);
+  return [s, hy, r, r, r, r, SOLID, 0];
+}
+/* slot layout: 0-2 centre, 3 rz, 4 rx, 5 ry, 6-7 half size, 8-11 radii, 12 ring, 13 plus, 14 tint, 15 opacity, 16 accent, 17 lip */
+const SL = 18;
+function layout(t){
+  const n = S.count, out = [];
+  const br = 1 + 0.28 * S.breathe * Math.sin(t * 0.33);
+  for (let i = 0; i < MAXN; i++) {
+    const r = rng(S.seed * 7919 + i * 104729 + 13), R = Array.from({ length: 12 }, r);
+    const o = new Float32Array(SL), u = n > 1 ? i / (n - 1) : 0.5, c = i - (n - 1) / 2;
+    let s = S.size * 0.74, x = 0, y = 0, rz = S.rotation + (R[3] - 0.5) * S.disorder * 140, sc = 1;
+    if (S.mode === 'Scatter') {
+      x = (R[0] * 2 - 1) * 1.15; y = (R[1] * 2 - 1) * 0.72; s *= 0.5 + R[2] * 0.6; rz += i * S.twist;
+    } else if (S.mode === 'Stack') {
+      sc = 1.55 * (1 - 0.74 * u); const k = u * s * 0.5;
+      x = -k * 0.75; y = -k; rz += i * S.twist * br;
+    } else if (S.mode === 'Fan') {
+      rz += c * S.twist * br; s *= 1 + (R[2] - 0.5) * S.disorder;
+    } else {
+      const a = rad(S.rotation - 90), st = s * 0.8 * br;
+      x = Math.cos(a) * c * st; y = Math.sin(a) * c * st; s *= 1.15; rz += i * S.twist;
+    }
+    const f = family(S.family, s * sc, R[4], R[5], R[6]);
+    if (S.mode === 'Fan') { const a = rad(rz), l = f[0] * 0.82; x = Math.cos(a) * l; y = Math.sin(a) * l; }
+    const fl = S.float, ph = R[7] * 6.283;
+    o[0] = x + S.posX + (R[8] - 0.5) * S.disorder * 0.3 + Math.sin(t * 0.31 + ph) * 0.05 * fl;
+    o[1] = y + S.posY + (R[9] - 0.5) * S.disorder * 0.3 + Math.cos(t * 0.24 + ph * 1.7) * 0.05 * fl;
+    o[2] = c * S.gap + Math.sin(t * 0.2 + ph * 2.3) * 0.03 * fl;
+    o[3] = rz + Math.sin(t * 0.17 + ph) * 5 * fl;
+    o[4] = (R[10] - 0.5) * 2 * S.tilt + Math.sin(t * 0.27 + ph) * 3.5 * fl;
+    o[5] = (R[11] - 0.5) * 2 * S.tilt + Math.cos(t * 0.21 + ph) * 3.5 * fl;
+    for (let j = 0; j < 8; j++) o[6 + j] = f[j];
+    o[14] = S.mode === 'Scatter' ? R[6] : Math.min(1, Math.max(0, 1 - u + (R[6] - 0.5) * 0.3));
+    o[15] = 0.78 + R[5] * 0.22;
+    o[16] = R[1] < S.accentShare ? 1 : 0;
+    o[17] = 0.8 + R[0] * 0.4;
+    if (i >= n) { o[6] = 0; o[7] = 0; for (let j = 8; j < 12; j++) o[j] = 0; o[15] = 0; }
+    out.push(o);
+  }
+  return out;
+}
+let cur = null;
+function stepShapes(t, k){
+  const tg = layout(t);
+  if (!cur) { cur = tg.map(o => { const c = o.slice(); c[6] *= 0.02; c[7] *= 0.02; for (let j = 8; j < 12; j++) c[j] *= 0.02; return c; }); if (k >= 1) cur = tg; return; }
+  for (let i = 0; i < MAXN; i++) for (let j = 0; j < SL; j++) {
+    let d = tg[i][j] - cur[i][j];
+    if (j === 3) d = ((d + 540) % 360 + 360) % 360 - 180;
+    cur[i][j] += d * k;
+  }
+}
+
+/* ============================== WebGL ============================== */
+const cv = document.getElementById('cv');
+const panel = document.getElementById('panel');
+const gl = cv.getContext('webgl', { antialias: false, premultipliedAlpha: false, alpha: false, preserveDrawingBuffer: true });
+const U = {};
+let T = 20, last = performance.now();
+if (gl) {
+  const mk = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(o)); return o; };
+  const p = gl.createProgram();
+  gl.attachShader(p, mk(gl.VERTEX_SHADER, 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}'));
+  gl.attachShader(p, mk(gl.FRAGMENT_SHADER, document.getElementById('fs').textContent));
+  gl.linkProgram(p); gl.useProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(p));
+  const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const a = gl.getAttribLocation(p, 'a'); gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
+  ['R', 'T', 'uC', 'uU', 'uV', 'uNn', 'uD', 'uRr', 'uM', 'uN', 'cA', 'cB', 'cAcc', 'cDeep', 'cBg0', 'cBg1', 'cLight', 'uRo', 'uCu', 'uCv', 'uCw', 'uL', 'uOff',
+    'uFl', 'uOp', 'uFrost', 'uLip', 'uLipAmt', 'uGloss', 'uIrid', 'uGlow', 'uRefr', 'uSh', 'uShSoft', 'uGrad', 'uDof', 'uFocus', 'uGrain', 'uVig', 'uBgZ']
+    .forEach(k => U[k] = gl.getUniformLocation(p, k));
+}
+function resize(){
+  if (!gl) return;
+  const d = Math.min(devicePixelRatio || 1, 2) * S.render;
+  cv.width = Math.max(2, innerWidth * d | 0); cv.height = Math.max(2, innerHeight * d | 0);
+  gl.viewport(0, 0, cv.width, cv.height); draw();
+}
+addEventListener('resize', resize);
+
+/* pointer: moves the lamp and nudges the camera; idles on a figure-eight */
+const ptr = { x: -0.45, y: 0.5, tx: -0.45, ty: 0.5, t: -1e9 };
+addEventListener('pointermove', e => {
+  if (e.target.closest && e.target.closest('#panel')) return;
+  ptr.tx = e.clientX / innerWidth * 2 - 1; ptr.ty = 1 - e.clientY / innerHeight * 2; ptr.t = performance.now();
+});
+const fA = new Float32Array(MAXN * 3), fU = new Float32Array(MAXN * 3), fV = new Float32Array(MAXN * 3), fN = new Float32Array(MAXN * 3);
+const fD = new Float32Array(MAXN * 4), fR = new Float32Array(MAXN * 4), fM = new Float32Array(MAXN * 4);
+function draw(){
+  if (!gl || !cur) return;
+  /* camera */
+  const fl = 1 / Math.tan(rad(S.lens) / 2), cd = fl / S.zoom;
+  const yaw = rad(S.yaw + ptr.x * 7 * S.parallax), pit = rad(S.pitch + ptr.y * 5 * S.parallax);
+  const ro = [cd * Math.sin(yaw) * Math.cos(pit), cd * Math.sin(pit), cd * Math.cos(yaw) * Math.cos(pit)];
+  const w = ro.map(v => -v / cd);
+  let cu = [-w[2], 0, w[0]]; const cl = Math.hypot(cu[0], cu[2]); cu = cu.map(v => v / cl);
+  const cw = [cu[1] * w[2] - cu[2] * w[1], cu[2] * w[0] - cu[0] * w[2], cu[0] * w[1] - cu[1] * w[0]];
+  /* lamp, in camera space */
+  let lx, ly, lz;
+  if (S.follow) { lx = ptr.x * 0.85; ly = ptr.y * 0.85; const m = Math.min(0.92, Math.hypot(lx, ly)), q = Math.hypot(lx, ly) || 1; lx *= m / q; ly *= m / q; lz = Math.sqrt(1 - m * m); }
+  else { const el = rad(S.lightHeight), az = rad(S.lightAngle); lx = Math.cos(az) * Math.cos(el); ly = Math.sin(az) * Math.cos(el); lz = Math.sin(el); }
+  const L = [0, 1, 2].map(i => cu[i] * lx + cw[i] * ly - w[i] * lz);
+  /* shapes, nearest first */
+  const live = [];
+  for (let i = 0; i < MAXN; i++) {
+    const o = cur[i]; if (o[6] < 0.012 || o[7] < 0.012) continue;
+    const cz = Math.cos(rad(o[3])), sz = Math.sin(rad(o[3])), cx = Math.cos(rad(o[4])), sx = Math.sin(rad(o[4])), cy = Math.cos(rad(o[5])), sy = Math.sin(rad(o[5]));
+    const rot = v => { const y1 = v[1] * cx - v[2] * sx, z1 = v[1] * sx + v[2] * cx; return [v[0] * cy + z1 * sy, y1, -v[0] * sy + z1 * cy]; };
+    const u = rot([cz, sz, 0]), v = rot([-sz, cz, 0]);
+    live.push({ o, u, v });
+  }
+  live.forEach((s, i) => {
+    const o = s.o;
+    fA.set([o[0], o[1], o[2]], i * 3); fU.set(s.u, i * 3); fV.set(s.v, i * 3);
+    fN.set([s.u[1] * s.v[2] - s.u[2] * s.v[1], s.u[2] * s.v[0] - s.u[0] * s.v[2], s.u[0] * s.v[1] - s.u[1] * s.v[0]], i * 3);
+    fD.set([o[6], o[7], o[12], o[13]], i * 4); fR.set([o[8], o[9], o[10], o[11]], i * 4); fM.set([o[14], o[15], o[16], o[17]], i * 4);
+  });
+  const open = !IS_EMBED && !panel.classList.contains('hidden') && innerWidth > 720;
+  gl.uniform2f(U.R, cv.width, cv.height); gl.uniform1f(U.T, T);
+  gl.uniform3fv(U.uC, fA); gl.uniform3fv(U.uU, fU); gl.uniform3fv(U.uV, fV); gl.uniform3fv(U.uNn, fN);
+  gl.uniform4fv(U.uD, fD); gl.uniform4fv(U.uRr, fR); gl.uniform4fv(U.uM, fM); gl.uniform1f(U.uN, live.length);
+  gl.uniform3fv(U.cA, hex(S.glassA)); gl.uniform3fv(U.cB, hex(S.glassB)); gl.uniform3fv(U.cAcc, hex(S.accent)); gl.uniform3fv(U.cDeep, hex(S.deep));
+  gl.uniform3fv(U.cBg0, hex(S.bg0)); gl.uniform3fv(U.cBg1, hex(S.bg1)); gl.uniform3fv(U.cLight, hex(S.light));
+  gl.uniform3fv(U.uRo, ro); gl.uniform3fv(U.uCu, cu); gl.uniform3fv(U.uCv, cw); gl.uniform3fv(U.uCw, w); gl.uniform3fv(U.uL, L);
+  gl.uniform2f(U.uOff, open ? 320 / innerHeight : 0, 0);
+  gl.uniform1f(U.uFl, fl); gl.uniform1f(U.uOp, S.opacity); gl.uniform1f(U.uFrost, S.frost); gl.uniform1f(U.uLip, S.lip); gl.uniform1f(U.uLipAmt, S.lipAmt);
+  gl.uniform1f(U.uGloss, S.gloss); gl.uniform1f(U.uIrid, S.irid); gl.uniform1f(U.uGlow, S.glow); gl.uniform1f(U.uRefr, S.refract);
+  gl.uniform1f(U.uSh, S.shadow); gl.uniform1f(U.uShSoft, S.shadowSoft); gl.uniform1f(U.uGrad, S.gradient);
+  gl.uniform1f(U.uDof, S.dof); gl.uniform1f(U.uFocus, cd - S.focus);
+  gl.uniform1f(U.uGrain, S.grain); gl.uniform1f(U.uVig, S.vignette);
+  gl.uniform1f(U.uBgZ, cd + Math.max(1.1, MAXN * 0.5 * S.gap + 0.5));
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+let frames = 0, slow = 0;
+function frame(now){
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (!document.hidden) {
+    if (!RM) T += dt * S.speed;
+    if (!RM && (IS_EMBED || now - ptr.t > 2500)) { const a = now / 1000 * 0.32; ptr.tx = Math.sin(a) * 0.62 - (IS_EMBED ? 0 : 0.12); ptr.ty = 0.3 + Math.sin(a * 2) * 0.38; }
+    const e = 1 - Math.exp(-dt * 3.2); ptr.x += (ptr.tx - ptr.x) * e; ptr.y += (ptr.ty - ptr.y) * e;
+    stepShapes(T, RM ? 1 : 1 - Math.exp(-dt * 4.5));
+    draw();
+    /* slow GPU: step the render scale down once the average frame is over 26 ms */
+    slow += dt; if (++frames === 45) { if (slow / 45 > 0.026 && S.render > 0.5) { S.render = Math.max(0.5, +(S.render - 0.15).toFixed(2)); refreshUi(); resize(); } frames = 0; slow = 0; }
+  }
+  if (!STILL) requestAnimationFrame(frame);
+}
+function exportPNG(scale){
+  if (!gl) return;
+  const pw = cv.width, ph = cv.height, open = panel.classList.contains('hidden');
+  panel.classList.add('hidden');
+  cv.width = Math.round(innerWidth * scale); cv.height = Math.round(innerHeight * scale);
+  gl.viewport(0, 0, cv.width, cv.height); draw();
+  const a = document.createElement('a'); a.download = 'glass-shapes-' + cv.width + 'x' + cv.height + '.png';
+  a.href = cv.toDataURL('image/png'); a.click();
+  showToast('PNG exported at ' + cv.width + '×' + cv.height);
+  if (!open) panel.classList.remove('hidden');
+  cv.width = pw; cv.height = ph; gl.viewport(0, 0, pw, ph); draw();
+}
+function setFg(){
+  const c = hex(S.bg0), l = .2126 * c[0] + .7152 * c[1] + .0722 * c[2], st = document.documentElement.style;
+  st.setProperty('--pagefg', l > 0.55 ? '#14161a' : '#e6ebf2');
+  st.setProperty('--pageidx', l > 0.55 ? '#14161a' : '#d8ff43');
+  document.body.style.background = S.bg1;
+}
+
+/* ============================== panel ============================== */
+const ui = {};
+const groupsEl = document.getElementById('groups');
+function slider(key, label, min, max, step, fmt, onChange) {
+  const wrap = document.createElement('div'); wrap.className = 'slider-row';
+  const top = document.createElement('div'); top.className = 'top';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const val = document.createElement('span'); val.className = 'val';
+  top.append(lab, val);
+  const input = document.createElement('input');
+  input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = S[key];
+  input.setAttribute('aria-label', label);
+  const refresh = v => { val.textContent = fmt ? fmt(v) : (+v).toFixed(step < 1 ? (step < 0.1 ? (step < 0.01 ? 3 : 2) : 1) : 0); };
+  refresh(S[key]);
+  input.addEventListener('input', () => { S[key] = +input.value; refresh(S[key]); onChange && onChange(S[key]); clearPresetActive(); });
+  wrap.append(top, input);
+  ui[key] = { input, refresh };
+  return wrap;
+}
+function colorCtl(key, label) {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const input = document.createElement('input'); input.type = 'color'; input.value = S[key]; input.setAttribute('aria-label', label);
+  input.addEventListener('input', () => { S[key] = input.value; setFg(); clearPresetActive(); });
+  row.append(lab, input);
+  ui[key] = { input, refresh: () => {} };
+  return row;
+}
+function toggle(key, label, onChange) {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const sw = document.createElement('span'); sw.className = 'switch';
+  const input = document.createElement('input'); input.type = 'checkbox'; input.checked = S[key]; input.setAttribute('aria-label', label);
+  const i = document.createElement('i');
+  sw.append(input, i);
+  input.addEventListener('change', () => { S[key] = input.checked; onChange && onChange(S[key]); clearPresetActive(); });
+  row.append(lab, sw);
+  ui[key] = { input, refresh: () => {} };
+  return row;
+}
+function modes(key, options, onChange, cls) {
+  const wrap = document.createElement('div'); wrap.className = 'modes' + (cls ? ' ' + cls : '');
+  const btns = {};
+  options.forEach(o => {
+    const b = document.createElement('button'); b.textContent = o;
+    b.addEventListener('click', () => { S[key] = o; refresh(); onChange && onChange(o); clearPresetActive(); });
+    wrap.appendChild(b); btns[o] = b;
+  });
+  const refresh = () => Object.keys(btns).forEach(o => btns[o].classList.toggle('active', S[key] === o));
+  refresh();
+  ui[key] = { input: { type: 'modes' }, refresh };
+  return wrap;
+}
+function sect(t) { const d = document.createElement('div'); d.className = 'sect'; d.textContent = t; return d; }
+function note(html) { const p = document.createElement('p'); p.className = 'note'; p.innerHTML = html; return p; }
+function buttons(list) {
+  const row = document.createElement('div'); row.className = 'btnrow';
+  list.forEach(([label, fn]) => { const b = document.createElement('button'); b.textContent = label; b.addEventListener('click', fn); row.appendChild(b); });
+  return row;
+}
+function group(title, items, open = true) {
+  const det = document.createElement('details'); det.open = open;
+  const sum = document.createElement('summary'); sum.textContent = title;
+  const grp = document.createElement('div'); grp.className = 'grp';
+  items.forEach(i => grp.appendChild(i));
+  det.append(sum, grp);
+  groupsEl.appendChild(det);
+}
+const deg = v => Math.round(v) + '°';
+function newShapes(){ S.seed = 1 + Math.floor(Math.random() * 9998); clearPresetActive(); }
+function shuffleColours(){
+  const p = pick(PALETTES); Object.assign(S, p);
+  S.accentShare = Math.random() < 0.55 ? +rnd(0.15, 0.4).toFixed(2) : 0;
+  refreshUi(); setFg(); clearPresetActive();
+}
+
+group('Arrangement', [
+  modes('mode', ['Cascade', 'Stack', 'Fan', 'Scatter']),
+  sect('Shape'),
+  modes('family', ['Mix', 'Slabs', 'Pills', 'Discs', 'Petals', 'Arches', 'Rings', 'Plus'], null, 'c4'),
+  slider('count', 'Count', 1, MAXN, 1),
+  slider('size', 'Size', 0.4, 1.8, 0.01),
+  slider('gap', 'Depth gap', 0.04, 0.8, 0.01),
+  slider('rotation', 'Rotation', -180, 180, 1, deg),
+  slider('twist', 'Twist per shape', -40, 40, 0.5, v => (+v).toFixed(1) + '°'),
+  slider('tilt', 'Tilt', 0, 45, 1, deg),
+  slider('disorder', 'Disorder', 0, 1, 0.01),
+  slider('posX', 'Position X', -1.2, 1.2, 0.01),
+  slider('posY', 'Position Y', -1.2, 1.2, 0.01),
+  buttons([['NEW SHAPES', newShapes]]),
+], true);
+group('Glass', [
+  slider('opacity', 'Opacity', 0.2, 1, 0.01),
+  slider('frost', 'Frost blur', 0, 1.5, 0.01),
+  slider('lip', 'Lip width', 0.01, 0.25, 0.005),
+  slider('lipAmt', 'Lip strength', 0, 1.5, 0.01),
+  slider('gloss', 'Gloss', 0, 2, 0.01),
+  slider('glow', 'Inner glow', 0, 2, 0.01),
+  slider('irid', 'Iridescence', 0, 1, 0.01),
+  slider('refract', 'Refraction', 0, 2, 0.01),
+], true);
+group('Light', [
+  toggle('follow', 'Lamp follows cursor'),
+  slider('lightAngle', 'Angle', 0, 360, 1, deg),
+  slider('lightHeight', 'Height', 10, 85, 1, deg),
+  note('Angle and height apply when the lamp does not follow the cursor.'),
+  slider('gradient', 'Face gradient', 0, 2, 0.01),
+  slider('shadow', 'Shadows', 0, 1.2, 0.01),
+  slider('shadowSoft', 'Shadow softness', 0.02, 0.8, 0.01),
+], false);
+group('Colour', [
+  colorCtl('glassA', 'Glass light'),
+  colorCtl('glassB', 'Glass deep'),
+  colorCtl('accent', 'Accent'),
+  slider('accentShare', 'Accent share', 0, 1, 0.01, v => Math.round(v * 100) + '%'),
+  colorCtl('deep', 'Shadow tone'),
+  colorCtl('light', 'Lamp'),
+  colorCtl('bg0', 'Backdrop top'),
+  colorCtl('bg1', 'Backdrop bottom'),
+  buttons([['SHUFFLE COLOURS', shuffleColours]]),
+], false);
+group('Camera', [
+  slider('zoom', 'Zoom', 0.5, 2.5, 0.01, v => (+v).toFixed(2) + '×'),
+  slider('lens', 'Lens', 12, 70, 1, deg),
+  slider('yaw', 'Orbit', -50, 50, 1, deg),
+  slider('pitch', 'Pitch', -50, 50, 1, deg),
+  slider('parallax', 'Cursor parallax', 0, 2, 0.01),
+  slider('dof', 'Depth of field', 0, 0.3, 0.005),
+  slider('focus', 'Focus depth', -1.5, 1.5, 0.01),
+], false);
+group('Motion', [
+  slider('speed', 'Speed', 0, 4, 0.05, v => (+v).toFixed(2) + '×'),
+  slider('float', 'Float', 0, 2, 0.01),
+  slider('breathe', 'Breathe', 0, 2, 0.01),
+  note('Shapes ease into every change. Reduced motion shows a still frame.'),
+], false);
+group('Finish', [
+  slider('grain', 'Grain', 0, 0.1, 0.002),
+  slider('vignette', 'Vignette', 0, 1, 0.01),
+  slider('render', 'Render scale', 0.5, 1, 0.05, v => (+v).toFixed(2) + '×', resize),
+], false);
+
+/* presets */
+const presetsEl = document.getElementById('presets');
+const presetButtons = {};
+Object.keys(PRESETS).forEach(name => {
+  const b = document.createElement('button'); b.textContent = name;
+  b.addEventListener('click', () => applyPreset(name));
+  presetsEl.appendChild(b);
+  presetButtons[name] = b;
+});
+function clearPresetActive() { Object.values(presetButtons).forEach(b => b.classList.remove('active')); }
+function refreshUi() {
+  Object.keys(ui).forEach(k => {
+    if (!(k in S)) return;
+    const c = ui[k];
+    if (c.input.type === 'checkbox') c.input.checked = S[k];
+    else if (c.input.type !== 'modes') c.input.value = S[k];
+    c.refresh(S[k]);
+  });
+}
+function applyPreset(name) {
+  const keep = { render: S.render };
+  Object.assign(S, clone(PRESETS[name]), keep);
+  refreshUi(); setFg();
+  clearPresetActive();
+  if (presetButtons[name]) presetButtons[name].classList.add('active');
+}
+
+/* randomise */
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const PALETTES = [
+  { bg0: '#c3d1e3', bg1: '#7f96b3', glassA: '#e4ecf6', glassB: '#a3b9d4', accent: '#3d6fe0', deep: '#22395a', light: '#ffffff' },
+  { bg0: '#d9dcdf', bg1: '#a9adb2', glassA: '#f1f3f5', glassB: '#dfe4ea', accent: '#4e99fb', deep: '#4b5f7a', light: '#ffffff' },
+  { bg0: '#b4b6cf', bg1: '#8f93b3', glassA: '#e9eaf4', glassB: '#a9aecd', accent: '#27437e', deep: '#1d2b52', light: '#ffffff' },
+  { bg0: '#93aef2', bg1: '#5a7fe6', glassA: '#b9cdfb', glassB: '#3e6cea', accent: '#1f3fd6', deep: '#1730a8', light: '#ffffff' },
+  { bg0: '#e3dfe6', bg1: '#c9c7cf', glassA: '#cfe6d6', glassB: '#5fae79', accent: '#1f6b3c', deep: '#12452a', light: '#ffffff' },
+  { bg0: '#1a1d21', bg1: '#08090a', glassA: '#59616b', glassB: '#20242a', accent: '#d8ff43', deep: '#050607', light: '#f6ffd9' },
+  { bg0: '#f0eff2', bg1: '#d5d6dd', glassA: '#f7f7fa', glassB: '#d7dbe6', accent: '#a098fd', deep: '#5a5f7a', light: '#ffffff' },
+  { bg0: '#f3ded2', bg1: '#e0b9a6', glassA: '#fff0e4', glassB: '#f2a47c', accent: '#ff540a', deep: '#6b2a12', light: '#fffaf2' },
+  { bg0: '#16233f', bg1: '#070c1a', glassA: '#6f8fd6', glassB: '#1c2f66', accent: '#86f3c3', deep: '#03060f', light: '#dfe9ff' },
+  { bg0: '#dfe6e4', bg1: '#b3c4c0', glassA: '#e9f6f3', glassB: '#7fc7bd', accent: '#0f5a46', deep: '#17463f', light: '#ffffff' },
+  { bg0: '#2a1f3d', bg1: '#0f0a1a', glassA: '#b8b0fb', glassB: '#4a3a9a', accent: '#ff8a4c', deep: '#07040f', light: '#fff1e6' },
+];
+function randomise() {
+  Object.assign(S, pick(PALETTES));
+  const dark = hex(S.bg0)[1] < 0.35;
+  S.mode = pick(['Cascade', 'Stack', 'Fan', 'Scatter', 'Scatter']);
+  S.family = pick(['Mix', 'Mix', 'Slabs', 'Pills', 'Discs', 'Petals', 'Arches', 'Rings', 'Plus']);
+  S.seed = 1 + Math.floor(Math.random() * 9998);
+  S.count = Math.round(rnd(3, 8)); S.size = +rnd(0.8, 1.3).toFixed(2); S.gap = +rnd(0.18, 0.5).toFixed(2);
+  S.rotation = Math.round(rnd(-180, 180));
+  S.twist = S.mode === 'Fan' ? +rnd(9, 24).toFixed(1) * pick([-1, 1]) : S.mode === 'Stack' ? +rnd(-9, 9).toFixed(1) : +rnd(-3, 3).toFixed(1);
+  S.tilt = Math.round(S.mode === 'Scatter' ? rnd(8, 32) : rnd(0, 10)); S.disorder = +(S.mode === 'Scatter' ? rnd(0.3, 0.8) : rnd(0, 0.25)).toFixed(2);
+  S.posX = +rnd(-0.3, 0.3).toFixed(2); S.posY = +rnd(-0.35, 0.25).toFixed(2);
+  S.opacity = +rnd(dark ? 0.5 : 0.62, 0.95).toFixed(2); S.frost = +rnd(0.3, 1.1).toFixed(2);
+  S.lip = +rnd(0.04, 0.12).toFixed(3); S.lipAmt = +rnd(0.7, 1.2).toFixed(2); S.gloss = +rnd(0.6, 1.3).toFixed(2); S.glow = +rnd(0.3, 1.1).toFixed(2);
+  S.irid = Math.random() < 0.3 ? +rnd(0.3, 0.9).toFixed(2) : 0; S.refract = +rnd(0.2, 1.1).toFixed(2);
+  S.follow = true; S.lightAngle = Math.round(rnd(0, 360)); S.lightHeight = Math.round(rnd(30, 65));
+  S.gradient = +rnd(0.6, 1.4).toFixed(2); S.shadow = +rnd(0.5, 1).toFixed(2); S.shadowSoft = +rnd(0.14, 0.4).toFixed(2);
+  S.accentShare = Math.random() < 0.55 ? +rnd(0.15, 0.4).toFixed(2) : 0;
+  S.zoom = +rnd(0.9, 1.4).toFixed(2); S.lens = Math.round(rnd(22, 42)); S.yaw = Math.round(rnd(-22, 22)); S.pitch = Math.round(rnd(6, 28));
+  S.dof = Math.random() < 0.35 ? +rnd(0.03, 0.12).toFixed(3) : 0; S.focus = +rnd(0, 0.8).toFixed(2);
+  S.float = +rnd(0.3, 0.9).toFixed(2); S.breathe = +rnd(0.2, 0.9).toFixed(2); S.speed = +rnd(0.7, 1.5).toFixed(2);
+  S.grain = +rnd(0.012, 0.035).toFixed(3); S.vignette = +rnd(0.1, dark ? 0.6 : 0.35).toFixed(2);
+  refreshUi(); setFg(); clearPresetActive();
+}
+
+/* panel show/hide, buttons, keys */
+document.getElementById('hideUi').addEventListener('click', () => panel.classList.add('hidden'));
+document.getElementById('toggleUi').addEventListener('click', () => panel.classList.remove('hidden'));
+document.getElementById('randomBtn').addEventListener('click', randomise);
+document.getElementById('exportBtn').addEventListener('click', () => exportPNG(2));
+const toast = document.getElementById('toast');
+function showToast(msg) { toast.textContent = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1800); }
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const json = JSON.stringify(S, null, 2);
+  try { await navigator.clipboard.writeText(json); showToast('Settings copied as JSON'); }
+  catch (e) { showToast('Clipboard blocked by the browser'); }
+});
+addEventListener('keydown', e => {
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.code === 'Space') { if (tag === 'BUTTON') return; e.preventDefault(); newShapes(); }
+  else if (e.key === 'r') randomise();
+  else if (e.key === 'h') panel.classList.toggle('hidden');
+});
+
+/* ============================== boot ============================== */
+const q = new URLSearchParams(location.search);
+if (!gl) showToast('WebGL is off in this browser');
+applyPreset(q.get('preset') && PRESETS[q.get('preset')] ? q.get('preset') : 'Frost');
+stepShapes(T, RM || STILL ? 1 : 0);
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
