@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>015 · Glass Shapes — StanVision Lab</title>
-<meta name="description" content="Abstract frosted glass shapes, generated. Slabs, pills, discs, petals, arches, rings and the StanVision + stacked in depth, with lips that catch the light, soft shadows, frost blur and depth of field. Four arrangements, eight presets, PNG export. A StanVision Lab experiment.">
+<meta name="description" content="Abstract glass shapes, generated. Clear pebbles, slabs, pills, discs, petals, arches, rings and the StanVision + stacked in depth, with hairline edges, refraction, soft shadows, frost blur and depth of field. Four arrangements, nine presets, PNG export. A StanVision Lab experiment.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   :root{
@@ -165,13 +165,12 @@
     text-transform:uppercase; color:var(--mute); padding:4px 2px 0;
   }
   .modes{display:grid; grid-template-columns:repeat(2,1fr); gap:6px; padding:4px 0;}
-  .modes.c4{grid-template-columns:repeat(4,1fr);}
+  .modes.c3{grid-template-columns:repeat(3,1fr);}
   .modes button{
     font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; letter-spacing:.03em;
     color:var(--text); background:rgba(148,163,184,.08); border:1px solid var(--line);
     border-radius:8px; padding:7px 4px; cursor:pointer; transition:border-color .15s, background .15s;
   }
-  .modes.c4 button{font-size:10px; letter-spacing:0; padding:7px 0;}
   .modes button:hover{border-color:rgba(148,163,184,.45);}
   .modes button.active{border-color:var(--accent); background:rgba(216,255,67,.14);}
   .btnrow{display:flex; gap:8px;}
@@ -197,7 +196,7 @@
 
 <header>
   <a class="lab-back" href="/"><span class="idx">015</span><span class="lbl">Glass Shapes</span></a>
-  <p>StanVision Lab — WebGL / frosted glass</p>
+  <p>StanVision Lab — WebGL / glass</p>
 </header>
 <div id="hint">move the cursor · space = new shapes · r = random · h = hide panel</div>
 
@@ -245,11 +244,13 @@ float plus(vec2 p, float a){
   float c=min(bx(p,vec2(a-rr,w-rr)),bx(p,vec2(w-rr,a-rr)))-rr;
   return max(c,-(bx(p,vec2(w*.75-rr))-rr));
 }
-/* D = half width, half height, ring width (large = solid), plus amount */
+/* D = half width, half height, ring width (large = solid), kind: 1 plus, -1 pebble */
 float sd(vec2 p, vec4 D, vec4 r){
   float d=rb(p,D.xy,r);
   d=max(d,-d-D.z);
   if(D.w>.002) d=mix(d,plus(p,min(D.x,D.y)),D.w);
+  /* pebble: a soft three-lobed blob, r = lobe amounts and phases */
+  if(D.w<-.002){float a=atan(p.y,p.x); d=mix(d,(length(p)-min(D.x,D.y)*(1.+r.x*cos(3.*a+r.z)+r.y*cos(2.*a+r.w)))*.85,-D.w);}
   return d;
 }
 /* how much of the light reaching P is blocked by the other shapes */
@@ -302,7 +303,7 @@ void main(){
     if(cov<.002) continue;
 
     vec3 Nf=n*(dn>0.?-1.:1.);
-    float bw=min(min(uLip*m.w,D.z*.45),min(D.x,D.y)*mix(.7,.1,D.w))+.0005;
+    float bw=min(min(uLip*m.w,D.z*.45),min(D.x,D.y)*mix(.7,.1,max(D.w,0.)))+.0005;
     float e=max(px,.004);
     vec2 g=vec2(sd(q+vec2(e,0.),D,rr)-sd(q-vec2(e,0.),D,rr),sd(q+vec2(0.,e),D,rr)-sd(q-vec2(0.,e),D,rr));
     g/=max(length(g),1e-5);
@@ -315,31 +316,40 @@ void main(){
 
     float sh=uSh>0.?shadow(P+Nf*.002,fi):0.;
     vec3 base=mix(mix(cA,cB,m.x),cAcc,m.z);
-    vec3 dark=mix(base*.62,cDeep,.3), lit=mix(base,cLight,.55);
+    vec3 dark=mix(base*.55,cDeep,.42), lit=mix(base,cLight,.55);
     vec2 lq=vec2(dot(uL,Uu),dot(uL,Vv));
     float gt=dot(q,lq)/max(D.x,D.y);
     float face=pow(max(dot(reflect(rd,Nf),uL),0.),3.);
-    float s=.5+.34*gt*uGrad+.3*(dot(Nf,uL)-.62)+.22*face*uGloss-sh*uSh*.5;
+    float s=.5+.42*gt*uGrad+.3*(dot(Nf,uL)-.62)+.22*face*uGloss-sh*uSh*.5;
     vec3 c=s<.5?mix(dark,base,smoothstep(0.,.5,s)):mix(base,lit,smoothstep(.5,1.1,s)*.85);
 
-    /* the lip: a band along the edge, light where it faces the lamp, dark on the far side */
-    vec3 band=mix(mix(c,dark,.55),lit,clamp(.58+.7*gL-sh*uSh*.3,0.,1.));
-    c=mix(c,band,smoothstep(0.,.55,k)*uLipAmt*det*.85);
+    /* the edge of clear glass: no painted band. The slab's front and back edges are two hairlines,
+       the strip between them is the thickness (wider on the side turned to the camera), plus a soft falloff and a glint */
+    vec2 vq=vec2(dot(-rd,Uu),dot(-rd,Vv));
+    float tk=clamp(.22+1.7*dot(g,vq),.04,1.);
+    float d2=d+bw*tk, in2=smoothstep(-px,px,d2);
+    vec3 edge=mix(mix(c,dark,.5),mix(c,lit,.65),clamp(.5+.85*gL-sh*uSh*.3,0.,1.));
+    c=mix(c,edge,(in2*.42+k*k*k*.3)*uLipAmt*det);
     c+=lit*exp(min(d,0.)/(bw*1.6+.012))*smoothstep(-bw*2.6,-bw*.8,d)*max(gL,0.)*uGlow*.3;
-    float l2=exp(-pow((d+bw)/(px*1.6),2.))*det*uLipAmt;
-    c=mix(c,gL<0.?lit:dark,l2*.3);
+    float h1=smoothstep(px*2.2,0.,-d), h2=exp(-pow(d2/(px*1.3),2.));
+    c+=cLight*h1*(.15+.85*max(gL,0.))*det*uLipAmt;
+    c=mix(c,dark,h1*max(-gL,0.)*.55*det*uLipAmt);
+    c=mix(c,gL>0.?dark:lit,h2*.38*det*uLipAmt);
 
+    /* reflections: a wide soft window streak across the face that slides with the lamp, and a glint on the very edge */
+    float rs=dot(q,normalize(lq+1e-4))/max(D.x,D.y);
+    float streak=exp(-pow((rs-.3)/.3,2.))*.2+exp(-pow((rs+.5)/.1,2.))*.08;
+    c+=cLight*streak*uGloss*(1.-k)*mix(.35,1.,det);
     vec3 rf=reflect(rd,Nb);
     float rl=max(dot(rf,uL),0.);
     float sp=pow(rl,70.)*1.5+pow(rl,9.)*.2+pow(max(dot(rf,Lf),0.),16.)*.22;
     float F=pow(1.-max(dot(-rd,Nb),0.),3.);
     vec3 ir=.5+.5*cos(6.2832*(k*1.15+gL*.55+vec3(0.,.33,.67)));
-    c+=cLight*mix(vec3(1.),ir*1.5,uIrid)*sp*uGloss*(.15+.85*k)*det;
-    c+=(ir-.5)*uIrid*k*det*.3;
-    c+=cLight*smoothstep(px*2.6,0.,-d)*(.18+.55*max(gL,0.))*det*uLipAmt;
-    c=mix(c,mix(cBg0,cLight,.5),F*.25*det);
+    c+=cLight*mix(vec3(1.),ir*1.5,uIrid)*sp*uGloss*k*k*det;
+    c+=(ir-.5)*uIrid*max(in2,k)*det*.3;
+    c=mix(c,mix(cBg0,cLight,.5),F*.2*det);
 
-    float a=cov*clamp(uOp*m.y+(k*.45+F*.4)*det*uLipAmt,0.,1.);
+    float a=cov*clamp(uOp*m.y+(in2*.22+k*k*.2+F*.3)*det*uLipAmt+streak*uGloss*.3,0.,1.);
     col+=tr*a*c; tr*=1.-a;
     float f=cov*uFrost;
     tF=mix(tF,t,f/(fr+f+1e-4)); fr+=f;
@@ -370,36 +380,39 @@ const MAXN = 10;
 const STILL = location.search.indexOf('still') > -1;
 
 const S = {
-  mode: 'Cascade', family: 'Slabs', count: 5, size: 1, gap: 0.3, rotation: 38, twist: 0, tilt: 6, disorder: 0.15, posX: 0, posY: 0, seed: 7,
-  opacity: 0.8, frost: 0.7, lip: 0.085, lipAmt: 1, gloss: 0.9, glow: 0.6, irid: 0, refract: 0.5,
-  follow: true, lightAngle: 125, lightHeight: 48, shadow: 0.75, shadowSoft: 0.22, gradient: 1,
-  bg0: '#c3d1e3', bg1: '#7f96b3', glassA: '#e4ecf6', glassB: '#a3b9d4', accent: '#3d6fe0', accentShare: 0, deep: '#22395a', light: '#ffffff',
+  mode: 'Scatter', family: 'Pebbles', count: 4, size: 1.5, gap: 0.3, rotation: 20, twist: 0, tilt: 8, disorder: 0.4, posX: 0, posY: 0, seed: 7,
+  opacity: 0.5, frost: 0.2, lip: 0.07, lipAmt: 1, gloss: 1, glow: 0.5, irid: 0, refract: 1.2,
+  follow: true, lightAngle: 125, lightHeight: 48, shadow: 0.6, shadowSoft: 0.3, gradient: 1.5,
+  bg0: '#8e93b4', bg1: '#c3c8de', glassA: '#cbd6f0', glassB: '#3c5cab', accent: '#2b3f8a', accentShare: 0, deep: '#1b2140', light: '#ffffff',
   zoom: 1, lens: 30, yaw: -16, pitch: 24, parallax: 0.6, dof: 0, focus: 0,
   speed: 1, float: 0.5, breathe: 0.5,
   grain: 0.022, vignette: 0.25, render: 1,
 };
 const PRESETS = {
-  'Frost':   { ...S },
-  'Fan':     { ...S, mode: 'Stack', family: 'Petals', count: 7, size: 1.05, gap: 0.2, rotation: -8, twist: 5, tilt: 3, posX: -0.25, posY: -0.3, seed: 3,
+  'Clear':   { ...S },
+  'Frost':   { ...S, mode: 'Cascade', family: 'Slabs', count: 5, size: 1, rotation: 38, tilt: 6, disorder: 0.15,
+               opacity: 0.8, frost: 0.7, lip: 0.055, gloss: 0.9, glow: 0.6, refract: 0.5, shadow: 0.75, shadowSoft: 0.22, gradient: 1,
+               bg0: '#c3d1e3', bg1: '#7f96b3', glassA: '#e4ecf6', glassB: '#a3b9d4', deep: '#22395a' },
+  'Fan':     { ...S, disorder: 0.15, refract: 0.5, gradient: 1, mode: 'Stack', family: 'Petals', count: 7, size: 1.05, gap: 0.2, rotation: -8, twist: 5, tilt: 3, posX: -0.25, posY: -0.3, seed: 3,
                opacity: 0.95, frost: 0.3, lip: 0.06, gloss: 1, glow: 0.4, shadow: 0.9, shadowSoft: 0.16,
                bg0: '#d9dcdf', bg1: '#a9adb2', glassA: '#f1f3f5', glassB: '#dfe4ea', deep: '#4b5f7a', yaw: -10, pitch: 16 },
-  'Depth':   { ...S, mode: 'Scatter', family: 'Mix', count: 6, size: 1.25, gap: 0.55, rotation: 30, tilt: 22, disorder: 0.6, seed: 33,
+  'Depth':   { ...S, refract: 0.5, gradient: 1, mode: 'Scatter', family: 'Mix', count: 6, size: 1.25, gap: 0.55, rotation: 30, tilt: 22, disorder: 0.6, seed: 33,
                opacity: 0.7, frost: 1, lip: 0.05, gloss: 0.8, shadow: 0.6, shadowSoft: 0.4,
                bg0: '#b4b6cf', bg1: '#8f93b3', glassA: '#e9eaf4', glassB: '#a9aecd', accent: '#27437e', accentShare: 0.25, deep: '#1d2b52',
                zoom: 1.1, yaw: 8, pitch: 10, dof: 0.075, focus: 1.3 },
-  'Sky':     { ...S, mode: 'Fan', family: 'Pills', count: 5, size: 1.15, gap: 0.24, rotation: 62, twist: 13, tilt: 5, posX: -0.2, posY: -0.5, seed: 12,
+  'Sky':     { ...S, disorder: 0.15, refract: 0.5, gradient: 1, gloss: 0.9, mode: 'Fan', family: 'Pills', count: 5, size: 1.15, gap: 0.24, rotation: 62, twist: 13, tilt: 5, posX: -0.2, posY: -0.5, seed: 12,
                opacity: 0.78, frost: 0.6, lip: 0.1, glow: 0.9, shadow: 0.7,
                bg0: '#93aef2', bg1: '#5a7fe6', glassA: '#b9cdfb', glassB: '#3e6cea', accent: '#1f3fd6', accentShare: 0.2, deep: '#1730a8', yaw: -8, pitch: 14 },
-  'Mint':    { ...S, mode: 'Scatter', family: 'Discs', count: 6, size: 0.95, gap: 0.42, rotation: 0, tilt: 30, disorder: 0.5, seed: 44,
+  'Mint':    { ...S, refract: 0.5, gradient: 1, gloss: 0.9, mode: 'Scatter', family: 'Discs', count: 6, size: 0.95, gap: 0.42, rotation: 0, tilt: 30, disorder: 0.5, seed: 44,
                opacity: 0.72, frost: 0.8, lip: 0.07, glow: 0.8, shadow: 0.85, shadowSoft: 0.3,
                bg0: '#e3dfe6', bg1: '#c9c7cf', glassA: '#cfe6d6', glassB: '#5fae79', accent: '#1f6b3c', accentShare: 0.2, deep: '#12452a', yaw: -14, pitch: 26 },
-  'Lime':    { ...S, mode: 'Cascade', family: 'Arches', count: 5, size: 0.95, gap: 0.3, rotation: -32, twist: 4, tilt: 8, seed: 5,
+  'Lime':    { ...S, disorder: 0.15, refract: 0.5, gradient: 1, mode: 'Cascade', family: 'Arches', count: 5, size: 0.95, gap: 0.3, rotation: -32, twist: 4, tilt: 8, seed: 5,
                opacity: 0.6, frost: 0.9, lip: 0.07, gloss: 1.1, glow: 1, irid: 0.15, shadow: 0.9,
                bg0: '#1a1d21', bg1: '#08090a', glassA: '#59616b', glassB: '#20242a', accent: '#d8ff43', accentShare: 0.3, deep: '#050607', light: '#f6ffd9', yaw: 14, pitch: 20, vignette: 0.5 },
-  'Plus':    { ...S, mode: 'Cascade', family: 'Plus', count: 3, size: 1, gap: 0.4, rotation: 18, twist: 8, tilt: 4, seed: 9,
+  'Plus':    { ...S, disorder: 0.15, refract: 0.5, gradient: 1, mode: 'Cascade', family: 'Plus', count: 3, size: 1, gap: 0.4, rotation: 18, twist: 8, tilt: 4, seed: 9,
                opacity: 0.7, frost: 0.75, lip: 0.045, gloss: 1, glow: 0.8, shadow: 0.9, shadowSoft: 0.2,
                bg0: '#16181c', bg1: '#060708', glassA: '#8e99a8', glassB: '#2b3038', accent: '#d8ff43', accentShare: 0.3, deep: '#040506', light: '#f6ffd9', yaw: -20, pitch: 22, vignette: 0.5 },
-  'Prism':   { ...S, mode: 'Scatter', family: 'Rings', count: 5, size: 1.1, gap: 0.4, rotation: 20, tilt: 26, disorder: 0.7, seed: 31,
+  'Prism':   { ...S, gradient: 1, mode: 'Scatter', family: 'Rings', count: 5, size: 1.1, gap: 0.4, rotation: 20, tilt: 26, disorder: 0.7, seed: 31,
                opacity: 0.55, frost: 0.5, lip: 0.09, gloss: 1.2, glow: 0.7, irid: 0.85, refract: 1, shadow: 0.5, shadowSoft: 0.35,
                bg0: '#f0eff2', bg1: '#d5d6dd', glassA: '#f7f7fa', glassB: '#d7dbe6', accent: '#b9b4f5', accentShare: 0.2, deep: '#5a5f7a', yaw: -12, pitch: 18 },
 };
@@ -412,8 +425,9 @@ function rng(seed){ let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F
 const SOLID = 9;
 /* half width, half height, four corner radii, ring width, plus amount */
 function family(kind, s, a, b, c){
-  if (kind === 'Mix') kind = ['Slabs', 'Pills', 'Discs', 'Petals', 'Arches', c > 0.8 ? 'Rings' : 'Slabs'][Math.floor(a * 5.999)];
+  if (kind === 'Mix') kind = ['Pebbles', 'Pebbles', 'Discs', 'Slabs', 'Petals', c > 0.8 ? 'Rings' : 'Pills'][Math.floor(a * 5.999)];
   const sm = 0.05 * s;
+  if (kind === 'Pebbles') { const h = s * 0.8; return [h, h, 0.05 + b * 0.045, c * 0.05, a * 6.283, b * 6.283, SOLID, -1]; }
   if (kind === 'Pills')  { const hy = s * (0.3 + b * 0.14); return [s * 1.15, hy, hy, hy, hy, hy, SOLID, 0]; }
   if (kind === 'Discs')  { const h = s * 0.78; return [h, h, h, h, h, h, SOLID, 0]; }
   if (kind === 'Petals') { const h = s * 0.82; return [h, h, h, sm, sm, h, SOLID, 0]; }
@@ -666,7 +680,7 @@ function shuffleColours(){
 group('Arrangement', [
   modes('mode', ['Cascade', 'Stack', 'Fan', 'Scatter']),
   sect('Shape'),
-  modes('family', ['Mix', 'Slabs', 'Pills', 'Discs', 'Petals', 'Arches', 'Rings', 'Plus'], null, 'c4'),
+  modes('family', ['Mix', 'Pebbles', 'Slabs', 'Pills', 'Discs', 'Petals', 'Arches', 'Rings', 'Plus'], null, 'c3'),
   slider('count', 'Count', 1, MAXN, 1),
   slider('size', 'Size', 0.4, 1.8, 0.01),
   slider('gap', 'Depth gap', 0.04, 0.8, 0.01),
@@ -776,7 +790,7 @@ function randomise() {
   Object.assign(S, pick(PALETTES));
   const dark = hex(S.bg0)[1] < 0.35;
   S.mode = pick(['Cascade', 'Stack', 'Fan', 'Scatter', 'Scatter']);
-  S.family = pick(['Mix', 'Mix', 'Slabs', 'Pills', 'Discs', 'Petals', 'Arches', 'Rings', 'Plus']);
+  S.family = pick(['Mix', 'Mix', 'Pebbles', 'Pebbles', 'Slabs', 'Pills', 'Discs', 'Petals', 'Arches', 'Rings', 'Plus']);
   S.seed = 1 + Math.floor(Math.random() * 9998);
   S.count = Math.round(rnd(3, 8)); S.size = +rnd(0.8, 1.3).toFixed(2); S.gap = +rnd(0.18, 0.5).toFixed(2);
   S.rotation = Math.round(rnd(-180, 180));
@@ -819,7 +833,7 @@ addEventListener('keydown', e => {
 /* ============================== boot ============================== */
 const q = new URLSearchParams(location.search);
 if (!gl) showToast('WebGL is off in this browser');
-applyPreset(q.get('preset') && PRESETS[q.get('preset')] ? q.get('preset') : 'Frost');
+applyPreset(q.get('preset') && PRESETS[q.get('preset')] ? q.get('preset') : 'Clear');
 stepShapes(T, RM || STILL ? 1 : 0);
 resize();
 requestAnimationFrame(frame);
